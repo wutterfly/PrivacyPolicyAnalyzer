@@ -1,0 +1,28 @@
+import logging
+from logging import Formatter
+from typing import Literal
+
+
+class UTF8SafeFormatter(Formatter):
+    def format(self, record):
+        # Sanitize the message
+        if isinstance(record.msg, str):
+            record.msg = record.msg.encode("utf-8", errors="ignore").decode("utf-8")
+        return super().format(record)
+
+
+def set_logging(
+    file: str,
+    level: Literal[50, 40, 30, 20, 10] = logging.INFO,
+):
+    logging.basicConfig(
+        level=level,
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(file, encoding="utf-8", errors="ignore"),
+        ],
+    )
+
+    formatter = UTF8SafeFormatter("[%(levelname)-8s] - %(message)s")
+    for handler in logging.getLogger().handlers:
+        handler.setFormatter(formatter)

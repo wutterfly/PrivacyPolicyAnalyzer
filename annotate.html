@@ -1,0 +1,1423 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hierarchical Text Annotator</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Oxygen, Ubuntu, Cantarell, sans-serif;
+                line-height: 1.4;
+                color: #333;
+                background-color: #f5f5f5;
+                padding: 15px;
+                font-size: 14px;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+                border-radius: 6px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            h1 {
+                margin-bottom: 15px;
+                color: #2c3e50;
+                font-size: 24px;
+            }
+
+            .file-upload {
+                margin-bottom: 15px;
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+            }
+
+            .upload-section {
+                margin-bottom: 10px;
+            }
+
+            .upload-label {
+                display: block;
+                font-weight: 600;
+                font-size: 12px;
+                margin-bottom: 5px;
+                color: #555;
+            }
+
+            input[type="file"] {
+                padding: 8px;
+                border: 2px solid #ddd;
+                border-radius: 4px;
+                background-color: white;
+                font-size: 13px;
+            }
+
+            .status-message {
+                margin-top: 10px;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 500;
+            }
+
+            .status-message.success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .status-message.error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+
+            .navigation {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+                margin-bottom: 15px;
+                gap: 15px;
+            }
+
+            .nav-buttons {
+                display: flex;
+                gap: 8px;
+            }
+
+            .nav-button {
+                padding: 8px 16px;
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
+                transition: background-color 0.2s;
+            }
+
+            .nav-button:hover:not(:disabled) {
+                background-color: #2980b9;
+            }
+
+            .nav-button:disabled {
+                background-color: #bdc3c7;
+                cursor: not-allowed;
+            }
+
+            .progress-info {
+                font-size: 14px;
+                font-weight: 600;
+                color: #2c3e50;
+            }
+
+            .jump-to {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .jump-to label {
+                font-size: 13px;
+            }
+
+            .jump-to input {
+                width: 70px;
+                padding: 6px;
+                border: 2px solid #ddd;
+                border-radius: 4px;
+                font-size: 13px;
+            }
+
+            .jump-button {
+                padding: 6px 14px;
+                background-color: #9b59b6;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
+            }
+
+            .jump-button:hover {
+                background-color: #8e44ad;
+            }
+
+            .annotation-line {
+                padding: 20px;
+                margin-bottom: 15px;
+                border: 2px solid #3498db;
+                border-radius: 6px;
+                background-color: #fafafa;
+            }
+
+            .line-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+
+            .line-number {
+                font-weight: bold;
+                font-size: 16px;
+                color: #2c3e50;
+            }
+
+            .clear-button {
+                padding: 6px 12px;
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 12px;
+            }
+
+            .clear-button:hover {
+                background-color: #c0392b;
+            }
+
+            .line-text {
+                margin: 12px 0;
+                padding: 12px;
+                background-color: white;
+                border-left: 3px solid #3498db;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .annotation-section {
+                margin-top: 15px;
+            }
+
+            .section-title {
+                font-weight: 600;
+                font-size: 13px;
+                color: #2c3e50;
+                margin-bottom: 6px;
+                padding-bottom: 4px;
+                border-bottom: 2px solid #3498db;
+            }
+
+            .label-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-top: 8px;
+            }
+
+            .label-button {
+                padding: 6px 12px;
+                border: 1px solid #ddd;
+                background-color: white;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 12px;
+                transition: all 0.2s;
+            }
+
+            .label-button:hover {
+                background-color: #f0f0f0;
+                border-color: #bbb;
+            }
+
+            .label-button.selected {
+                background-color: #4caf50;
+                color: white;
+                border-color: #4caf50;
+                font-weight: 600;
+            }
+
+            .hierarchical-container {
+                margin-top: 15px;
+            }
+
+            .add-topic-section {
+                margin-bottom: 15px;
+                padding: 10px;
+                background-color: #e8f5e9;
+                border-radius: 4px;
+                border: 1px dashed #4caf50;
+            }
+
+            .add-topic-title {
+                font-weight: 600;
+                font-size: 12px;
+                color: #2e7d32;
+                margin-bottom: 6px;
+            }
+
+            .topic-section {
+                margin-bottom: 15px;
+                padding: 12px;
+                background-color: #fff3e0;
+                border-radius: 4px;
+                border: 1px solid #ffb74d;
+            }
+
+            .topic-section.other-topic {
+                background-color: #f5f5f5;
+                border: 1px solid #bbb;
+            }
+
+            .topic-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+
+            .topic-title {
+                font-weight: 600;
+                font-size: 14px;
+                color: #e65100;
+            }
+
+            .topic-section.other-topic .topic-title {
+                color: #666;
+            }
+
+            .remove-topic-button {
+                padding: 4px 10px;
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 11px;
+            }
+
+            .remove-topic-button:hover {
+                background-color: #c0392b;
+            }
+
+            .hierarchy-level {
+                margin-bottom: 10px;
+            }
+
+            .hierarchy-level:last-child {
+                margin-bottom: 0;
+            }
+
+            .hierarchy-title {
+                font-weight: 600;
+                font-size: 12px;
+                color: #e65100;
+                margin-bottom: 6px;
+            }
+
+            .hierarchy-title .arrow {
+                margin: 0 4px;
+                color: #ff9800;
+            }
+
+            .content-item {
+                margin-bottom: 10px;
+                padding: 10px;
+                background-color: #fff;
+                border-radius: 3px;
+                border: 1px solid #ffcc80;
+            }
+
+            .content-item.other-content {
+                background-color: #f5f5f5;
+                border: 1px solid #bbb;
+            }
+
+            .content-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .content-name {
+                font-weight: 600;
+                font-size: 12px;
+                color: #f57c00;
+            }
+
+            .content-item.other-content .content-name {
+                color: #666;
+            }
+
+            .remove-content-button {
+                padding: 3px 8px;
+                background-color: #ff9800;
+                color: white;
+                border: none;
+                border-radius: 2px;
+                cursor: pointer;
+                font-size: 11px;
+            }
+
+            .remove-content-button:hover {
+                background-color: #f57c00;
+            }
+
+            .attribute-section {
+                margin-top: 8px;
+            }
+
+            .add-attribute-section {
+                margin-top: 8px;
+                padding: 8px;
+                background-color: #f5f5f5;
+                border-radius: 3px;
+                border: 1px dashed #999;
+            }
+
+            .add-attribute-title {
+                font-weight: 600;
+                font-size: 11px;
+                color: #555;
+                margin-bottom: 6px;
+            }
+
+            .custom-attribute-input {
+                display: flex;
+                gap: 6px;
+                margin-top: 6px;
+            }
+
+            .custom-attribute-input input {
+                flex: 1;
+                padding: 4px 8px;
+                border: 1px solid #ddd;
+                border-radius: 3px;
+                font-size: 12px;
+            }
+
+            .add-custom-button {
+                padding: 4px 12px;
+                background-color: #9b59b6;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                font-size: 11px;
+            }
+
+            .add-custom-button:hover {
+                background-color: #8e44ad;
+            }
+
+            .custom-attribute {
+                background-color: #e1bee7;
+                border-color: #ba68c8;
+            }
+
+            .custom-attribute.selected {
+                background-color: #9c27b0;
+                border-color: #9c27b0;
+            }
+
+            .other-note {
+                font-size: 11px;
+                color: #666;
+                font-style: italic;
+                margin-top: 5px;
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 10px;
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 2px solid #ddd;
+            }
+
+            .action-button {
+                padding: 10px 20px;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.2s;
+            }
+
+            .export-button {
+                background-color: #3498db;
+            }
+
+            .export-button:hover {
+                background-color: #2980b9;
+            }
+
+            .export-schema-button {
+                background-color: #9b59b6;
+            }
+
+            .export-schema-button:hover {
+                background-color: #8e44ad;
+            }
+
+            .export-button:disabled,
+            .export-schema-button:disabled {
+                background-color: #bdc3c7;
+                cursor: not-allowed;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px;
+                color: #999;
+                font-size: 16px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Hierarchical Text Annotator</h1>
+
+            <div class="file-upload">
+                <div class="upload-section">
+                    <label class="upload-label">Schema File (REQUIRED):</label>
+                    <input type="file" id="schemaInput" accept=".json" />
+                </div>
+                <div class="upload-section">
+                    <label class="upload-label"
+                        >Text File (for new annotation):</label
+                    >
+                    <input type="file" id="fileInput" accept=".txt" />
+                </div>
+                <div class="upload-section">
+                    <label class="upload-label"
+                        >OR Existing Annotations (to continue work):</label
+                    >
+                    <input type="file" id="annotationsInput" accept=".json" />
+                </div>
+                <div id="statusMessage"></div>
+            </div>
+
+            <div id="navigationArea" style="display: none">
+                <div class="navigation">
+                    <div class="nav-buttons">
+                        <button class="nav-button" id="prevButton">
+                            ← Prev
+                        </button>
+                        <button class="nav-button" id="nextButton">
+                            Next →
+                        </button>
+                    </div>
+                    <div class="progress-info" id="progressInfo"></div>
+                    <div class="jump-to">
+                        <label>Jump:</label>
+                        <input type="number" id="jumpInput" min="1" />
+                        <button class="jump-button" id="jumpButton">Go</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="annotationArea"></div>
+
+            <div
+                class="action-buttons"
+                id="actionButtons"
+                style="display: none"
+            >
+                <button class="action-button export-button" id="exportButton">
+                    Export Annotations
+                </button>
+                <button
+                    class="action-button export-schema-button"
+                    id="exportSchemaButton"
+                >
+                    Export Schema
+                </button>
+            </div>
+        </div>
+
+        <script>
+            let SCHEMA = null; // Schema must be loaded from file
+            let lines = [];
+            let annotations = {};
+            let currentIndex = 0;
+
+            // Show status message
+            function showStatus(message, isError = false) {
+                const statusDiv = document.getElementById("statusMessage");
+                statusDiv.className = `status-message ${isError ? "error" : "success"}`;
+                statusDiv.textContent = message;
+                statusDiv.style.display = "block";
+
+                setTimeout(() => {
+                    statusDiv.style.display = "none";
+                }, 5000);
+            }
+
+            // Handle text file upload
+            document
+                .getElementById("fileInput")
+                .addEventListener("change", function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        const text = event.target.result;
+                        // Remove \r characters and split by \n
+                        lines = text
+                            .replace(/\r/g, "")
+                            .split("\n")
+                            .filter((line) => line.trim() !== "");
+
+                        // Reset annotations when loading new text
+                        annotations = {};
+
+                        currentIndex = 0;
+                        document.getElementById(
+                            "navigationArea",
+                        ).style.display = "block";
+                        document.getElementById("actionButtons").style.display =
+                            "flex";
+                        document.getElementById("jumpInput").max = lines.length;
+
+                        // Disable annotations input
+                        document.getElementById("annotationsInput").disabled =
+                            true;
+                        document.getElementById(
+                            "annotationsInput",
+                        ).style.opacity = "0.5";
+
+                        renderCurrentSentence();
+                        showStatus(
+                            `Loaded ${lines.length} sentences from text file`,
+                        );
+                    };
+                    reader.readAsText(file);
+                });
+
+            // Handle schema file upload
+            document
+                .getElementById("schemaInput")
+                .addEventListener("change", function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        try {
+                            const loadedSchema = JSON.parse(
+                                event.target.result,
+                            );
+
+                            // Validate schema structure
+                            if (
+                                !loadedSchema.context ||
+                                !Array.isArray(loadedSchema.context)
+                            ) {
+                                throw new Error(
+                                    "Schema must have a 'context' array",
+                                );
+                            }
+                            if (
+                                !loadedSchema.topics ||
+                                !Array.isArray(loadedSchema.topics)
+                            ) {
+                                throw new Error(
+                                    "Schema must have a 'topics' array",
+                                );
+                            }
+                            if (
+                                !loadedSchema.topicContents ||
+                                typeof loadedSchema.topicContents !== "object"
+                            ) {
+                                throw new Error(
+                                    "Schema must have a 'topicContents' object",
+                                );
+                            }
+                            if (
+                                !loadedSchema.contentAttributes ||
+                                typeof loadedSchema.contentAttributes !==
+                                    "object"
+                            ) {
+                                throw new Error(
+                                    "Schema must have a 'contentAttributes' object",
+                                );
+                            }
+
+                            SCHEMA = loadedSchema;
+                            showStatus("Schema loaded successfully!");
+                            if (lines.length > 0) {
+                                renderCurrentSentence();
+                            }
+                        } catch (error) {
+                            showStatus(
+                                "Error loading schema: " + error.message,
+                                true,
+                            );
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+
+            // Handle annotations file upload
+            document
+                .getElementById("annotationsInput")
+                .addEventListener("change", function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        try {
+                            const loadedData = JSON.parse(event.target.result);
+
+                            // Validate the format
+                            if (!Array.isArray(loadedData)) {
+                                throw new Error(
+                                    "Invalid format: expected an array of annotations",
+                                );
+                            }
+
+                            // Process the loaded annotations - only extract text from annotations file
+                            const newAnnotations = {};
+                            const newLines = [];
+                            let processedCount = 0;
+
+                            loadedData.forEach((item, idx) => {
+                                if (!item.annotations) {
+                                    return;
+                                }
+
+                                // Extract text from annotations file
+                                if (item.text) {
+                                    newLines.push(item.text);
+                                    newAnnotations[idx] = item.annotations;
+                                    processedCount++;
+                                }
+                            });
+
+                            if (newLines.length === 0) {
+                                throw new Error(
+                                    "No valid annotations with text found in file",
+                                );
+                            }
+
+                            // Set the data
+                            lines = newLines;
+                            annotations = newAnnotations;
+                            currentIndex = 0;
+
+                            document.getElementById(
+                                "navigationArea",
+                            ).style.display = "block";
+                            document.getElementById(
+                                "actionButtons",
+                            ).style.display = "flex";
+                            document.getElementById("jumpInput").max =
+                                lines.length;
+
+                            // Disable text file input
+                            document.getElementById("fileInput").disabled =
+                                true;
+                            document.getElementById("fileInput").style.opacity =
+                                "0.5";
+
+                            showStatus(
+                                `Loaded ${processedCount} annotations with text (${lines.length} sentences)`,
+                            );
+
+                            if (lines.length > 0) {
+                                renderCurrentSentence();
+                            }
+                        } catch (error) {
+                            showStatus(
+                                "Error loading annotations: " + error.message,
+                                true,
+                            );
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+
+            // Navigation
+            document
+                .getElementById("prevButton")
+                .addEventListener("click", () => {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        renderCurrentSentence();
+                    }
+                });
+
+            document
+                .getElementById("nextButton")
+                .addEventListener("click", () => {
+                    if (currentIndex < lines.length - 1) {
+                        currentIndex++;
+                        renderCurrentSentence();
+                    }
+                });
+
+            document
+                .getElementById("jumpButton")
+                .addEventListener("click", () => {
+                    const jumpTo = parseInt(
+                        document.getElementById("jumpInput").value,
+                    );
+                    if (jumpTo >= 1 && jumpTo <= lines.length) {
+                        currentIndex = jumpTo - 1;
+                        renderCurrentSentence();
+                    }
+                });
+
+            // Keyboard shortcuts
+            document.addEventListener("keydown", (e) => {
+                if (lines.length === 0) return;
+                if (e.target.tagName === "INPUT") return;
+
+                if (e.key === "ArrowRight" && currentIndex < lines.length - 1) {
+                    currentIndex++;
+                    renderCurrentSentence();
+                } else if (e.key === "ArrowLeft" && currentIndex > 0) {
+                    currentIndex--;
+                    renderCurrentSentence();
+                } else if (
+                    e.key === "Enter" &&
+                    currentIndex < lines.length - 1
+                ) {
+                    currentIndex++;
+                    renderCurrentSentence();
+                }
+            });
+
+            // Render current sentence
+            function renderCurrentSentence() {
+                const area = document.getElementById("annotationArea");
+
+                if (!SCHEMA) {
+                    area.innerHTML =
+                        '<div class="empty-state">Please load a schema file first to begin annotation</div>';
+                    return;
+                }
+
+                if (lines.length === 0) {
+                    area.innerHTML =
+                        '<div class="empty-state">Please load a text file or annotations file to begin annotation</div>';
+                    return;
+                }
+
+                const annotation = annotations[currentIndex] || {
+                    contexts: [],
+                    topics: [],
+                };
+                area.innerHTML = createAnnotationLineHTML(
+                    lines[currentIndex],
+                    currentIndex,
+                    annotation,
+                );
+
+                updateNavigation();
+                attachEventListeners();
+            }
+
+            function updateNavigation() {
+                const prevButton = document.getElementById("prevButton");
+                const nextButton = document.getElementById("nextButton");
+                const progressInfo = document.getElementById("progressInfo");
+
+                prevButton.disabled = currentIndex === 0;
+                nextButton.disabled = currentIndex === lines.length - 1;
+
+                progressInfo.textContent = `${currentIndex + 1} / ${lines.length}`;
+                document.getElementById("jumpInput").value = currentIndex + 1;
+            }
+
+            function createAnnotationLineHTML(line, index, annotation) {
+                return `
+                      <div class="annotation-line">
+                          <div class="line-header">
+                              <span class="line-number">Sentence ${index + 1}</span>
+                              <button class="clear-button" data-line="${index}">Clear All</button>
+                          </div>
+                          <div class="line-text">${escapeHtml(line)}</div>
+
+                          <!-- Context Section -->
+                          <div class="annotation-section">
+                              <div class="section-title">Context (select one or "Other")</div>
+                              <div class="label-buttons">
+                                  ${SCHEMA.context
+                                      .map(
+                                          (ctx) => `
+                                      <button class="label-button context-button ${
+                                          annotation.contexts.includes(ctx)
+                                              ? "selected"
+                                              : ""
+                                      }"
+                                              data-line="${index}"
+                                              data-context="${ctx}">
+                                          ${ctx}
+                                      </button>
+                                  `,
+                                      )
+                                      .join("")}
+                              </div>
+                          </div>
+
+                          <!-- Topics Section -->
+                          <div class="hierarchical-container">
+                              <!-- Add Topic Section (Always on top) -->
+                              <div class="add-topic-section">
+                                  <div class="add-topic-title">Add Topic</div>
+                                  <div class="label-buttons">
+                                      ${SCHEMA.topics
+                                          .map((topic) => {
+                                              const isSelected =
+                                                  annotation.topics.some(
+                                                      (t) => t.topic === topic,
+                                                  );
+                                              return !isSelected
+                                                  ? `
+                                              <button class="label-button topic-button"
+                                                      data-line="${index}"
+                                                      data-topic="${topic}">
+                                                  + ${topic}
+                                              </button>
+                                          `
+                                                  : "";
+                                          })
+                                          .join("")}
+                                  </div>
+                              </div>
+
+                              ${annotation.topics
+                                  .map((topicData) =>
+                                      createTopicSectionHTML(index, topicData),
+                                  )
+                                  .join("")}
+                          </div>
+                      </div>
+                  `;
+            }
+
+            function createTopicSectionHTML(lineIndex, topicData) {
+                const topic = topicData.topic;
+                const availableContents = SCHEMA.topicContents[topic] || [];
+
+                // Check if this is the "Other" topic
+                if (topic === "Other") {
+                    return `
+                          <div class="topic-section other-topic">
+                              <div class="topic-header">
+                                  <div class="topic-title">Other</div>
+                                  <button class="remove-topic-button" data-line="${lineIndex}" data-topic="${topic}">
+                                      Remove
+                                  </button>
+                              </div>
+                              <div class="other-note">This sentence contains no deeper information to annotate.</div>
+                          </div>
+                      `;
+                }
+
+                return `
+                      <div class="topic-section">
+                          <div class="topic-header">
+                              <div class="topic-title">${topic}</div>
+                              <button class="remove-topic-button" data-line="${lineIndex}" data-topic="${topic}">
+                                  Remove
+                              </button>
+                          </div>
+
+                          <!-- Content Selection -->
+                          <div class="hierarchy-level">
+                              <div class="hierarchy-title">Content <span class="arrow">→</span></div>
+                              <div class="label-buttons">
+                                  ${availableContents
+                                      .map((content) => {
+                                          const isSelected =
+                                              topicData.contents.some(
+                                                  (c) => c.content === content,
+                                              );
+                                          return !isSelected
+                                              ? `
+                                          <button class="label-button content-button"
+                                                  data-line="${lineIndex}"
+                                                  data-topic="${topic}"
+                                                  data-content="${content}">
+                                              + ${content}
+                                          </button>
+                                      `
+                                              : "";
+                                      })
+                                      .join("")}
+                              </div>
+                          </div>
+
+                          <!-- Content Items with Attributes -->
+                          ${topicData.contents
+                              .map((contentData) =>
+                                  createContentItemHTML(
+                                      lineIndex,
+                                      topic,
+                                      contentData,
+                                  ),
+                              )
+                              .join("")}
+                      </div>
+                  `;
+            }
+
+            function createContentItemHTML(lineIndex, topic, contentData) {
+                const content = contentData.content;
+
+                // Check if this is "Other" content
+                if (content === "Other") {
+                    return `
+                          <div class="content-item other-content">
+                              <div class="content-header">
+                                  <div class="content-name">Other</div>
+                                  <button class="remove-content-button"
+                                          data-line="${lineIndex}"
+                                          data-topic="${topic}"
+                                          data-content="${content}">
+                                      ×
+                                  </button>
+                              </div>
+                              <div class="other-note">No additional details for this content.</div>
+                          </div>
+                      `;
+                }
+
+                const predefinedAttributes =
+                    SCHEMA.contentAttributes[content] || [];
+
+                return `
+                      <div class="content-item">
+                          <div class="content-header">
+                              <div class="content-name">${content}</div>
+                              <button class="remove-content-button"
+                                      data-line="${lineIndex}"
+                                      data-topic="${topic}"
+                                      data-content="${content}">
+                                  ×
+                              </button>
+                          </div>
+
+                          <!-- Predefined Attributes -->
+                          <div class="attribute-section">
+                              <div class="hierarchy-title">Attributes <span class="arrow">→</span></div>
+                              <div class="label-buttons">
+                                  ${predefinedAttributes
+                                      .map(
+                                          (attr) => `
+                                      <button class="label-button attribute-button ${
+                                          contentData.attributes.includes(attr)
+                                              ? "selected"
+                                              : ""
+                                      }"
+                                              data-line="${lineIndex}"
+                                              data-topic="${topic}"
+                                              data-content="${content}"
+                                              data-attribute="${attr}">
+                                          ${attr}
+                                      </button>
+                                  `,
+                                      )
+                                      .join("")}
+                                  ${contentData.attributes
+                                      .filter(
+                                          (attr) =>
+                                              !predefinedAttributes.includes(
+                                                  attr,
+                                              ),
+                                      )
+                                      .map(
+                                          (attr) => `
+                                      <button class="label-button attribute-button custom-attribute selected"
+                                              data-line="${lineIndex}"
+                                              data-topic="${topic}"
+                                              data-content="${content}"
+                                              data-attribute="${attr}">
+                                          ${attr}
+                                      </button>
+                                  `,
+                                      )
+                                      .join("")}
+                              </div>
+                          </div>
+
+                          <!-- Add Custom Attribute -->
+                          <div class="add-attribute-section">
+                              <div class="add-attribute-title">+ Add Custom Attribute</div>
+                              <div class="custom-attribute-input">
+                                  <input type="text"
+                                         placeholder="Enter custom attribute"
+                                         data-line="${lineIndex}"
+                                         data-topic="${topic}"
+                                         data-content="${content}"
+                                         class="custom-attr-input">
+                                  <button class="add-custom-button"
+                                          data-line="${lineIndex}"
+                                          data-topic="${topic}"
+                                          data-content="${content}">
+                                      Add
+                                  </button>
+                              </div>
+                          </div>
+                      </div>
+                  `;
+            }
+
+            function attachEventListeners() {
+                // Context buttons
+                document
+                    .querySelectorAll(".context-button")
+                    .forEach((button) => {
+                        button.addEventListener("click", handleContextClick);
+                    });
+
+                // Topic buttons
+                document.querySelectorAll(".topic-button").forEach((button) => {
+                    button.addEventListener("click", handleTopicClick);
+                });
+
+                // Remove topic buttons
+                document
+                    .querySelectorAll(".remove-topic-button")
+                    .forEach((button) => {
+                        button.addEventListener(
+                            "click",
+                            handleRemoveTopicClick,
+                        );
+                    });
+
+                // Content buttons
+                document
+                    .querySelectorAll(".content-button")
+                    .forEach((button) => {
+                        button.addEventListener("click", handleContentClick);
+                    });
+
+                // Remove content buttons
+                document
+                    .querySelectorAll(".remove-content-button")
+                    .forEach((button) => {
+                        button.addEventListener(
+                            "click",
+                            handleRemoveContentClick,
+                        );
+                    });
+
+                // Attribute buttons
+                document
+                    .querySelectorAll(".attribute-button")
+                    .forEach((button) => {
+                        button.addEventListener("click", handleAttributeClick);
+                    });
+
+                // Add custom attribute buttons
+                document
+                    .querySelectorAll(".add-custom-button")
+                    .forEach((button) => {
+                        button.addEventListener(
+                            "click",
+                            handleAddCustomAttribute,
+                        );
+                    });
+
+                // Custom attribute input enter key
+                document
+                    .querySelectorAll(".custom-attr-input")
+                    .forEach((input) => {
+                        input.addEventListener("keypress", (e) => {
+                            if (e.key === "Enter") {
+                                const button = input.nextElementSibling;
+                                button.click();
+                            }
+                        });
+                    });
+
+                // Clear button
+                document.querySelectorAll(".clear-button").forEach((button) => {
+                    button.addEventListener("click", handleClearClick);
+                });
+            }
+
+            function handleContextClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const context = e.target.dataset.context;
+
+                if (!annotations[lineIndex]) {
+                    annotations[lineIndex] = { contexts: [], topics: [] };
+                }
+
+                // If clicking "Other"
+                if (context === "Other") {
+                    // If "Other" is already selected, deselect it
+                    if (annotations[lineIndex].contexts.includes("Other")) {
+                        annotations[lineIndex].contexts = [];
+                    } else {
+                        // Otherwise, select only "Other"
+                        annotations[lineIndex].contexts = ["Other"];
+                    }
+                } else {
+                    // Clicking a non-Other context
+                    // First check if "Other" is selected, if so, remove it
+                    const otherIndex =
+                        annotations[lineIndex].contexts.indexOf("Other");
+                    if (otherIndex > -1) {
+                        annotations[lineIndex].contexts.splice(otherIndex, 1);
+                    }
+
+                    // Then toggle the clicked context
+                    const contextIndex =
+                        annotations[lineIndex].contexts.indexOf(context);
+                    if (contextIndex > -1) {
+                        annotations[lineIndex].contexts.splice(contextIndex, 1);
+                    } else {
+                        annotations[lineIndex].contexts.push(context);
+                    }
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleTopicClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+
+                if (!annotations[lineIndex]) {
+                    annotations[lineIndex] = { contexts: [], topics: [] };
+                }
+
+                // If clicking "Other" topic
+                if (topic === "Other") {
+                    // Remove all other topics and add only "Other"
+                    annotations[lineIndex].topics = [
+                        {
+                            topic: "Other",
+                            contents: [],
+                        },
+                    ];
+                } else {
+                    // Clicking a non-Other topic
+                    // First check if "Other" topic exists, if so, remove it
+                    const otherIndex = annotations[lineIndex].topics.findIndex(
+                        (t) => t.topic === "Other",
+                    );
+                    if (otherIndex > -1) {
+                        annotations[lineIndex].topics.splice(otherIndex, 1);
+                    }
+
+                    //Then add the new topic
+                    annotations[lineIndex].topics.unshift({
+                        topic: topic,
+                        contents: [],
+                    });
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleRemoveTopicClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+
+                const topicIndex = annotations[lineIndex].topics.findIndex(
+                    (t) => t.topic === topic,
+                );
+                if (topicIndex > -1) {
+                    annotations[lineIndex].topics.splice(topicIndex, 1);
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleContentClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+                const content = e.target.dataset.content;
+
+                const topicData = annotations[lineIndex].topics.find(
+                    (t) => t.topic === topic,
+                );
+                if (!topicData) return;
+
+                // If clicking "Other", remove all other contents
+                if (content === "Other") {
+                    topicData.contents = [
+                        {
+                            content: "Other",
+                            attributes: [],
+                        },
+                    ];
+                } else {
+                    // If adding a non-Other content, first check if "Other" exists and remove it
+                    const otherIndex = topicData.contents.findIndex(
+                        (c) => c.content === "Other",
+                    );
+                    if (otherIndex > -1) {
+                        topicData.contents.splice(otherIndex, 1);
+                    }
+
+                    // Then add the new content
+                    topicData.contents.push({
+                        content: content,
+                        attributes: [],
+                    });
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleRemoveContentClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+                const content = e.target.dataset.content;
+
+                const topicData = annotations[lineIndex].topics.find(
+                    (t) => t.topic === topic,
+                );
+                if (!topicData) return;
+
+                const contentIndex = topicData.contents.findIndex(
+                    (c) => c.content === content,
+                );
+                if (contentIndex > -1) {
+                    topicData.contents.splice(contentIndex, 1);
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleAttributeClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+                const content = e.target.dataset.content;
+                const attribute = e.target.dataset.attribute;
+
+                const topicData = annotations[lineIndex].topics.find(
+                    (t) => t.topic === topic,
+                );
+                if (!topicData) return;
+
+                const contentData = topicData.contents.find(
+                    (c) => c.content === content,
+                );
+                if (!contentData) return;
+
+                const attrIndex = contentData.attributes.indexOf(attribute);
+                if (attrIndex > -1) {
+                    contentData.attributes.splice(attrIndex, 1);
+                } else {
+                    contentData.attributes.push(attribute);
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleAddCustomAttribute(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const topic = e.target.dataset.topic;
+                const content = e.target.dataset.content;
+
+                const input = e.target.previousElementSibling;
+                const customAttribute = input.value.trim();
+
+                if (!customAttribute) return;
+
+                const topicData = annotations[lineIndex].topics.find(
+                    (t) => t.topic === topic,
+                );
+                if (!topicData) return;
+
+                const contentData = topicData.contents.find(
+                    (c) => c.content === content,
+                );
+                if (!contentData) return;
+
+                // Add to current annotation
+                if (!contentData.attributes.includes(customAttribute)) {
+                    contentData.attributes.push(customAttribute);
+                }
+
+                // Add to schema if not already present
+                if (!SCHEMA.contentAttributes[content]) {
+                    SCHEMA.contentAttributes[content] = [];
+                }
+                if (
+                    !SCHEMA.contentAttributes[content].includes(customAttribute)
+                ) {
+                    SCHEMA.contentAttributes[content].push(customAttribute);
+                }
+
+                renderCurrentSentence();
+            }
+
+            function handleClearClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                annotations[lineIndex] = { contexts: [], topics: [] };
+                renderCurrentSentence();
+            }
+
+            // Export annotations as JSON
+            document
+                .getElementById("exportButton")
+                .addEventListener("click", function () {
+                    const exportData = lines.map((line, index) => ({
+                        line_number: index + 1,
+                        text: line,
+                        annotations: annotations[index] || {
+                            contexts: [],
+                            topics: [],
+                        },
+                    }));
+
+                    const dataStr = JSON.stringify(exportData, null, 2);
+                    const dataBlob = new Blob([dataStr], {
+                        type: "application/json",
+                    });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "annotations.json";
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+
+            // Export schema as JSON
+            document
+                .getElementById("exportSchemaButton")
+                .addEventListener("click", function () {
+                    const dataStr = JSON.stringify(SCHEMA, null, 2);
+                    const dataBlob = new Blob([dataStr], {
+                        type: "application/json",
+                    });
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "annotation_schema.json";
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+
+            function escapeHtml(text) {
+                const div = document.createElement("div");
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            // Initialize
+            renderCurrentSentence();
+        </script>
+    </body>
+</html>

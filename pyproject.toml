@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=80", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "privacy-policy-analyzer"
+version = "0.1.0"
+dependencies = [
+    # training
+    "torch",
+    "transformers",
+    "datasets",
+    "huggingface-hub",
+    "numpy",
+    "accelerate",
+    "bitsandbytes",
+    "scikit-learn",
+    "protobuf",
+    "sentencepiece",
+
+    # crawler dependencies
+    "pandas",
+    "beautifulsoup4",
+    "playwright",
+    "requests",
+    "html5lib",
+    "langdetect",
+
+    # visualization
+    "matplotlib",
+]
+
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
