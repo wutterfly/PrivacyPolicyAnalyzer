@@ -12,17 +12,21 @@ class UTF8SafeFormatter(Formatter):
 
 
 def set_logging(
-    file: str,
+    file: str | None,
     level: Literal[50, 40, 30, 20, 10] = logging.INFO,
 ):
     """Set up logging to console and file with UTF-8 safe formatter."""
 
+    handlers: list = [
+        logging.StreamHandler(),
+    ]
+
+    if file is not None:
+        handlers.append(logging.FileHandler(file, encoding="utf-8", errors="ignore"))
+
     logging.basicConfig(
         level=level,
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler(file, encoding="utf-8", errors="ignore"),
-        ],
+        handlers=handlers,
     )
 
     formatter = UTF8SafeFormatter("[%(levelname)-8s] - %(message)s")
