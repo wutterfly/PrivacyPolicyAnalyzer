@@ -115,7 +115,6 @@ print(summary)
 
 # Generate and print score report
 scores = create_score_report(summary)
-assert scores is not None
 print(scores)
 
 # Generate and save topic map SVG

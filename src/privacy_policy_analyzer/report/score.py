@@ -367,10 +367,7 @@ def create_score_report(
     data_grading: GradeBoundaries = DEFAULT_DATA_SPECIFICITY_BOUNDARIES,
     third_party_grading: GradeBoundaries = DEFAULT_THIRD_PARTY_SPECIFICITY_BOUNDARIES,
     data_retention_grading: GradeBoundaries = DEFAULT_RETENTION_SPECIFICITY_BOUNDARIES,
-) -> ScoreReport | None:
-    if not summary.data_type.data_types:
-        return None
-
+) -> ScoreReport:
     data = calculate_transparency(
         summary, hierarchy, data_grading, third_party_grading, data_retention_grading
     )
