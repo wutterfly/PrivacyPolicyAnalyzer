@@ -32,6 +32,8 @@ from privacy_policy_analyzer.shared.structure import (
 
 @dataclass
 class CollectedPolicy:
+    """A privacy policy collected from the web."""
+
     name: str
     source: str
     language: Language
@@ -169,6 +171,8 @@ class CollectedPolicy:
 def crawl(
     name: str, url: str, language: Language, config: SplitterPattern
 ) -> CollectedPolicy | CrawlError:
+    """Crawl a privacy policy from a given URL."""
+
     scraper = WebScraper()
     splitter = SentenceSplitter(config)
 

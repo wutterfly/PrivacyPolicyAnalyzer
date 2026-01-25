@@ -1,4 +1,8 @@
 class CrawlError(Exception):
+    """
+    Base class for errors that occur during the crawling process.
+    """
+
     description: str
     code: str
 

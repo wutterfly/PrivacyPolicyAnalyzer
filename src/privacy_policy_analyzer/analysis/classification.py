@@ -38,6 +38,8 @@ class ModelConfig:
 
 @dataclass
 class ModelConfigs:
+    """Configuration for all models used in the pipeline."""
+
     context: ModelConfig
     topic: ModelConfig
     audience: ModelConfig
@@ -56,7 +58,7 @@ class ModelConfigs:
     user_rights: ModelConfig
 
 
-def load_pipeline(model_name: str, use_onnx: bool) -> TextClassificationPipeline:
+def _load_pipeline(model_name: str, use_onnx: bool) -> TextClassificationPipeline:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     model = None
@@ -87,7 +89,7 @@ def classify_context(
     use_onnx: bool,
 ):
     model = LoadedClassifier(
-        classifier=load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
     )
     debug(f"Classifying context with model {config.model_name}")
 
@@ -114,7 +116,7 @@ def classify_context(
 
 def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool):
     model = LoadedClassifier(
-        classifier=load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
     )
     debug(f"Classifying topics with model {config.model_name}")
 
@@ -143,7 +145,7 @@ def classify_content(
     entries: list[RawEntry], topic: str, config: ModelConfig, use_onnx: bool
 ):
     model = LoadedClassifier(
-        classifier=load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
     )
     debug(f"Classifying content for topic {topic} with model {config.model_name}")
 

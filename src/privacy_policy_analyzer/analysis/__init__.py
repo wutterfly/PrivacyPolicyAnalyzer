@@ -211,3 +211,5 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
         thresholds={},
     ),
 )
+"""
+Default model configurations for privacy policy analysis."""

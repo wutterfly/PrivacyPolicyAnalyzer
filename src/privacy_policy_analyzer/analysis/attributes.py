@@ -7,6 +7,8 @@ from privacy_policy_analyzer.shared.annotation import RawEntry
 
 @dataclass
 class AttributePattern:
+    """Holds compiled regex patterns for different attributes."""
+
     patterns: dict[str, list[re.Pattern]]
 
     @staticmethod
@@ -29,6 +31,8 @@ class AttributePattern:
 
 @dataclass
 class AttributePatterns:
+    """Holds different categories of attribute patterns."""
+
     data_type: AttributePattern
     track_conv: AttributePattern
     method_source: AttributePattern
@@ -61,6 +65,8 @@ def extract_attributes(
 
 @dataclass
 class DurationPattern:
+    """Holds compiled regex patterns for duration attributes."""
+
     unit: AttributePattern
     length: AttributePattern
 
@@ -98,10 +104,12 @@ def extract_duration(
 
 @dataclass
 class DatePattern:
+    """Holds date format patterns."""
+
     format_pattern: dict[str, str]
 
 
-def clean(text: str, fmt: str) -> str:
+def _clean(text: str, fmt: str) -> str:
     if "," not in fmt:
         text = text.replace(",", "")
     return text
@@ -123,7 +131,7 @@ def extract_date(
                             if matches:
                                 matched_txt = matches.group()
                                 try:
-                                    cleaned_txt = clean(matched_txt, format)
+                                    cleaned_txt = _clean(matched_txt, format)
                                     dt = datetime.strptime(cleaned_txt, format)
                                     date = dt.date().isoformat()
                                     cnt.attributes.append(date)

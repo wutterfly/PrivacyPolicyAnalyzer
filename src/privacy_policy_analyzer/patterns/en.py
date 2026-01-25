@@ -63,6 +63,7 @@ EN_SPLITTER_CONFIG: SplitterPattern = SplitterPattern.from_parts(
         "Art\\. [0-9] para\\. s\\.$",
     ],
 )
+""" English language splitter configuration. """
 
 
 # ------------------------------------------------------------------------------------------
@@ -1788,6 +1789,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
         }
     ),
 )
+""" English language attribute patterns. """
+
 EN_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
     unit=AttributePattern.from_dict(
         {
@@ -1822,6 +1825,8 @@ EN_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
         }
     ),
 )
+""" English language duration patterns. """
+
 EN_DATE_PATTERN_CONFIG: DatePattern = DatePattern(
     {
         "%Y-%m-%d": "\\b(\\d{4})-(\\d{1,2})-(\\d{1,2})\\b",
@@ -1842,3 +1847,4 @@ EN_DATE_PATTERN_CONFIG: DatePattern = DatePattern(
         "%b %Y": "\\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s*,?\\s+(\\d{4})\\b",
     }
 )
+""" English language date patterns. """

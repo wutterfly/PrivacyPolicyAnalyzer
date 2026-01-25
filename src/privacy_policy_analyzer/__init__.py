@@ -2,6 +2,8 @@ from enum import StrEnum
 
 
 class Language(StrEnum):
+    """Enumeration of supported languages."""
+
     EN = "en"
     UNKNOWN = "unknown"
 

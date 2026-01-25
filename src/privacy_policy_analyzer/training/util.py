@@ -10,6 +10,7 @@ from transformers.utils import logging as hf_logging
 
 
 def set_global_seed(seed: int):
+    """Set the global random seed for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -51,6 +52,7 @@ def get_optimal_precision():
 
 
 def disable_logging():
+    """Disable logging from transformers and datasets libraries."""
     disable_progress_bar()
     os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "true"
     os.environ["TRANSFORMERS_VERBOSITY"] = "error"

@@ -50,6 +50,8 @@ class DataTypeRow:
 
 @dataclass
 class DetailedReport:
+    """Detailed report of data types and their associated processing details."""
+
     rows: list[DataTypeRow]
 
     def to_df(self) -> pd.DataFrame:
@@ -78,6 +80,8 @@ def create_detailed_report(
     include_contexts: list[str],
     exclude_contexts: list[str],
 ) -> DetailedReport:
+    """Create a detailed report from structured data entries."""
+
     rows: dict[str, list[DataTypeRow]] = {
         "Unknown": [],
     }

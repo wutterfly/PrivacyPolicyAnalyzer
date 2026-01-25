@@ -47,6 +47,11 @@ class MismatchedLanguages:
 
 @dataclass
 class PolicyResult:
+    """
+    Results of analyzing a privacy policy.
+    Contains the original policy data and the analyzed structured entries.
+    """
+
     name: str
     source: str
     language: str
@@ -106,6 +111,11 @@ class PolicyResult:
 
 
 class Pipeline:
+    """
+    A pipeline for analyzing privacy policies.
+    Combines crawling and information extraction.
+    """
+
     language: Language
 
     model_configs: ModelConfigs
@@ -170,6 +180,8 @@ class Pipeline:
     def run_with_policy(
         self, policy: CollectedPolicy
     ) -> PolicyResult | MismatchedLanguages:
+        """Run the pipeline with a collected policy."""
+
         if self.language != policy.language:
             return MismatchedLanguages(pipeline=self.language, policy=policy.language)
 
@@ -206,6 +218,8 @@ class Pipeline:
     def run_with_url(
         self, name: str, url: str, language: Language
     ) -> PolicyResult | CrawlError:
+        """Run the pipeline with a URL to crawl the policy from."""
+
         result = crawl(name, url, language, self.splitter_configs)
 
         if isinstance(result, CrawlError):
@@ -218,6 +232,8 @@ class Pipeline:
     def run_with_html(
         self, name: str, source: str, language: Language, html: str
     ) -> PolicyResult:
+        """Run the pipeline with raw HTML content of a policy."""
+
         policy = CollectedPolicy.from_parts(
             splitter_config=self.splitter_configs,
             name=name,

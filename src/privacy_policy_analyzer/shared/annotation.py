@@ -6,18 +6,24 @@ from pathlib import Path
 
 @dataclass
 class ContentAnnotation:
+    """An annotated content within a topic."""
+
     content: str
     attributes: list[str]
 
 
 @dataclass
 class TopicAnnotation:
+    """An annotated topic within a training entry."""
+
     topic: str
     contents: list[ContentAnnotation]
 
 
 @dataclass
 class RawEntry:
+    """A single annotated entry in the training data."""
+
     line_number: int
     text: str
     contexts: list[str]
@@ -25,6 +31,8 @@ class RawEntry:
 
 
 def read_raw_entry(data: dict) -> RawEntry:
+    """Reads a single raw entry from a dictionary."""
+
     line_number = data["line_number"]
     text = data["text"]
     contexts = data.get("annotations", data)["contexts"]
@@ -67,6 +75,8 @@ def read_raw_entry(data: dict) -> RawEntry:
 
 
 def read_training_data(folder: Path) -> list[list[RawEntry]]:
+    """Reads all training data from the specified folder."""
+
     training_files: list[list[RawEntry]] = []
     for filename in folder.glob("*.json"):
         try:

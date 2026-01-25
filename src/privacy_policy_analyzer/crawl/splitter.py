@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 @dataclass
 class SplitterPattern:
+    """Configuration for sentence splitter."""
+
     replace_words: list[tuple[re.Pattern, str]]
     last_on_line: list[re.Pattern]
     not_last_on_line: list[re.Pattern]
@@ -33,6 +35,8 @@ class SplitterPattern:
 
 
 class SentenceSplitter:
+    """Splits text into sentences based on provided patterns."""
+
     replace_words: list[tuple[re.Pattern, str]]
     last_on_line: list[re.Pattern]
     not_last_on_line: list[re.Pattern]

@@ -15,6 +15,8 @@ def set_logging(
     file: str,
     level: Literal[50, 40, 30, 20, 10] = logging.INFO,
 ):
+    """Set up logging to console and file with UTF-8 safe formatter."""
+
     logging.basicConfig(
         level=level,
         handlers=[

@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 from privacy_policy_analyzer.shared.annotation import RawEntry
 
 
-def build_label2id_map(labels: list[str]) -> dict[str, int]:
+def _build_label2id_map(labels: list[str]) -> dict[str, int]:
+    """Build label to ID mapping with 'Other' as the first label."""
     label2id: dict[str, int] = {"Other": 0}
     for label in labels:
         if label not in label2id:
@@ -20,6 +21,8 @@ def build_label2id_map(labels: list[str]) -> dict[str, int]:
 
 @dataclass
 class LabelSchema:
+    """Schema for sentence labeling annotation."""
+
     context: list[str]
     topics: list[str]
     topicContents: dict[str, list[str]]
@@ -36,6 +39,8 @@ class LabelSchema:
 
 
 def read_annotation_schema(schema_file: Path) -> LabelSchema:
+    """Read annotation schema from a JSON file."""
+
     with schema_file.open("r", encoding="utf-8") as f:
         schema = json.load(f)
     return LabelSchema.from_dict(schema)

@@ -28,7 +28,7 @@ from privacy_policy_analyzer.shared.annotation import (
 )
 from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 from privacy_policy_analyzer.training.data import (
-    build_label2id_map,
+    _build_label2id_map,
     extract_training_data_content,
     extract_training_data_context,
     extract_training_data_topics,
@@ -293,6 +293,8 @@ def _train_model_on_dataset(
 
 @dataclass
 class ModelTrainingConfig:
+    """Configuration for training a model."""
+
     model_name: str
     output_dir: Path
     training_files: list[list[RawEntry]]
@@ -304,8 +306,10 @@ class ModelTrainingConfig:
     seed: int
 
     def execute_training(self):
+        """Execute the training based on the configuration."""
+
         # load label2id mapping
-        label2id = build_label2id_map(self.labels)
+        label2id = _build_label2id_map(self.labels)
 
         # extract dataset based on scope
         dataset: Dataset | None = None
@@ -335,6 +339,8 @@ class ModelTrainingConfig:
 def get_label_distribution(
     data: list[RawEntry] | list[list[RawEntry]],
 ) -> dict[str, Any]:
+    """Get label distribution from the training data."""
+
     combined: list[RawEntry] = []
 
     if isinstance(data, list) and all(isinstance(i, list) for i in data):

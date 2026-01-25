@@ -1149,6 +1149,8 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
 
 @dataclass
 class SummaryReport:
+    """Summary report of a privacy policy analysis."""
+
     policy: PolicyInformation
     context: ContextInformation
     purpose: PurposeInformation
@@ -1192,6 +1194,8 @@ def create_summary_report(
     exclude_contexts: list[str],
     data_hierarchy: DataHierarchy = DEFAULT_HIERARCHY,
 ) -> SummaryReport:
+    """Create a summary report from structured data entries."""
+
     # extract context information before filtering
     context = extract_context_information(data)
 

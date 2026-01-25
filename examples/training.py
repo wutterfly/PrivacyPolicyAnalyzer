@@ -6,7 +6,7 @@ from privacy_policy_analyzer.shared.annotation import (
     read_training_data,
 )
 from privacy_policy_analyzer.shared.logging import set_logging
-from privacy_policy_analyzer.training import ModelTrainingConfig
+from privacy_policy_analyzer.training import ModelTrainingConfig, get_label_distribution
 from privacy_policy_analyzer.training.data import (
     LabelSchema,
     read_annotation_schema,
@@ -34,6 +34,11 @@ if __name__ == "__main__":
     # read training data and annotation schema
     training_files: list[list[RawEntry]] = read_training_data(training_folder)
     schema: LabelSchema = read_annotation_schema(annotation_schema_file)
+
+    # check label distributions
+    print(
+        "Label distributions in training data:", get_label_distribution(training_files)
+    )
 
     # define training configurations
     configs = [

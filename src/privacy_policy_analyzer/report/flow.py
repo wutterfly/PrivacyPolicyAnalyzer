@@ -26,6 +26,8 @@ TOPIC_COLOR_MAP = {
 
 
 def generate_topic_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
+    """Generate a topic map visualization from structured entries."""
+
     # Filter to only items with text
     data = [item for item in data if item.text.strip()]
 
