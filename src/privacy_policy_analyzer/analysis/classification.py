@@ -129,6 +129,11 @@ def classify_context(
     )
 
     texts = [entry.text for entry in entries]
+
+    if len(texts) == 0:
+        del model
+        return
+
     predictions = model.classifier(texts, batch_size=16)
 
     for entry, prediction in zip(entries, predictions):
@@ -156,6 +161,11 @@ def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool
     )
 
     texts = [entry.text for entry in entries]
+
+    if len(texts) == 0:
+        del model
+        return
+
     predictions = model.classifier(texts, batch_size=16)
 
     for entry, prediction in zip(entries, predictions):
@@ -191,6 +201,10 @@ def classify_content(
         if has_topic:
             filtered_indices.append(i)
             texts.append(entry.text)
+
+    if len(texts) == 0:
+        del model
+        return
 
     # classify only the filtered entries
     predictions = model.classifier(texts)
