@@ -37,6 +37,7 @@ from privacy_policy_analyzer.shared.structure import (
     TableOutput,
     TableRowOutput,
 )
+from privacy_policy_analyzer.shared.util import get_device
 
 logger = get_logger(__name__)
 
@@ -178,6 +179,12 @@ class Pipeline:
                 self.date_pattern_config = date_pattern_config
         else:
             assert False, f"Unsupported language: {language}"
+
+        if onnx:
+            logger.info("Using device: %s", "CPU (ONNX)")
+
+        else:
+            logger.info("Using device: %s", get_device())
 
         if cache_load_models:
             model_configs.test_load_models(onnx)
