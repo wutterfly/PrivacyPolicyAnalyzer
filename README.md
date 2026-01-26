@@ -221,3 +221,29 @@ for config in configs:
     config.execute_training()
 
 ```
+
+### Defaults & Configurations
+
+Several default configurations are provided for convenience.
+
+#### **Model Configs**
+
+These configurations define which models to use and what classification thresholds to apply.
+The default model configurations can be imported from `privacy_policy_analyzer.analysis.DEFAULT_MODEL_CONFIGS`.
+They use pre-trained models hosted on HuggingFace.
+
+- [Context Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-context)
+- [Topic Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-topic)
+- Content Classifiers for each topic, e.g.:
+  - [User Rights Content Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-content-userrights)
+  - ...
+
+#### **Pattern Configs**
+
+These pattern configurations define regular expressions to identify specific information in the privacy policy text, such as dates, durations and data types.
+The default pattern configurations for English can be imported from `privacy_policy_analyzer.patterns.en`.
+More languages and configurations can be added in the future or specified by the user.
+
+#### **Splitter Configs**
+
+These pattern configure how to split long text sections into smaller segments for analysis.
