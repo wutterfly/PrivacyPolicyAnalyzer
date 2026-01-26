@@ -136,6 +136,7 @@ class Pipeline:
         duration_pattern_configs: DurationPattern | None,
         date_pattern_config: DatePattern | None,
         onnx: bool,
+        cache_load_models: bool = True,
     ):
         self.onnx = onnx
         self.model_configs = model_configs
@@ -173,9 +174,11 @@ class Pipeline:
                 self.date_pattern_config = EN_DATE_PATTERN_CONFIG
             else:
                 self.date_pattern_config = date_pattern_config
-
         else:
             assert False, f"Unsupported language: {language}"
+
+        if cache_load_models:
+            model_configs.test_load_models(onnx)
 
     def run_with_policy(
         self, policy: CollectedPolicy

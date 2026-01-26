@@ -57,8 +57,76 @@ class ModelConfigs:
     third_party: ModelConfig
     user_rights: ModelConfig
 
+    def test_load_models(self, use_onnx: bool):
+        loaded = _load_pipeline(self.context.model_name, use_onnx)
+        del loaded
+        debug("Context model loaded successfully: " + self.context.model_name)
 
-def _load_pipeline(model_name: str, use_onnx: bool) -> TextClassificationPipeline:
+        loaded = _load_pipeline(self.topic.model_name, use_onnx)
+        del loaded
+        debug("Topic model loaded successfully: " + self.topic.model_name)
+
+        loaded = _load_pipeline(self.audience.model_name, use_onnx)
+        del loaded
+        debug("Audience model loaded successfully: " + self.audience.model_name)
+
+        loaded = _load_pipeline(self.contact.model_name, use_onnx)
+        del loaded
+        debug("Contact model loaded successfully: " + self.contact.model_name)
+
+        loaded = _load_pipeline(self.control.model_name, use_onnx)
+        del loaded
+        debug("Control model loaded successfully: " + self.control.model_name)
+
+        loaded = _load_pipeline(self.deletion.model_name, use_onnx)
+        del loaded
+        debug("Deletion model loaded successfully: " + self.deletion.model_name)
+
+        loaded = _load_pipeline(self.legal_basis.model_name, use_onnx)
+        del loaded
+        debug("Legal Basis model loaded successfully: " + self.legal_basis.model_name)
+
+        loaded = _load_pipeline(self.policy.model_name, use_onnx)
+        del loaded
+        debug("Policy model loaded successfully: " + self.policy.model_name)
+
+        loaded = _load_pipeline(self.processing.model_name, use_onnx)
+        del loaded
+        debug("Processing model loaded successfully: " + self.processing.model_name)
+
+        loaded = _load_pipeline(self.purpose.model_name, use_onnx)
+        del loaded
+        debug("Purpose model loaded successfully: " + self.purpose.model_name)
+
+        loaded = _load_pipeline(self.retention.model_name, use_onnx)
+        del loaded
+        debug("Retention model loaded successfully: " + self.retention.model_name)
+
+        loaded = _load_pipeline(self.security_privacy.model_name, use_onnx)
+        del loaded
+        debug(
+            "Security/Privacy model loaded successfully: "
+            + self.security_privacy.model_name
+        )
+
+        loaded = _load_pipeline(self.selling.model_name, use_onnx)
+        del loaded
+        debug("Selling model loaded successfully: " + self.selling.model_name)
+
+        loaded = _load_pipeline(self.sharing.model_name, use_onnx)
+        del loaded
+        debug("Sharing model loaded successfully: " + self.sharing.model_name)
+
+        loaded = _load_pipeline(self.third_party.model_name, use_onnx)
+        del loaded
+        debug("Third Party model loaded successfully: " + self.third_party.model_name)
+
+        loaded = _load_pipeline(self.user_rights.model_name, use_onnx)
+        del loaded
+        debug("User Rights model loaded successfully: " + self.user_rights.model_name)
+
+
+def _load_pipeline(model_name: str, use_onnx: bool) -> LoadedClassifier:
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
     model = None
@@ -72,14 +140,16 @@ def _load_pipeline(model_name: str, use_onnx: bool) -> TextClassificationPipelin
         model = AutoModelForSequenceClassification.from_pretrained(model_name)
         device = get_device()
 
-    return pipeline(
-        "text-classification",
-        model=model,
-        tokenizer=tokenizer,
-        device=device,
-        top_k=None,
-        batch_size=16,
-        truncation=True,
+    return LoadedClassifier(
+        pipeline(
+            "text-classification",
+            model=model,
+            tokenizer=tokenizer,
+            device=device,
+            top_k=None,
+            batch_size=16,
+            truncation=True,
+        )
     )
 
 
@@ -88,9 +158,7 @@ def classify_context(
     config: ModelConfig,
     use_onnx: bool,
 ):
-    model = LoadedClassifier(
-        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
-    )
+    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
     debug(f"Classifying context with model {config.model_name}")
 
     texts = [entry.text for entry in entries]
@@ -115,9 +183,7 @@ def classify_context(
 
 
 def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool):
-    model = LoadedClassifier(
-        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
-    )
+    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
     debug(f"Classifying topics with model {config.model_name}")
 
     texts = [entry.text for entry in entries]
@@ -144,9 +210,8 @@ def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool
 def classify_content(
     entries: list[RawEntry], topic: str, config: ModelConfig, use_onnx: bool
 ):
-    model = LoadedClassifier(
-        classifier=_load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
-    )
+    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+
     debug(f"Classifying content for topic {topic} with model {config.model_name}")
 
     # filter entries by topic
