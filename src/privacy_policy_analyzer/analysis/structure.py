@@ -184,7 +184,7 @@ class StructuredTextMappings:
                     row_text = f"{col_name}: {cell_text}"
 
                     structure_info.append(
-                        TableCell(table_id=entry.row_id, row_id=entry.row_id)
+                        TableCell(table_id=entry.table_id, row_id=entry.row_id)
                     )
                     mappings.append(len(texts))
                     texts.append(row_text)

@@ -23,6 +23,7 @@ if __name__ == "__main__":
         duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
         date_pattern_config=EN_DATE_PATTERN_CONFIG,
         onnx=False,
+        cache_load_models=True,
     )
 
     name = "OpenAI"

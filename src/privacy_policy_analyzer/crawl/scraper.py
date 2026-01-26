@@ -1,6 +1,7 @@
 import gzip
 import re
 import ssl
+import threading
 import time
 import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -209,46 +210,110 @@ class WebScraper:
             logger.debug("Insufficient content from simple request for url=%s", url)
             return None
 
-    def _scrape_playwright(self, url: str, headless: bool) -> str | None:
+    def _scrape_playwright(
+        self,
+        url: str,
+        headless: bool,
+        cancel_event: threading.Event | None = None,
+    ) -> str | None:
         """
         Scrape using Playwright (JavaScript execution).
+
+        Args:
+            url: The URL to scrape.
+            headless: Whether to run the browser in headless mode.
+            cancel_event: Optional event to signal cancellation. If set, the method
+                will abort early and clean up resources.
         """
         try:
             with sync_playwright() as p:
+                # Check for cancellation before launching browser
+                if cancel_event is not None and cancel_event.is_set():
+                    logger.debug(
+                        "Playwright scrape cancelled before browser launch for url=%s headless=%s",
+                        url,
+                        headless,
+                    )
+                    return None
+
                 browser = p.chromium.launch(headless=headless)
 
-                page = browser.new_page()
-
                 try:
-                    # Navigate and wait for network to be idle
-                    page.goto(
-                        url,
-                        wait_until="domcontentloaded",
-                        timeout=self.playwright_timeout,
-                    )
-
-                    # Additional wait for lazy-loaded content
-                    if self.playwright_wait_after_load > 0:
-                        time.sleep(self.playwright_wait_after_load)
-
-                    html = page.content()
-
-                    # Verify we got actual content
-                    if self._is_content_sufficient(html, javascript_check=False):
-                        return html
-                    else:
+                    # Check for cancellation after browser launch
+                    if cancel_event is not None and cancel_event.is_set():
                         logger.debug(
-                            "Insufficient content from Playwright for url=%s headless=%s",
+                            "Playwright scrape cancelled after browser launch for url=%s headless=%s",
                             url,
                             headless,
                         )
                         return None
 
-                except Exception as e:
-                    logger.error("Playwright error for url=%s: %s", url, e)
-                    return None
+                    page = browser.new_page()
+
+                    try:
+                        # Navigate and wait for network to be idle
+                        page.goto(
+                            url,
+                            wait_until="domcontentloaded",
+                            timeout=self.playwright_timeout,
+                        )
+
+                        # Check for cancellation after page load
+                        if cancel_event is not None and cancel_event.is_set():
+                            logger.debug(
+                                "Playwright scrape cancelled after page load for url=%s headless=%s",
+                                url,
+                                headless,
+                            )
+                            return None
+
+                        # Additional wait for lazy-loaded content with cancellation checks
+                        if self.playwright_wait_after_load > 0:
+                            wait_interval = 0.5  # Check every 0.5 seconds
+                            elapsed = 0.0
+                            while elapsed < self.playwright_wait_after_load:
+                                if cancel_event is not None and cancel_event.is_set():
+                                    logger.debug(
+                                        "Playwright scrape cancelled during wait for url=%s headless=%s",
+                                        url,
+                                        headless,
+                                    )
+                                    return None
+                                sleep_time = min(
+                                    wait_interval,
+                                    self.playwright_wait_after_load - elapsed,
+                                )
+                                time.sleep(sleep_time)
+                                elapsed += sleep_time
+
+                        # Final cancellation check before extracting content
+                        if cancel_event is not None and cancel_event.is_set():
+                            logger.debug(
+                                "Playwright scrape cancelled before content extraction for url=%s headless=%s",
+                                url,
+                                headless,
+                            )
+                            return None
+
+                        html = page.content()
+
+                        # Verify we got actual content
+                        if self._is_content_sufficient(html, javascript_check=False):
+                            return html
+                        else:
+                            logger.debug(
+                                "Insufficient content from Playwright for url=%s headless=%s",
+                                url,
+                                headless,
+                            )
+                            return None
+
+                    except Exception as e:
+                        logger.error("Playwright error for url=%s: %s", url, e)
+                        return None
+                    finally:
+                        page.close()
                 finally:
-                    page.close()
                     browser.close()
 
         except Exception as e:
@@ -284,16 +349,21 @@ class WebScraper:
     def _scrape_playwright_parallel(self, url: str) -> str | None:
         """
         Run headless and non-headless Playwright scraping in parallel.
-        Returns the first successful result.
+        Returns the first successful result and signals cancellation to the other thread.
         """
         strategies = [
             ("headless", True),
             ("non-headless", False),
         ]
 
+        # Shared cancellation event to signal other threads to stop
+        cancel_event = threading.Event()
+
         with ThreadPoolExecutor(max_workers=2) as executor:
             future_to_mode = {
-                executor.submit(self._scrape_playwright, url, headless): mode
+                executor.submit(
+                    self._scrape_playwright, url, headless, cancel_event
+                ): mode
                 for mode, headless in strategies
             }
 
@@ -305,7 +375,9 @@ class WebScraper:
                         logger.debug(
                             "Playwright (%s) scrape succeeded for url=%s", mode, url
                         )
-                        # Cancel remaining futures
+                        # Signal cancellation to remaining threads
+                        cancel_event.set()
+                        # Cancel futures that haven't started yet
                         for f in future_to_mode:
                             f.cancel()
                         return result

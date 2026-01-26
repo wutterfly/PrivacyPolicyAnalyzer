@@ -64,10 +64,10 @@ def combine_entry(
         filtered_src = skip_info.filter(filtered_src)
 
     # combine contexts
-    dst.contexts = list(set(dst.contexts + src.contexts))
+    dst.contexts = list(set(dst.contexts + filtered_src.contexts))
 
     # combine topics and contents
-    for src_tpc in src.topics:
+    for src_tpc in filtered_src.topics:
         # check if topic exists in dst
         dst_tpc = next((tpc for tpc in dst.topics if tpc.topic == src_tpc.topic), None)
         if dst_tpc:
@@ -190,6 +190,9 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
 
 
 def smooth_context(entries: list[StructuredEntry]):
+    if len(entries) < 3:
+        return
+
     for i in range(1, len(entries) - 1):
         prev_entry = entries[i - 1]
         current_entry = entries[i]
