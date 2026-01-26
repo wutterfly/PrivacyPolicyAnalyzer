@@ -1,11 +1,16 @@
+import logging
+
 from privacy_policy_analyzer.pipeline import PolicyResult
 from privacy_policy_analyzer.report.detailed import create_detailed_report
 from privacy_policy_analyzer.report.flow import generate_topic_map
 from privacy_policy_analyzer.report.label import generate_svg_label
 from privacy_policy_analyzer.report.score import create_score_report
 from privacy_policy_analyzer.report.summary import create_summary_report
+from privacy_policy_analyzer.shared.logging import set_logging
 
 if __name__ == "__main__":
+    set_logging(level=logging.DEBUG)
+
     # Assuming `policy_result` is an instance of `PolicyResult` obtained from analysis
     policy: PolicyResult = ...  # Replace with actual PolicyResult object
 

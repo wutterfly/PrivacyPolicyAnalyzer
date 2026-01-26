@@ -1,3 +1,5 @@
+import logging
+
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.analysis import DEFAULT_MODEL_CONFIGS
 from privacy_policy_analyzer.crawl import CrawlError
@@ -8,8 +10,11 @@ from privacy_policy_analyzer.patterns.en import (
     EN_SPLITTER_CONFIG,
 )
 from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult
+from privacy_policy_analyzer.shared.logging import set_logging
 
 if __name__ == "__main__":
+    set_logging(level=logging.DEBUG)
+
     pipeline: Pipeline = Pipeline(
         language=Language.EN,
         model_configs=DEFAULT_MODEL_CONFIGS,
