@@ -60,6 +60,9 @@ def disable_logging():
     os.environ["HF_DATASETS_DISABLE_PROGRESS_BAR"] = "true"
 
     hf_logging.set_verbosity_error()
+    hf_logging.disable_progress_bar()
     logging.getLogger("transformers").setLevel(logging.ERROR)
     logging.getLogger("transformers.trainer").setLevel(logging.ERROR)
     logging.getLogger("datasets").setLevel(logging.ERROR)
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("httpcore").setLevel(logging.ERROR)
