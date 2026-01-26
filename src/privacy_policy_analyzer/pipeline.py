@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from logging import debug
 from typing import Any
 
 from privacy_policy_analyzer import Language
@@ -26,6 +25,7 @@ from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
 from privacy_policy_analyzer.crawl.splitter import SplitterPattern
+from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
     AddressOutput,
     HeaderOutput,
@@ -37,6 +37,8 @@ from privacy_policy_analyzer.shared.structure import (
     TableOutput,
     TableRowOutput,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -190,7 +192,9 @@ class Pipeline:
 
         mapping = StructuredTextMappings(policy.harmonized)
 
-        debug(f"Collecting information for policy: {policy.name}")
+        logger.debug(
+            "Collecting information for policy=%s source=%s", policy.name, policy.source
+        )
 
         collect_information(
             entries=mapping.raw_entries,
@@ -200,7 +204,7 @@ class Pipeline:
             date_pattern_config=self.date_pattern_config,
             onnx=self.onnx,
         )
-        debug(f"Completed information collection for policy: {policy.name}")
+        logger.debug("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
         propagate_headers(entries, skips=DEFAULT_SKIPS)

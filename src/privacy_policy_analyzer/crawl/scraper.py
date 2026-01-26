@@ -5,8 +5,6 @@ import time
 import zlib
 from html import unescape
 from http.cookiejar import CookieJar
-from logging import debug, error, info, warning
-from typing import Optional
 from urllib import request
 
 from bs4 import BeautifulSoup
@@ -14,6 +12,9 @@ from bs4.element import Tag
 from playwright.sync_api import sync_playwright
 
 from privacy_policy_analyzer.crawl.err import NoHTML, NoMainContent
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 HEADERS: dict[str, str] = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
@@ -90,7 +91,7 @@ class WebScraper:
         text_length_ok = len(body_text) >= self.min_content_length
 
         if javascript_check and "javascript" in body_text.lower():
-            info("✗ Content contains 'javascript' keyword, likely JS-heavy")
+            logger.info("Content contains 'javascript' keyword, likely JS-heavy")
             return False
 
         return text_length_ok
@@ -108,7 +109,7 @@ class WebScraper:
 
         return html
 
-    def get_main_content_area(self, html: str) -> Optional[Tag]:
+    def get_main_content_area(self, html: str) -> Tag | None:
         assert isinstance(html, str)
 
         html = self._html_preprocessing(html)
@@ -135,52 +136,52 @@ class WebScraper:
         # check for <main> tag first
         content = soup.find("main")
         if content:
-            debug("Checking <main> as main content area.")
+            logger.debug("Checking <main> as main content area")
             if len(content.get_text(strip=True)) >= min_len:
-                debug("✓ Using <main> as main content area.")
+                logger.debug("Using <main> as main content area")
                 return content
 
         # check for role="main"
         content = soup.find(attrs={"role": "main"})
         if content:
-            debug("Checking role='main' as main content area.")
+            logger.debug("Checking role='main' as main content area")
             # check if it has substantial content
             if len(content.get_text(strip=True)) >= min_len:
-                debug("✓ Using role='main' as main content area.")
+                logger.debug("Using role='main' as main content area")
                 return content
 
         # check for id containing "main"
         content = soup.find(id=re.compile(r"main", re.IGNORECASE))
         if content:
-            debug("Checking id='main' as main content area.")
+            logger.debug("Checking id='main' as main content area")
             if len(content.get_text(strip=True)) >= min_len:
-                debug("✓ Using id='main' as main content area.")
+                logger.debug("Using id='main' as main content area")
                 return content
 
         # check for <article> tag
         content = soup.find("article")
         if content:
-            debug("Checking <article> as main content area.")
+            logger.debug("Checking <article> as main content area")
             if len(content.get_text(strip=True)) >= min_len:
-                debug("✓ Using <article> as main content area.")
+                logger.debug("Using <article> as main content area")
                 return content
 
         content = soup.find("body")
         if content:
-            debug("Checking <body> as main content area.")
+            logger.debug("Checking <body> as main content area")
             if len(content.get_text(strip=True)) >= min_len:
-                debug("✓ Using <body> as main content area.")
+                logger.debug("Using <body> as main content area")
                 return content
 
-        debug("✗ No suitable main content area found.")
+        logger.debug("No suitable main content area found")
         return None
 
-    def _scrape_simple(self, url: str) -> Optional[str]:
+    def _scrape_simple(self, url: str) -> str | None:
         request_obj = request.Request(url, headers=self.headers)
         try:
             res = request.urlopen(request_obj, timeout=self.request_timeout)
         except Exception as e:
-            warning(f"Simple request error for {url}: {e}")
+            logger.warning("Simple request failed for url=%s: %s", url, e)
             return None
 
         html: str
@@ -189,7 +190,9 @@ class WebScraper:
 
         # check for PDF
         if res.headers.get("Content-Type", "").lower() == "application/pdf":
-            warning(f"PDF content detected at {url}, skipping HTML parsing.")
+            logger.warning(
+                "PDF content detected, skipping HTML parsing for url=%s", url
+            )
             raise ValueError("PDF content detected, skipping HTML parsing.")
 
         if encoding == "gzip":
@@ -202,10 +205,10 @@ class WebScraper:
         if self._is_content_sufficient(html, javascript_check=False):
             return html
         else:
-            debug(f"✗ Insufficient content from simple request for {url}")
+            logger.debug("Insufficient content from simple request for url=%s", url)
             return None
 
-    def _scrape_playwright(self, url: str, headless: bool) -> Optional[str]:
+    def _scrape_playwright(self, url: str, headless: bool) -> str | None:
         """
         Scrape using Playwright (JavaScript execution).
         """
@@ -233,54 +236,65 @@ class WebScraper:
                     if self._is_content_sufficient(html, javascript_check=False):
                         return html
                     else:
-                        debug(
-                            f"✗ Insufficient content from Playwright for headless={headless} {url}"
+                        logger.debug(
+                            "Insufficient content from Playwright for url=%s headless=%s",
+                            url,
+                            headless,
                         )
                         return None
 
                 except Exception as e:
-                    error(f"Playwright error for {url}: {e}")
+                    logger.error("Playwright error for url=%s: %s", url, e)
                     return None
                 finally:
                     page.close()
                     browser.close()
 
         except Exception as e:
-            error(f"Playwright initialization failed for {url}: {e}")
+            logger.error("Playwright initialization failed for url=%s: %s", url, e)
             return None
 
     def scrape(self, url: str) -> Tag:
         # Try simple request first
         html = self._scrape_simple(url)
-        debug(f"Simple scrape returned HTML: {html is not None}")
+        logger.debug("Simple scrape returned HTML=%s for url=%s", html is not None, url)
 
         if html is not None:
             main_content = self.get_main_content_area(html)
             if main_content is not None:
                 return main_content
 
-            debug("✗ Main content not found in simple scrape.")
+            logger.debug("Main content not found in simple scrape for url=%s", url)
 
         # Fallback to Playwright in headless mode
         html = self._scrape_playwright(url, headless=True)
-        debug(f"Playwright scrape returned HTML: {html is not None}")
+        logger.debug(
+            "Playwright scrape returned HTML=%s for url=%s", html is not None, url
+        )
         if html is not None:
             main_content = self.get_main_content_area(html)
             if main_content is not None:
                 return main_content
-            debug("✗ Main content not found in Playwright scrape.")
+            logger.debug("Main content not found in Playwright scrape for url=%s", url)
 
         # Final attempt with Playwright in non-headless mode
         html = self._scrape_playwright(url, headless=False)
-        debug(f"Playwright (non-headless) scrape returned HTML: {html is not None}")
+        logger.debug(
+            "Playwright (non-headless) scrape returned HTML=%s for url=%s",
+            html is not None,
+            url,
+        )
         if html is not None:
             main_content = self.get_main_content_area(html)
             if main_content is not None:
                 return main_content
 
-            debug("✗ Main content not found in Playwright (non-headless) scrape.")
+            logger.debug(
+                "Main content not found in Playwright (non-headless) scrape for url=%s",
+                url,
+            )
 
-        error(f"✗ Failed to scrape content from {url}")
+        logger.error("Failed to scrape content from url=%s", url)
         if html is None:
             raise NoHTML()
 

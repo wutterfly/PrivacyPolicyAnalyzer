@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -167,7 +166,7 @@ class TableRow:
 @dataclass
 class Table:
     rows: list[TableRow]
-    headers: Optional[list[str]] = None
+    headers: list[str] | None = None
 
     def to_dict_list(self) -> list[dict]:
         if not self.headers or not self.rows:

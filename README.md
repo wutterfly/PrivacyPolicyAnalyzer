@@ -1,6 +1,6 @@
 # Privacy Policy Analyzer
 
-This is a python package that provides a set of tool to analyze privacy policies.
+Tools to crawl, analyze and report on website privacy policies using NLP models and rule-based patterns.
 
 ## Features
 
@@ -247,3 +247,4 @@ More languages and configurations can be added in the future or specified by the
 #### **Splitter Configs**
 
 These pattern configure how to split long text sections into smaller segments for analysis.
+The default splitter configurations for English can be imported from `privacy_policy_analyzer.patterns.en.EN_SPLITTER_CONFIG`.

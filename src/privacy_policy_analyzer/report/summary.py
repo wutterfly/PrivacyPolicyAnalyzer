@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from datetime import date
-from logging import warning
 
 from privacy_policy_analyzer.analysis.data_hierarchy import (
     DEFAULT_HIERARCHY,
     DataHierarchy,
 )
 from privacy_policy_analyzer.analysis.structure import StructuredEntry
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 # --------------- Security/Privacy -----------------
 
@@ -619,7 +621,7 @@ def collect_data_types_by_level(
     for data_type in data_types:
         hierarchy_entry = hierarchy.find_data_type(data_type)
         if hierarchy_entry is None:
-            warning(f"Data type '{data_type}' not found in hierarchy.")
+            logger.warning("Data type not found in hierarchy: data_type=%s", data_type)
             continue
 
         for level, dt in enumerate(hierarchy_entry.path):

@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from logging import error
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +7,9 @@ from datasets import Dataset, DatasetInfo, concatenate_datasets
 from sklearn.model_selection import train_test_split
 
 from privacy_policy_analyzer.shared.annotation import RawEntry
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def _build_label2id_map(labels: list[str]) -> dict[str, int]:
@@ -98,10 +100,13 @@ def extract_training_data_content(
                     content_flags: list[float] = [0.0] * num_labels
                     for content_annotation in topic_annotation.contents:
                         if content_annotation.content not in label2id:
-                            error(
-                                f"Content label '{content_annotation.content}' not in label2id mapping."
+                            logger.error(
+                                "Content label not in label2id mapping: label=%s",
+                                content_annotation.content,
                             )
-                            error(f"Error in entry: {i} - {entry.text}")
+                            logger.error(
+                                "Error in entry: index=%d text=%s", i, entry.text
+                            )
                         content_flags[label2id[content_annotation.content]] = 1.0
 
                     data["text"].append(entry.text)

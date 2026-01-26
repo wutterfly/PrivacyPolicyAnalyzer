@@ -1,7 +1,10 @@
 import json
 from dataclasses import dataclass
-from logging import error, info
 from pathlib import Path
+
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -63,8 +66,8 @@ def read_raw_entry(data: dict) -> RawEntry:
             )
             topics.append(topic_annotation)
     except Exception as e:
-        error(f"Error parsing topics for line {line_number}: {e}")
-        error(f"Data: {data}")
+        logger.error("Error parsing topics for line_number=%d: %s", line_number, e)
+        logger.error("Data: %s", data)
 
     return RawEntry(
         line_number=line_number,
@@ -87,7 +90,7 @@ def read_training_data(folder: Path) -> list[list[RawEntry]]:
                 contents.append(read_raw_entry(entry))
             training_files.append(contents)
         except Exception as e:
-            error(f"Error reading {filename}: {e}")
+            logger.error("Error reading file=%s: %s", filename, e)
 
-    info(f"Loaded {len(training_files)} training files.")
+    logger.info("Loaded %d training files from folder=%s", len(training_files), folder)
     return training_files

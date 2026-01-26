@@ -1,12 +1,14 @@
 import math
 from dataclasses import dataclass
-from logging import warning
 
 from privacy_policy_analyzer.analysis.data_hierarchy import (
     DEFAULT_HIERARCHY,
     DataHierarchy,
 )
 from privacy_policy_analyzer.report.summary import SummaryReport
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 # ---------------- Grade Boundaries ----------------
 
@@ -77,7 +79,7 @@ def calculate_data_specificity(
     for dt in data_types:
         result = hierarchy.find_data_type(dt)
         if result is None:
-            warning(f"Warning: Data type '{dt}' not found in hierarchy.")
+            logger.warning("Data type not found in hierarchy: data_type=%s", dt)
             continue
 
         score = result.level**3

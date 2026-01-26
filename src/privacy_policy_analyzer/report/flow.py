@@ -1,11 +1,13 @@
 from collections import defaultdict
 from io import BytesIO
-from logging import warning
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
 from privacy_policy_analyzer.analysis.structure import StructuredEntry
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 TOPIC_COLOR_MAP = {
     "Audience": "#e41a1c",  # Red
@@ -54,7 +56,7 @@ def generate_topic_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
             # Unknown topic - use fallback color
             topic_colors[topic] = fallback_colors[fallback_idx % len(fallback_colors)]
             fallback_idx += 1
-            warning(f"Warning: Unknown topic '{topic}' using fallback color")
+            logger.warning("Unknown topic using fallback color: topic=%s", topic)
 
     # Create the visualization - thinner width
     fig, ax = plt.subplots(figsize=(8, 12))

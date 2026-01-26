@@ -1,5 +1,3 @@
-from logging import debug
-
 from privacy_policy_analyzer.analysis.attributes import (
     AttributePatterns,
     DatePattern,
@@ -16,6 +14,9 @@ from privacy_policy_analyzer.analysis.classification import (
     classify_topics,
 )
 from privacy_policy_analyzer.shared.annotation import RawEntry
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def collect_information(
@@ -27,7 +28,9 @@ def collect_information(
     onnx: bool,
 ):
     # classify contexts, topics, and contents
-    debug("Classifying contexts, topics, and contents")
+    logger.debug(
+        "Classifying contexts, topics, and contents for entries=%d", len(entries)
+    )
     classify_context(entries, model_config.context, onnx)
     classify_topics(entries, model_config.topic, onnx)
     classify_content(entries, "Audience", model_config.audience, onnx)
@@ -44,9 +47,9 @@ def collect_information(
     classify_content(entries, "Sharing", model_config.sharing, onnx)
     classify_content(entries, "ThirdParty", model_config.third_party, onnx)
     classify_content(entries, "UserRights", model_config.user_rights, onnx)
-    debug("Classifications done")
+    logger.debug("Classifications completed")
 
-    debug("Extracting attributes")
+    logger.debug("Extracting attributes")
     # extract attributes
     extract_attributes(
         entries,
@@ -142,7 +145,7 @@ def collect_information(
         patterns=date_pattern_config,
     )
 
-    debug("Attribute extraction done")
+    logger.debug("Attribute extraction completed")
 
 
 DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(

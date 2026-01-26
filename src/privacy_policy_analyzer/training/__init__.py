@@ -1,6 +1,5 @@
 import json
 from dataclasses import dataclass
-from logging import info
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal
@@ -26,6 +25,7 @@ from transformers.trainer_callback import PrinterCallback
 from privacy_policy_analyzer.shared.annotation import (
     RawEntry,
 )
+from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 from privacy_policy_analyzer.training.data import (
     _build_label2id_map,
@@ -39,6 +39,8 @@ from privacy_policy_analyzer.training.progress import SimpleProgressBarCallback
 from privacy_policy_analyzer.training.util import (
     get_optimal_precision,
 )
+
+logger = get_logger(__name__)
 
 # Metrics
 
@@ -187,7 +189,7 @@ def _train_model_on_dataset(
 
     # Model Initialization
     device = get_device()
-    info(f"Using device: {device}")
+    logger.info("Using device=%s", device)
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         num_labels=len(label2id),
@@ -250,7 +252,7 @@ def _train_model_on_dataset(
     trainer.remove_callback(PrinterCallback)
 
     # Training & Evaluation
-    info(f"Starting training for model: {model_name} with target: {output_dir}")
+    logger.info("Starting training for model=%s output_dir=%s", model_name, output_dir)
     trainer.train()
     final_metrics = trainer.evaluate()
 
@@ -324,7 +326,9 @@ class ModelTrainingConfig:
             )
 
         assert dataset is not None
-        info(f"Training dataset size: {len(dataset)} samples.")
+        logger.info(
+            "Training dataset size=%d samples scope=%s", len(dataset), self.scope
+        )
         _train_model_on_dataset(
             dataset=dataset,
             label2id=label2id,

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from bs4 import Comment, Script, TemplateString
 from bs4.element import NavigableString, Tag
@@ -39,7 +39,7 @@ class DataItem:
 # ---- Table Parsing ---- #
 
 
-def _parse_table(table_element: Tag) -> Optional[Table]:
+def _parse_table(table_element: Tag) -> Table | None:
     if not isinstance(table_element, Tag) or table_element.name != "table":
         raise ValueError("Input must be a BeautifulSoup table Tag")
 
@@ -97,7 +97,7 @@ def _parse_table(table_element: Tag) -> Optional[Table]:
     return Table(rows=filtered_rows, headers=headers)
 
 
-def _parse_row(tr: Tag, is_header_section: bool = False) -> Optional[TableRow]:
+def _parse_row(tr: Tag, is_header_section: bool = False) -> TableRow | None:
     """Parse a table row element."""
     cells: list[TableCell] = []
 

@@ -1,7 +1,10 @@
 import time
-from logging import info
 
 from transformers import TrainerCallback, TrainerState
+
+from privacy_policy_analyzer.shared.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 class SimpleProgressBarCallback(TrainerCallback):
@@ -41,8 +44,13 @@ class SimpleProgressBarCallback(TrainerCallback):
             assert self.start_time is not None
             elapsed_time = (time.time() - self.start_time) / 60
             print()
-            info(
-                f"Epoch: {state.epoch} | Eval Loss: {eval_loss:.3f} | F1 Macro: {f1_macro:.3f} | F1 Micro: {f1_micro:.3f} | Elapsed Time: {elapsed_time:.2f}"
+            logger.info(
+                "Epoch=%s eval_loss=%.3f f1_macro=%.3f f1_micro=%.3f elapsed_min=%.2f",
+                state.epoch,
+                eval_loss,
+                f1_macro,
+                f1_micro,
+                elapsed_time,
             )
 
             self.last_epoch = state.epoch
@@ -50,4 +58,4 @@ class SimpleProgressBarCallback(TrainerCallback):
     def on_train_end(self, args, state, control, **kwargs):
         assert self.start_time is not None
         duration = time.time() - self.start_time
-        info(f"==[*]==  Training completed! {duration} ==[*]==")
+        logger.info("Training completed in %.2f seconds", duration)
