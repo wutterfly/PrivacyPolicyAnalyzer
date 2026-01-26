@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from typing import ClassVar
 
 
 @dataclass
@@ -37,6 +38,62 @@ class SplitterPattern:
 class SentenceSplitter:
     """Splits text into sentences based on provided patterns."""
 
+    # Pre-compiled patterns at class level for performance
+    _MULTI_SPACE: ClassVar[re.Pattern] = re.compile(r" +")
+    _NEWLINES: ClassVar[re.Pattern] = re.compile(r"\n+")
+    _NUMBERED_PAREN: ClassVar[re.Pattern] = re.compile(r"\(([0-9]+)\)([A-Za-z])")
+    _APOSTROPHE_D: ClassVar[re.Pattern] = re.compile(r"( )?\' d\b")
+    _APOSTROPHE_S: ClassVar[re.Pattern] = re.compile(r"( )?\' s\b")
+    _BUTTON_TEXTS: ClassVar[re.Pattern] = re.compile(
+        r"\b(Click here|Read more|Learn more|Submit|OK|Cancel|Expand all|"
+        r"Collapse all|Show more|Show less|Read less)\b|"
+        r"googleoff: all|googleon: all"
+    )
+
+    # Single-pass character replacements using str.translate
+    _CHAR_REPLACEMENTS: ClassVar[dict[int, str]] = {
+        0x2018: "'",  # LEFT SINGLE QUOTATION MARK
+        0x2019: "'",  # RIGHT SINGLE QUOTATION MARK
+        0x201C: '"',  # LEFT DOUBLE QUOTATION MARK
+        0x201D: '"',  # RIGHT DOUBLE QUOTATION MARK
+    }
+
+    # Character replacements for text_to_words
+    _WORD_CHAR_REPLACEMENTS: ClassVar[dict[int, str]] = {
+        0x00A0: " ",  # NO-BREAK SPACE
+        0x200D: " ",  # ZERO WIDTH JOINER
+        0x2170: "i",  # SMALL ROMAN NUMERAL ONE
+        0x2171: "ii",  # SMALL ROMAN NUMERAL TWO
+        0x2172: "iii",  # SMALL ROMAN NUMERAL THREE
+        0x2173: "iv",  # SMALL ROMAN NUMERAL FOUR
+        0x2174: "v",  # SMALL ROMAN NUMERAL FIVE
+        0x2175: "vi",  # SMALL ROMAN NUMERAL SIX
+        0x2176: "vii",  # SMALL ROMAN NUMERAL SEVEN
+        0x2177: "viii",  # SMALL ROMAN NUMERAL EIGHT
+        0x2178: "ix",  # SMALL ROMAN NUMERAL NINE
+        0x2179: "x",  # SMALL ROMAN NUMERAL TEN
+        0x217A: "xi",  # SMALL ROMAN NUMERAL ELEVEN
+        0x217B: "xii",  # SMALL ROMAN NUMERAL TWELVE
+    }
+
+    # String replacements combined into single regex pass
+    _STRING_REPLACEMENTS: ClassVar[dict[str, str]] = {
+        " ,": ",",
+        " .": ".",
+        " ;": "; ",
+        " :": ":",
+        " ?": "?",
+        " !": "!",
+        " )": ")",
+        "( ": "(",
+        " ]": "]",
+        "[ ": "[",
+        "?.": "?",
+    }
+    _STRING_REPLACEMENT_PATTERN: ClassVar[re.Pattern] = re.compile(
+        "|".join(re.escape(k) for k in _STRING_REPLACEMENTS.keys())
+    )
+
     replace_words: list[tuple[re.Pattern, str]]
     last_on_line: list[re.Pattern]
     not_last_on_line: list[re.Pattern]
@@ -53,96 +110,40 @@ class SentenceSplitter:
         self.sentence_not_split_pattern = config.sentence_not_split_pattern
 
     def text_postprocessing(self, text: str) -> str:
-        # replace multiple spaces with single space
-        text = re.sub(r" +", " ", text)
+        # Single-pass character replacements (quotes)
+        text = text.translate(self._CHAR_REPLACEMENTS)
 
-        # replace " , " with ", "
-        text = text.replace(" ,", ",")
-
-        # replace " . " with ". "
-        text = text.replace(" .", ".")
-
-        # replace " ; " with "; "
-        text = text.replace(" ;", "; ")
-
-        # replace " : " with ": "
-        text = text.replace(" :", ":")
-
-        # replace " ?" with "?"
-        text = text.replace(" ?", "?")
-
-        # replace " ! " with "! "
-        text = text.replace(" !", "!")
-
-        # replace " )" with ")"
-        text = text.replace(" )", ")")
-
-        # replace "( " with "("
-        text = text.replace("( ", "(")
-
-        # replace " ]" with "]"
-        text = text.replace(" ]", "]")
-
-        # replace "[ " with "["
-        text = text.replace("[ ", "[")
-
-        # replace "?." with "?"
-        text = text.replace("?.", "?")
-
-        # replace "’" with "'"
-        text = text.replace("’", "'")
-        text = text.replace("‘", "'")
-
-        # “ ” with ""
-        text = text.replace("“", '"').replace("”", '"')
-
-        # replace "(2)" with "(2) "
-        text = re.sub(r"\(([0-9]+)\)([A-Za-z])", r"(\1) \2", text)
-
-        # replace "' d" with "'d"
-        text = re.sub(r"( )?\' d\b", "'d", text)
-
-        # replace " ' s" with "'s"
-        text = re.sub(r"( )?\' s\b", "'s", text)
-
-        # replace button texts
-        text = re.sub(
-            r"\b(Click here|Read more|Learn more|Submit|OK|Cancel)\b", "", text
+        # Single-pass string replacements (punctuation spacing)
+        text = self._STRING_REPLACEMENT_PATTERN.sub(
+            lambda m: self._STRING_REPLACEMENTS[m.group(0)], text
         )
-        text = re.sub(r"Expand all", "", text)
-        text = re.sub(r"Collapse all", "", text)
-        text = re.sub(r"Show more", "", text)
-        text = re.sub(r"Show less", "", text)
-        text = re.sub(r"googleoff: all", "", text)
-        text = re.sub(r"googleon: all", "", text)
-        text = re.sub(r"Read (less|more)", "", text)
 
-        # text = re.sub(r"\[endif\]", "", text)
-        # text = re.sub(r"\[if\!supportLists\]", "", text)
+        # Normalize multiple spaces to single space
+        text = self._MULTI_SPACE.sub(" ", text)
+
+        # Fix numbered parentheses: "(2)word" -> "(2) word"
+        text = self._NUMBERED_PAREN.sub(r"(\1) \2", text)
+
+        # Fix apostrophe contractions
+        text = self._APOSTROPHE_D.sub("'d", text)
+        text = self._APOSTROPHE_S.sub("'s", text)
+
+        # Remove button texts in single pass
+        text = self._BUTTON_TEXTS.sub("", text)
 
         return text.strip()
 
     def text_to_words(self, text: str) -> list[str]:
         assert isinstance(text, str)
 
-        text = re.sub(r"\n+", " ", text)
-        text = text.replace("\xa0", " ")
-        text = text.replace("\u200d", " ")
-        text = text.replace("ⅰ", "i")
-        text = text.replace("ⅱ", "ii")
-        text = text.replace("ⅲ", "iii")
-        text = text.replace("ⅴ", "v")
-        text = text.replace("ⅳ", "iv")
-        text = text.replace("ⅵ", "vi")
-        text = text.replace("ⅶ", "vii")
-        text = text.replace("ⅷ", "viii")
-        text = text.replace("ⅹ", "x")
-        text = text.replace("ⅸ", "ix")
-        text = text.replace("ⅺ", "xi")
-        text = text.replace("ⅻ", "xii")
+        # Replace newlines with spaces
+        text = self._NEWLINES.sub(" ", text)
+
+        # Single-pass character replacements for special chars and roman numerals
+        text = text.translate(self._WORD_CHAR_REPLACEMENTS)
 
         for old, new in self.replace_words:
-            text = re.sub(old, new, text)
+            text = old.sub(new, text)
 
         words = text.split(" ")
         words = [word.strip() for word in words if word.strip() != ""]

@@ -3,6 +3,7 @@ import re
 import ssl
 import time
 import zlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from html import unescape
 from http.cookiejar import CookieJar
 from urllib import request
@@ -255,7 +256,7 @@ class WebScraper:
             return None
 
     def scrape(self, url: str) -> Tag:
-        # Try simple request first
+        # Try simple request first (fast path)
         html = self._scrape_simple(url)
         logger.debug("Simple scrape returned HTML=%s for url=%s", html is not None, url)
 
@@ -263,39 +264,59 @@ class WebScraper:
             main_content = self.get_main_content_area(html)
             if main_content is not None:
                 return main_content
-
             logger.debug("Main content not found in simple scrape for url=%s", url)
 
-        # Fallback to Playwright in headless mode
-        html = self._scrape_playwright(url, headless=True)
-        logger.debug(
-            "Playwright scrape returned HTML=%s for url=%s", html is not None, url
-        )
+        # Fallback: run both Playwright modes in parallel, use first success
+        html = self._scrape_playwright_parallel(url)
+
         if html is not None:
             main_content = self.get_main_content_area(html)
             if main_content is not None:
                 return main_content
             logger.debug("Main content not found in Playwright scrape for url=%s", url)
 
-        # Final attempt with Playwright in non-headless mode
-        html = self._scrape_playwright(url, headless=False)
-        logger.debug(
-            "Playwright (non-headless) scrape returned HTML=%s for url=%s",
-            html is not None,
-            url,
-        )
-        if html is not None:
-            main_content = self.get_main_content_area(html)
-            if main_content is not None:
-                return main_content
-
-            logger.debug(
-                "Main content not found in Playwright (non-headless) scrape for url=%s",
-                url,
-            )
-
         logger.error("Failed to scrape content from url=%s", url)
         if html is None:
             raise NoHTML()
 
         raise NoMainContent()
+
+    def _scrape_playwright_parallel(self, url: str) -> str | None:
+        """
+        Run headless and non-headless Playwright scraping in parallel.
+        Returns the first successful result.
+        """
+        strategies = [
+            ("headless", True),
+            ("non-headless", False),
+        ]
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_to_mode = {
+                executor.submit(self._scrape_playwright, url, headless): mode
+                for mode, headless in strategies
+            }
+
+            for future in as_completed(future_to_mode):
+                mode = future_to_mode[future]
+                try:
+                    result = future.result()
+                    if result is not None:
+                        logger.debug(
+                            "Playwright (%s) scrape succeeded for url=%s", mode, url
+                        )
+                        # Cancel remaining futures
+                        for f in future_to_mode:
+                            f.cancel()
+                        return result
+                    logger.debug(
+                        "Playwright (%s) scrape returned no content for url=%s",
+                        mode,
+                        url,
+                    )
+                except Exception as e:
+                    logger.debug(
+                        "Playwright (%s) scrape failed for url=%s: %s", mode, url, e
+                    )
+
+        return None
