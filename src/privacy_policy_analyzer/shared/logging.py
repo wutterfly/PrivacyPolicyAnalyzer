@@ -86,3 +86,16 @@ def set_logging(
 
     # Prevent propagation to root logger
     logger.propagate = False
+
+    #
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(level)
+    root_handler = logging.StreamHandler()
+    root_handler.setFormatter(formatter)
+    root_logger.addHandler(root_handler)
+
+    if file is not None:
+        root_file_handler = logging.FileHandler(file, encoding="utf-8", errors="ignore")
+        root_file_handler.setFormatter(formatter)
+        root_logger.addHandler(root_file_handler)

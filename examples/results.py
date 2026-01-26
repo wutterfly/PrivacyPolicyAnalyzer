@@ -1,4 +1,5 @@
 import logging
+from logging import info
 
 from privacy_policy_analyzer.pipeline import PolicyResult
 from privacy_policy_analyzer.report.detailed import create_detailed_report
@@ -21,24 +22,24 @@ if __name__ == "__main__":
     detailed = create_detailed_report(
         policy.analyzed, include_contexts, exclude_contexts
     )
-    print(detailed)
+    info(detailed)
 
     # Generate and print summary report
     summary = create_summary_report(policy.analyzed, include_contexts, exclude_contexts)
-    print(summary)
+    info(summary)
 
     # Generate and print score report
     scores = create_score_report(summary)
-    print(scores)
+    info(scores)
 
     # Generate and save topic map SVG
     topic_map_png = generate_topic_map(policy.analyzed)
     with open("topic_map.png", "wb") as f:
         f.write(topic_map_png)
-    print("Topic map SVG saved as topic_map.svg")
+    info("Topic map SVG saved as topic_map.svg")
 
     # Generate and save label SVG
     label_svg = generate_svg_label(scores, summary, policy.source)
     with open("label.svg", "w", encoding="utf-8") as f:
         f.write(label_svg)
-    print("Label SVG saved as label.svg")
+    info("Label SVG saved as label.svg")

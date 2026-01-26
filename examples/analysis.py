@@ -1,4 +1,5 @@
 import logging
+from logging import info
 
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.analysis import DEFAULT_MODEL_CONFIGS
@@ -33,7 +34,7 @@ if __name__ == "__main__":
     result: PolicyResult | CrawlError = pipeline.run_with_url(name, url, Language.EN)
 
     if isinstance(result, PolicyResult):
-        print("Analysis Results:")
-        print(result.text)
-        print(result.structured)
-        print(result.analyzed)
+        info("Analysis Results:")
+        info(result.text)
+        info(result.structured)
+        info(result.analyzed)

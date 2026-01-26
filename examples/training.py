@@ -1,4 +1,5 @@
 import logging
+from logging import info
 from pathlib import Path
 
 from privacy_policy_analyzer.shared.annotation import (
@@ -36,7 +37,7 @@ if __name__ == "__main__":
     schema: LabelSchema = read_annotation_schema(annotation_schema_file)
 
     # check label distributions
-    print(
+    info(
         "Label distributions in training data:", get_label_distribution(training_files)
     )
 

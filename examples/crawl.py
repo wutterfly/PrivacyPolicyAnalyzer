@@ -1,4 +1,5 @@
 import logging
+from logging import info
 
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     )
 
     if isinstance(result, CollectedPolicy):
-        print(f"Successfully crawled policy for {name} at {url}")
-        print("Extracted Text:")
-        print(result.text)
-        print(result.structured)
+        info(f"Successfully crawled policy for {name} at {url}")
+        info("Extracted Text:")
+        info(result.text)
+        info(result.structured)
