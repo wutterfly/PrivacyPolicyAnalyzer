@@ -156,7 +156,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     audience=ModelConfig(
         model_name="Wutterfly/albert-privacy-policy-content-audience",
-        thresholds={},
+        thresholds={"SpecificCountry": 0.4},
     ),
     contact=ModelConfig(
         model_name="Wutterfly/roberta-privacy-policy-content-contact",
@@ -192,7 +192,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     security_privacy=ModelConfig(
         model_name="Wutterfly/roberta-privacy-policy-content-securityprivacy",
-        thresholds={},
+        thresholds={"SecurityHints": 0.4},
     ),
     selling=ModelConfig(
         model_name="Wutterfly/roberta-privacy-policy-content-selling",
