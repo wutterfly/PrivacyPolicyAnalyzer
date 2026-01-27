@@ -3,7 +3,7 @@ from logging import info
 
 from privacy_policy_analyzer.pipeline import PolicyResult
 from privacy_policy_analyzer.report.detailed import create_detailed_report
-from privacy_policy_analyzer.report.flow import generate_topic_map
+from privacy_policy_analyzer.report.flow import generate_context_map, generate_topic_map
 from privacy_policy_analyzer.report.label import generate_svg_label
 from privacy_policy_analyzer.report.score import create_score_report
 from privacy_policy_analyzer.report.summary import create_summary_report
@@ -32,11 +32,16 @@ if __name__ == "__main__":
     scores = create_score_report(summary)
     info(scores)
 
-    # Generate and save topic map SVG
+    # Generate and save topic map PNG
     topic_map_png = generate_topic_map(policy.analyzed)
     with open("topic_map.png", "wb") as f:
         f.write(topic_map_png)
-    info("Topic map SVG saved as topic_map.svg")
+    info("Topic map PNG saved as topic_map.svg")
+
+    context_map_png = generate_context_map(policy.analyzed)
+    with open("context_map.png", "wb") as f:
+        f.write(context_map_png)
+    info("Context map PNG saved as context_map.png")
 
     # Generate and save label SVG
     label_svg = generate_svg_label(scores, summary, policy.source)

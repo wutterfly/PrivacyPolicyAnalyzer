@@ -8,7 +8,7 @@ from privacy_policy_analyzer.report.summary import (
 )
 
 
-def count_user_rights(data: UserRightsInformation) -> tuple[int, int]:
+def _count_user_rights(data: UserRightsInformation) -> tuple[int, int]:
     """Count true values in a dictionary. Returns (true_count, total_count)."""
     true_count = 0
     total_count = 0
@@ -30,7 +30,7 @@ def count_user_rights(data: UserRightsInformation) -> tuple[int, int]:
     return true_count, total_count
 
 
-def get_checkmark_symbol(value: bool | None) -> tuple[str, str]:
+def _get_checkmark_symbol(value: bool | None) -> tuple[str, str]:
     """Get the symbol and CSS class for a boolean/null value."""
     if value is None:
         return "?", "unknown"
@@ -40,7 +40,7 @@ def get_checkmark_symbol(value: bool | None) -> tuple[str, str]:
         return "✗", "no"
 
 
-def get_score_color(score: float) -> str:
+def _get_score_color(score: float) -> str:
     """Get color based on score."""
 
     if score > 60:
@@ -51,7 +51,7 @@ def get_score_color(score: float) -> str:
         return "#F44336"  # Red
 
 
-def format_purposes(purposes: list[str], max_display: int) -> list[str]:
+def _format_purposes(purposes: list[str], max_display: int) -> list[str]:
     """Format purpose list, limiting to max_display items."""
     formatted = []
     for purpose in purposes[:max_display]:
@@ -65,7 +65,7 @@ def format_purposes(purposes: list[str], max_display: int) -> list[str]:
     return formatted
 
 
-def generate_svg_header(total_height: int) -> str:
+def _generate_svg_header(total_height: int) -> str:
     """Generate SVG header with styles."""
     header = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 {total_height}" width="400" height="{total_height}">\n'
     header += """  <defs>
@@ -99,7 +99,7 @@ def generate_svg_header(total_height: int) -> str:
     return header
 
 
-def generate_transparency_section(transparency: TransparencyScore) -> str:
+def _generate_transparency_section(transparency: TransparencyScore) -> str:
     """Generate the transparency section."""
     data_specificity_grade = transparency.data_specificity_grade
     third_party_specificity_grade = (
@@ -130,11 +130,13 @@ def generate_transparency_section(transparency: TransparencyScore) -> str:
     return section
 
 
-def generate_purposes_section(info: PurposeInformation) -> tuple[str, int]:
+def _generate_purposes_section(info: PurposeInformation) -> tuple[str, int]:
     """Generate the purposes section. Returns (svg_string, final_y_position)."""
     display = 7
-    formatted_purposes = format_purposes(info.purposes, display)
-    formatted_third_party_purposes = format_purposes(info.third_party_purposes, display)
+    formatted_purposes = _format_purposes(info.purposes, display)
+    formatted_third_party_purposes = _format_purposes(
+        info.third_party_purposes, display
+    )
     max_purposes = max(len(formatted_purposes), len(formatted_third_party_purposes))
 
     y_offset = 170
@@ -161,7 +163,7 @@ def generate_purposes_section(info: PurposeInformation) -> tuple[str, int]:
     return section, y_pos
 
 
-def generate_coverage_section(
+def _generate_coverage_section(
     y_offset: int,
     security_privacy: SecurityPrivacyInformation,
     rights_count: int,
@@ -172,10 +174,10 @@ def generate_coverage_section(
 ) -> tuple[str, int]:
     """Generate the coverage section. Returns (svg_string, final_y_position)."""
     coverage_bar_width = coverage_score * 3.4
-    coverage_color = get_score_color(coverage_score)
+    coverage_color = _get_score_color(coverage_score)
 
-    merger_symbol, merger_class = get_checkmark_symbol(merger_acquisition)
-    children_symbol, children_class = get_checkmark_symbol(children_mentioned)
+    merger_symbol, merger_class = _get_checkmark_symbol(merger_acquisition)
+    children_symbol, children_class = _get_checkmark_symbol(children_mentioned)
 
     sec_count = [
         security_privacy.transmission,
@@ -220,7 +222,7 @@ def generate_coverage_section(
     return section, y_offset + 117
 
 
-def generate_contact_meta_section(
+def _generate_contact_meta_section(
     y_offset: int,
     contact_phone: bool,
     contact_email: bool,
@@ -232,14 +234,14 @@ def generate_contact_meta_section(
 ) -> tuple[str, int]:
     """Generate the contact & meta information section. Returns (svg_string, final_y_position)."""
     meta_bar_width = meta_score * 3.4
-    meta_color = get_score_color(meta_score)
+    meta_color = _get_score_color(meta_score)
 
-    phone_symbol, phone_class = get_checkmark_symbol(contact_phone)
-    email_symbol, email_class = get_checkmark_symbol(contact_email)
-    address_symbol, address_class = get_checkmark_symbol(contact_address)
-    website_symbol, website_class = get_checkmark_symbol(contact_website)
-    date_symbol, date_class = get_checkmark_symbol(policy_date_available)
-    dpo_symbol, dpo_class = get_checkmark_symbol(dpo)
+    phone_symbol, phone_class = _get_checkmark_symbol(contact_phone)
+    email_symbol, email_class = _get_checkmark_symbol(contact_email)
+    address_symbol, address_class = _get_checkmark_symbol(contact_address)
+    website_symbol, website_class = _get_checkmark_symbol(contact_website)
+    date_symbol, date_class = _get_checkmark_symbol(policy_date_available)
+    dpo_symbol, dpo_class = _get_checkmark_symbol(dpo)
 
     section = """
   <!-- Meta Information Section -->
@@ -296,7 +298,7 @@ def generate_contact_meta_section(
     return section, y_offset + 131
 
 
-def generate_data_processing_section(
+def _generate_data_processing_section(
     y_offset: int,
     profiling: bool | None,
     automated_decision: bool | None,
@@ -310,8 +312,8 @@ def generate_data_processing_section(
         not automated_decision if automated_decision is not None else None
     )
 
-    profiling_symbol, profiling_class = get_checkmark_symbol(profiling)
-    automated_symbol, automated_class = get_checkmark_symbol(automated_decision)
+    profiling_symbol, profiling_class = _get_checkmark_symbol(profiling)
+    automated_symbol, automated_class = _get_checkmark_symbol(automated_decision)
 
     section = """
   <!-- Data Processing Summary -->
@@ -344,7 +346,7 @@ def generate_data_processing_section(
     return section, y_offset + 88 + (len(categories_display) - 1) * 15
 
 
-def generate_data_sharing_section(
+def _generate_data_sharing_section(
     y_offset: int,
     sharing_types: list[str],
     total_sharing_types: int,
@@ -408,7 +410,7 @@ def generate_data_sharing_section(
     return section, (y_offset + 147)
 
 
-def generate_legal_basis_section(
+def _generate_legal_basis_section(
     y_offset: int, legal_basis: LegalBasisInformation
 ) -> tuple[str, int]:
     """Generate the legal basis section with stacked bar chart. Returns (svg_string, final_y_position)."""
@@ -514,7 +516,7 @@ def generate_legal_basis_section(
     return section, new_y_offset
 
 
-def generate_footer(
+def _generate_footer(
     y_offset: int, policy_date: str, total_sentences: int, source: str
 ) -> tuple[str, int]:
     """Generate the footer section."""
@@ -568,7 +570,7 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     """Generate the complete SVG label from score and summary data."""
 
     # User rights
-    rights_count, rights_total = count_user_rights(summary.user_rights)
+    rights_count, rights_total = _count_user_rights(summary.user_rights)
 
     # Get high-level categories from level 2
     level_2_categories = summary.data_type.data_types_level.get(2, [])
@@ -584,14 +586,14 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     svg_parts = []
 
     # Transparency
-    svg_parts.append(generate_transparency_section(scores.transparency))
+    svg_parts.append(_generate_transparency_section(scores.transparency))
 
     # Purposes
-    purposes_svg, y_pos = generate_purposes_section(summary.purpose)
+    purposes_svg, y_pos = _generate_purposes_section(summary.purpose)
     svg_parts.append(purposes_svg)
 
     # Coverage
-    coverage_svg, y_pos = generate_coverage_section(
+    coverage_svg, y_pos = _generate_coverage_section(
         y_pos + 23,
         summary.security_privacy,
         rights_count,
@@ -603,7 +605,7 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     svg_parts.append(coverage_svg)
 
     # Contact & Meta
-    contact_svg, y_pos = generate_contact_meta_section(
+    contact_svg, y_pos = _generate_contact_meta_section(
         y_pos,
         summary.contact.phone,
         summary.contact.email,
@@ -616,7 +618,7 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     svg_parts.append(contact_svg)
 
     # Data Processing
-    processing_svg, y_pos = generate_data_processing_section(
+    processing_svg, y_pos = _generate_data_processing_section(
         y_pos,
         summary.processing.profiling,
         summary.processing.automated_decision,
@@ -652,7 +654,7 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
         last_item = companies[-1].split(", ")[-1]
         companies[-1] = companies[-1].replace(last_item, "and more")
 
-    sharing_svg, y_pos = generate_data_sharing_section(
+    sharing_svg, y_pos = _generate_data_sharing_section(
         y_pos,
         sharing_types,
         len(summary.sharing.sharing_types),
@@ -664,11 +666,11 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     svg_parts.append(sharing_svg)
 
     # Legal Basis
-    legal_svg, y_pos = generate_legal_basis_section(y_pos, summary.legal_basis)
+    legal_svg, y_pos = _generate_legal_basis_section(y_pos, summary.legal_basis)
     svg_parts.append(legal_svg)
 
     # Footer
-    footer_svg, y_pos = generate_footer(
+    footer_svg, y_pos = _generate_footer(
         y_pos,
         "unknown" if summary.policy.date is None else summary.policy.date,
         summary.policy.total_sentences,
@@ -680,6 +682,6 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
     total_height = y_pos
 
     # Insert header at the beginning
-    svg_content = generate_svg_header(total_height) + "".join(svg_parts)
+    svg_content = _generate_svg_header(total_height) + "".join(svg_parts)
 
     return svg_content
