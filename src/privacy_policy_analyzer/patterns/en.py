@@ -969,16 +969,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     ),
     country=AttributePattern.from_dict(
         {
-            "NorthAmerica": ["\\bnorth america\\b"],
-            "SouthAmerica": ["\\bsouth america\\b"],
-            "CentralAmerica": ["\\bcentral america\\b"],
+            "North America": ["\\bnorth america\\b"],
+            "South America": ["\\bsouth america\\b"],
+            "Central America": ["\\bcentral america\\b"],
             "Europe": ["\\beurope\\b"],
-            "EuropeanUnion": ["\\beuropean union\\b", "\\beu\\b"],
+            "European Union": ["\\beuropean union\\b", "\\beu\\b"],
             "EEA": ["\\beea\\b", "\\beuropean economic area\\b"],
             "Asia": ["\\basia\\b"],
             "Africa": ["\\bafrica\\b"],
             "Oceania": ["\\boceania\\b"],
-            "MiddleEast": ["\\bmiddle east\\b"],
+            "Middle East": ["\\bmiddle east\\b"],
             "International": [
                 "\\binternational\\b",
                 "\\bworldwide\\b",
@@ -987,7 +987,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "global(.){0,20}(infrastructure|service|operation|presence|reach|coverage|facilit(y|ies))",
                 "\\boverseas\\b",
             ],
-            "ResidenceState": [
+            "Residence State": [
                 "\\b(residence|home) (state|country)\\b",
                 "\\b(state|country) of residence\\b",
                 "\\b(state|country) where you live\\b",
