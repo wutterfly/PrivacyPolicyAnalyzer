@@ -24,7 +24,7 @@ The taxonomy can be viewed here: [Taxonomy](./taxonomy.png)
 This package uses playwright for web crawling. After installing the package, please run the following command to install the necessary browser binaries:
 
 ```bash
-python -m playwright install
+python -m playwright install chromium
 ```
 
 ### Crawler
