@@ -19,6 +19,14 @@ The taxonomy can be viewed here: [Taxonomy](./taxonomy.png)
 
 ## Using the Package
 
+## Post-Installation
+
+This package uses playwright for web crawling. After installing the package, please run the following command to install the necessary browser binaries:
+
+```bash
+python -m playwright install
+```
+
 ### Crawler
 
 This section demonstrates how to use the crawler to extract privacy policies from a given URL.
