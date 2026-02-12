@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date as Date
 from typing import Any
 
 from privacy_policy_analyzer import Language
@@ -58,6 +59,7 @@ class PolicyResult:
     name: str
     source: str
     language: str
+    date: Date
 
     html: str
     structured: list[
@@ -88,6 +90,7 @@ class PolicyResult:
         name: str = data["name"]
         source: str = data["source"]
         language: Language = Language(data["language"])
+        date: Date = Date.fromisoformat(data["date"])
 
         html: str = data["html"]
 
@@ -105,6 +108,7 @@ class PolicyResult:
             name=name,
             source=source,
             language=language,
+            date=date,
             html=html,
             structured=structured,
             harmonized=harmonized,
@@ -129,6 +133,7 @@ class Pipeline:
     date_pattern_config: DatePattern
 
     onnx: bool
+    cache_load_models: bool
 
     def __init__(
         self,
@@ -189,6 +194,8 @@ class Pipeline:
         if cache_load_models:
             model_configs.test_load_models(onnx)
 
+        self.cache_load_models = cache_load_models
+
     def run_with_policy(
         self, policy: CollectedPolicy
     ) -> PolicyResult | MismatchedLanguages:
@@ -210,6 +217,7 @@ class Pipeline:
             duration_pattern_config=self.duration_pattern_configs,
             date_pattern_config=self.date_pattern_config,
             onnx=self.onnx,
+            cached=self.cache_load_models,
         )
         logger.debug("Completed information collection for policy=%s", policy.name)
 
@@ -222,6 +230,7 @@ class Pipeline:
             name=policy.name,
             source=policy.source,
             language=policy.language,
+            date=policy.date,
             html=policy.html,
             structured=policy.structured,
             harmonized=policy.harmonized,
@@ -244,7 +253,7 @@ class Pipeline:
         return output
 
     def run_with_html(
-        self, name: str, source: str, language: Language, html: str
+        self, name: str, source: str, language: Language, date: Date, html: str
     ) -> PolicyResult:
         """Run the pipeline with raw HTML content of a policy."""
 
@@ -253,6 +262,7 @@ class Pipeline:
             name=name,
             source=source,
             language=language,
+            date=date,
             html=html,
             structured_raw=None,
             harmonized_raw=None,

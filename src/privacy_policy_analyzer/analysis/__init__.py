@@ -26,27 +26,30 @@ def collect_information(
     duration_pattern_config: DurationPattern,
     date_pattern_config: DatePattern,
     onnx: bool,
+    cached: bool,
 ):
     # classify contexts, topics, and contents
     logger.debug(
         "Classifying contexts, topics, and contents for entries=%d", len(entries)
     )
-    classify_context(entries, model_config.context, onnx)
-    classify_topics(entries, model_config.topic, onnx)
-    classify_content(entries, "Audience", model_config.audience, onnx)
-    classify_content(entries, "Contact", model_config.contact, onnx)
-    classify_content(entries, "Control", model_config.control, onnx)
-    classify_content(entries, "Deletion", model_config.deletion, onnx)
-    classify_content(entries, "LegalBasis", model_config.legal_basis, onnx)
-    classify_content(entries, "Policy", model_config.policy, onnx)
-    classify_content(entries, "Processing", model_config.processing, onnx)
-    classify_content(entries, "Purpose", model_config.purpose, onnx)
-    classify_content(entries, "Retention", model_config.retention, onnx)
-    classify_content(entries, "Security/Privacy", model_config.security_privacy, onnx)
-    classify_content(entries, "Selling", model_config.selling, onnx)
-    classify_content(entries, "Sharing", model_config.sharing, onnx)
-    classify_content(entries, "ThirdParty", model_config.third_party, onnx)
-    classify_content(entries, "UserRights", model_config.user_rights, onnx)
+    classify_context(entries, model_config.context, onnx, cached)
+    classify_topics(entries, model_config.topic, onnx, cached)
+    classify_content(entries, "Audience", model_config.audience, onnx, cached)
+    classify_content(entries, "Contact", model_config.contact, onnx, cached)
+    classify_content(entries, "Control", model_config.control, onnx, cached)
+    classify_content(entries, "Deletion", model_config.deletion, onnx, cached)
+    classify_content(entries, "LegalBasis", model_config.legal_basis, onnx, cached)
+    classify_content(entries, "Policy", model_config.policy, onnx, cached)
+    classify_content(entries, "Processing", model_config.processing, onnx, cached)
+    classify_content(entries, "Purpose", model_config.purpose, onnx, cached)
+    classify_content(entries, "Retention", model_config.retention, onnx, cached)
+    classify_content(
+        entries, "Security/Privacy", model_config.security_privacy, onnx, cached
+    )
+    classify_content(entries, "Selling", model_config.selling, onnx, cached)
+    classify_content(entries, "Sharing", model_config.sharing, onnx, cached)
+    classify_content(entries, "ThirdParty", model_config.third_party, onnx, cached)
+    classify_content(entries, "UserRights", model_config.user_rights, onnx, cached)
     logger.debug("Classifications completed")
 
     logger.debug("Extracting attributes")

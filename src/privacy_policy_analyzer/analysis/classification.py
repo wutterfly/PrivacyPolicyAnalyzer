@@ -84,15 +84,15 @@ class ModelConfigs:
 
     def test_load_models(self, onnx: bool):
         for name, config in self._get_model_configs():
-            loaded = _load_pipeline(config.model_name, onnx)
+            loaded = _load_pipeline(config.model_name, onnx, cached=False)
             del loaded
             logger.debug(
                 "Model loaded successfully: name=%s model=%s", name, config.model_name
             )
 
 
-def _load_pipeline(model_name: str, use_onnx: bool) -> LoadedClassifier:
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+def _load_pipeline(model_name: str, use_onnx: bool, cached: bool) -> LoadedClassifier:
+    tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
 
     model = None
     device = None
@@ -100,9 +100,12 @@ def _load_pipeline(model_name: str, use_onnx: bool) -> LoadedClassifier:
     if use_onnx:
         # model = ORTModelForSequenceClassification.from_pretrained(model_name)
         device = "cpu"
+        assert False, "ONNX models are currently not supported yet"
 
     else:
-        model = AutoModelForSequenceClassification.from_pretrained(model_name)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, local_files_only=cached
+        )
         device = get_device()
 
     return LoadedClassifier(
@@ -119,11 +122,11 @@ def _load_pipeline(model_name: str, use_onnx: bool) -> LoadedClassifier:
 
 
 def classify_context(
-    entries: list[RawEntry],
-    config: ModelConfig,
-    use_onnx: bool,
+    entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
 ):
-    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+    model = _load_pipeline(
+        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+    )
     logger.debug(
         "Classifying context with model=%s entries=%d", config.model_name, len(entries)
     )
@@ -154,8 +157,12 @@ def classify_context(
     del model
 
 
-def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool):
-    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+def classify_topics(
+    entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
+):
+    model = _load_pipeline(
+        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+    )
     logger.debug(
         "Classifying topics with model=%s entries=%d", config.model_name, len(entries)
     )
@@ -187,9 +194,15 @@ def classify_topics(entries: list[RawEntry], config: ModelConfig, use_onnx: bool
 
 
 def classify_content(
-    entries: list[RawEntry], topic: str, config: ModelConfig, use_onnx: bool
+    entries: list[RawEntry],
+    topic: str,
+    config: ModelConfig,
+    use_onnx: bool,
+    cached: bool,
 ):
-    model = _load_pipeline(model_name=config.model_name, use_onnx=use_onnx)
+    model = _load_pipeline(
+        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+    )
 
     logger.debug("Classifying content for topic=%s model=%s", topic, config.model_name)
 

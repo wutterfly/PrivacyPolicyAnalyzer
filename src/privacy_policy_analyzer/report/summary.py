@@ -1146,6 +1146,51 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
     )
 
 
+# --------------- Boilerplate Information -----------------
+
+
+@dataclass
+class BoilerplateInformation:
+    boilerplate_sentences: int
+    boilerplate_sentences_percentage: float
+
+    @staticmethod
+    def from_json(data: dict) -> "BoilerplateInformation":
+        return BoilerplateInformation(
+            boilerplate_sentences=int(data["boilerplate_sentences"]),
+            boilerplate_sentences_percentage=float(
+                data["boilerplate_sentences_percentage"]
+            ),
+        )
+
+
+def extract_boilerplate_information(
+    data: list[StructuredEntry],
+) -> BoilerplateInformation:
+    boilerplate_sentences = 0
+
+    for entry in data:
+        # only consider sentences that have 1 topic
+        if len(entry.topics) > 1:
+            continue
+
+        # check that the only topic is "Other"
+        for tpc in entry.topics:
+            if tpc.topic == "Other":
+                boilerplate_sentences += 1
+                break
+
+    total_sentences = len(data)
+    boilerplate_sentences_percentage = (
+        (boilerplate_sentences / total_sentences) * 100 if total_sentences > 0 else 0
+    )
+
+    return BoilerplateInformation(
+        boilerplate_sentences=boilerplate_sentences,
+        boilerplate_sentences_percentage=boilerplate_sentences_percentage,
+    )
+
+
 # --------------- Summary Report -----------------
 
 
@@ -1167,6 +1212,7 @@ class SummaryReport:
     third_party: ThirdPartyInformation
     contact: ContactInformation
     user_rights: UserRightsInformation
+    boilerplate: BoilerplateInformation
 
     @staticmethod
     def from_json(data: dict) -> "SummaryReport":
@@ -1227,6 +1273,7 @@ def create_summary_report(
     policy = extract_change_information(filtered)
     contact = extract_contact_information(filtered)
     user_rights = extract_user_rights_information(filtered)
+    boilerplate = extract_boilerplate_information(filtered)
 
     #
     return SummaryReport(
@@ -1244,4 +1291,5 @@ def create_summary_report(
         third_party=third_party,
         contact=contact,
         user_rights=user_rights,
+        boilerplate=boilerplate,
     )

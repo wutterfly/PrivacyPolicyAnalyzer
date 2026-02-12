@@ -1,3 +1,7 @@
+from privacy_policy_analyzer.report.readability import (
+    ReadabilityScores,
+    fre_score_mapping,
+)
 from privacy_policy_analyzer.report.score import ScoreReport, TransparencyScore
 from privacy_policy_analyzer.report.summary import (
     LegalBasisInformation,
@@ -79,7 +83,9 @@ def _generate_svg_header(total_height: int) -> str:
       .grade-b { fill: #8BC34A; }
       .grade-c { fill: #FFC107; }
       .grade-d { fill: #FF9800; }
+      .grade-e { fill: #FF5722; }
       .grade-f { fill: #F44336; }
+      .grade-neutral { fill: #9E9E9E; }
       .grade-unknown { fill: #9E9E9E; }
       .yes { fill: #4CAF50; }
       .no { fill: #F44336; }
@@ -99,7 +105,9 @@ def _generate_svg_header(total_height: int) -> str:
     return header
 
 
-def _generate_transparency_section(transparency: TransparencyScore) -> str:
+def _generate_transparency_section(
+    transparency: TransparencyScore, readability_score: float, y_pos: int
+) -> tuple[str, int]:
     """Generate the transparency section."""
     data_specificity_grade = transparency.data_specificity_grade
     third_party_specificity_grade = (
@@ -109,28 +117,44 @@ def _generate_transparency_section(transparency: TransparencyScore) -> str:
     )
     retention_specificity_grade = transparency.retention_specificity_grade
 
-    section = """
+    _, score = fre_score_mapping(readability_score)
+
+    section = f"""
   <!-- Transparency Section -->
-  <text x="20" y="70" class="section-title">Transparency</text>
-  <line x1="20" y1="75" x2="380" y2="75" stroke="#000000" stroke-width="1"/>
+  <text x="20" y="{y_pos}" class="section-title">Transparency</text>
+  <line x1="20" y1="{y_pos + 5}" x2="380" y2="{y_pos + 5}" stroke="#000000" stroke-width="1"/>
 
 """
-    section += '  <text x="30" y="95" class="label">Data Specificity:</text>\n'
-    section += f'  <circle cx="360" cy="91" r="10" class="grade-{data_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="94" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{data_specificity_grade}</text>\n'
+
+    y_pos += 20
+    section += (
+        f'  <text x="30" y="{y_pos + 5}" class="label">Data Specificity:</text>\n'
+    )
+    section += f'  <circle cx="360" cy="{y_pos + 1}" r="10" class="grade-{data_specificity_grade.lower()}"/>\n'
+    section += f'  <text x="360" y="{y_pos + 4}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{data_specificity_grade}</text>\n'
     section += "  \n"
-    section += '  <text x="30" y="115" class="label">Third Party Specificity:</text>\n'
-    section += f'  <circle cx="360" cy="111" r="10" class="grade-{third_party_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="114" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{third_party_specificity_grade}</text>\n'
+    section += f'  <text x="30" y="{y_pos + 5 + 20}" class="label">Third Party Specificity:</text>\n'
+    section += f'  <circle cx="360" cy="{y_pos + 1 + 20}" r="10" class="grade-{third_party_specificity_grade.lower()}"/>\n'
+    section += f'  <text x="360" y="{y_pos + 4 + 20}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{third_party_specificity_grade}</text>\n'
     section += "  \n"
-    section += '  <text x="30" y="135" class="label">Retention Specificity:</text>\n'
-    section += f'  <circle cx="360" cy="131" r="10" class="grade-{retention_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="134" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{retention_specificity_grade}</text>\n'
+    section += f'  <text x="30" y="{y_pos + 5 + 40}" class="label">Retention Specificity:</text>\n'
+    section += f'  <circle cx="360" cy="{y_pos + 1 + 40}" r="10" class="grade-{retention_specificity_grade.lower()}"/>\n'
+    section += f'  <text x="360" y="{y_pos + 4 + 40}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{retention_specificity_grade}</text>\n'
+    section += "  \n"
+    section += (
+        f'  <text x="30" y="{y_pos + 5 + 60}" class="label">Readability Score:</text>\n'
+    )
+    section += (
+        f'  <circle cx="360" cy="{y_pos + 1 + 60}" r="10" class="grade-neutral"/>\n'
+    )
+    section += f'  <text x="360" y="{y_pos + 4 + 60}" text-anchor="middle" fill="White" style="font-size: 10px; font-weight: bold;">{score}</text>\n'
 
-    return section
+    return section, y_pos + 80 + 20
 
 
-def _generate_purposes_section(info: PurposeInformation) -> tuple[str, int]:
+def _generate_purposes_section(
+    info: PurposeInformation, y_offset: int
+) -> tuple[str, int]:
     """Generate the purposes section. Returns (svg_string, final_y_position)."""
     display = 7
     formatted_purposes = _format_purposes(info.purposes, display)
@@ -139,7 +163,6 @@ def _generate_purposes_section(info: PurposeInformation) -> tuple[str, int]:
     )
     max_purposes = max(len(formatted_purposes), len(formatted_third_party_purposes))
 
-    y_offset = 170
     section = """
   <!-- Purposes Section -->
 """
@@ -566,7 +589,12 @@ def display_types(types: list[str], max_len: int) -> list[str]:
     return [", ".join(bin_group) for bin_group in bins]
 
 
-def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str) -> str:
+def generate_svg_label(
+    scores: ScoreReport,
+    summary: SummaryReport,
+    readability: ReadabilityScores,
+    source: str,
+) -> str:
     """Generate the complete SVG label from score and summary data."""
 
     # User rights
@@ -584,12 +612,16 @@ def generate_svg_label(scores: ScoreReport, summary: SummaryReport, source: str)
 
     # Generate all sections first to calculate total height
     svg_parts = []
+    y_pos = 0
 
     # Transparency
-    svg_parts.append(_generate_transparency_section(scores.transparency))
+    transparency_svg, y_pos = _generate_transparency_section(
+        scores.transparency, readability.flesh_reading_ease, 70
+    )
+    svg_parts.append(transparency_svg)
 
     # Purposes
-    purposes_svg, y_pos = _generate_purposes_section(summary.purpose)
+    purposes_svg, y_pos = _generate_purposes_section(summary.purpose, y_pos)
     svg_parts.append(purposes_svg)
 
     # Coverage

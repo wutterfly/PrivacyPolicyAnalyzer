@@ -32,6 +32,7 @@ HEADERS: dict[str, str] = {
     "sec-fetch-mode": "navigate",
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
+    "Cookie": "chosen_country=US;rs_geo=US;rw_locale=%2Fus%2Fen;",
 }
 
 
@@ -45,6 +46,7 @@ class WebScraper:
     playwright_timeout: int
     min_content_length: int
     playwright_wait_after_load: float
+    language_setting: str
 
     headers: dict[str, str]
     opener: request.OpenerDirector
@@ -64,6 +66,8 @@ class WebScraper:
         # Default headers to mimic a real browser
         self.headers = HEADERS
         self.headers.update(HEADERS_EN)
+
+        self.language_setting = "en-US"
 
         # Create context that doesn't verify certificates
         ctx = ssl.create_default_context()
@@ -153,7 +157,7 @@ class WebScraper:
                 return content
 
         # check for id containing "main"
-        content = soup.find(id=re.compile(r"main", re.IGNORECASE))
+        content = soup.find(id=re.compile(r"^main$", re.IGNORECASE))
         if content:
             logger.debug("Checking id='main' as main content area")
             if len(content.get_text(strip=True)) >= min_len:
@@ -237,6 +241,7 @@ class WebScraper:
                     return None
 
                 browser = p.chromium.launch(headless=headless)
+                context = browser.new_context(locale=self.language_setting)
 
                 try:
                     # Check for cancellation after browser launch
@@ -248,7 +253,7 @@ class WebScraper:
                         )
                         return None
 
-                    page = browser.new_page()
+                    page = context.new_page()
 
                     try:
                         # Navigate and wait for network to be idle
@@ -314,6 +319,7 @@ class WebScraper:
                     finally:
                         page.close()
                 finally:
+                    context.close()
                     browser.close()
 
         except Exception as e:

@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass
+from datetime import date as Date
 from typing import Any
 
 from bs4 import BeautifulSoup
@@ -37,6 +38,7 @@ class CollectedPolicy:
     name: str
     source: str
     language: Language
+    date: Date
 
     html: str
     structured: list[
@@ -68,6 +70,7 @@ class CollectedPolicy:
             "name": self.name,
             "source": self.source,
             "language": self.language,
+            "date": self.date.isoformat(),
         }
 
         if html:
@@ -89,6 +92,7 @@ class CollectedPolicy:
         name: str = data["name"]
         source: str = data["source"]
         language: Language = Language(data["language"])
+        date: Date = Date.fromisoformat(data["date"])
 
         html: str = data["html"]
         structured_raw: list[dict] = data["structured"]
@@ -102,6 +106,7 @@ class CollectedPolicy:
             name=name,
             source=source,
             language=language,
+            date=date,
             html=html,
             structured=structured,
             harmonized=harmonized,
@@ -114,6 +119,7 @@ class CollectedPolicy:
         name: str,
         source: str,
         language: Language,
+        date: Date,
         html: str,
         structured_raw: list[dict] | None,
         harmonized_raw: list[dict] | None,
@@ -161,6 +167,7 @@ class CollectedPolicy:
             name=name,
             source=source,
             language=language,
+            date=date,
             html=html,
             structured=structured,
             harmonized=harmonized,
@@ -204,6 +211,7 @@ def crawl(
         name=name,
         source=url,
         language=language,
+        date=Date.today(),
         html=str(main_content),
         structured=structured,
         harmonized=harmonized,
