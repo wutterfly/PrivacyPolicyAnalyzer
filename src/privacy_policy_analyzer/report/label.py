@@ -348,15 +348,13 @@ def _generate_data_processing_section(
     section += f'  <text x="20" y="{y_offset}" class="section-title">Data Processing Summary</text>\n'
     section += f'  <line x1="20" y1="{y_offset + 5}" x2="380" y2="{y_offset + 5}" stroke="#000000" stroke-width="1"/>\n'
     section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 25}" class="label">No Profiling:</text>\n'
-    )
+    section += f'  <text x="30" y="{y_offset + 25}" class="label">Profiling:</text>\n'
     section += (
         f'  <circle cx="175" cy="{y_offset + 21}" r="8" class="{profiling_class}"/>\n'
     )
     section += f'  <text x="175" y="{y_offset + 24}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{profiling_symbol}</text>\n'
     section += "  \n"
-    section += f'  <text x="210" y="{y_offset + 25}" class="label">No Automated Decision:</text>\n'
+    section += f'  <text x="210" y="{y_offset + 25}" class="label">Automated Decision:</text>\n'
     section += (
         f'  <circle cx="360" cy="{y_offset + 21}" r="8" class="{automated_class}"/>\n'
     )
