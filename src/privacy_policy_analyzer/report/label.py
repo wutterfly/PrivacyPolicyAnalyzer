@@ -44,6 +44,16 @@ def _get_checkmark_symbol(value: bool | None) -> tuple[str, str]:
         return "✗", "no"
 
 
+def _get_checkmark_symbol_inverted(value: bool | None) -> tuple[str, str]:
+    """Get the symbol and CSS class for a boolean/null value, with inverted logic."""
+    if value is None:
+        return "?", "unknown"
+    elif value is True:
+        return "✓", "no"
+    else:
+        return "✗", "yes"
+
+
 def _get_score_color(score: float) -> str:
     """Get color based on score."""
 
@@ -330,16 +340,9 @@ def _generate_data_processing_section(
 ) -> tuple[str, int]:
     """Generate the data processing summary section. Returns (svg_string, final_y_position)."""
 
-    profiling = not profiling if profiling is not None else None
-    automated_decision = (
-        not automated_decision if automated_decision is not None else None
-    )
-
-    profiling_symbol, profiling_class = _get_checkmark_symbol(
-        not profiling if profiling is not None else None
-    )
-    automated_symbol, automated_class = _get_checkmark_symbol(
-        not automated_decision if automated_decision is not None else None
+    profiling_symbol, profiling_class = _get_checkmark_symbol_inverted(profiling)
+    automated_symbol, automated_class = _get_checkmark_symbol_inverted(
+        automated_decision
     )
 
     section = """
