@@ -50,14 +50,14 @@ DEFAULT_DATA_SPECIFICITY_BOUNDARIES = GradeBoundaries(
 )
 
 DEFAULT_THIRD_PARTY_SPECIFICITY_BOUNDARIES = GradeBoundaries(
-    class_a=135.00,
-    class_b=92.98,
-    class_c=59.46,
+    class_a=123.33,
+    class_b=77.59,
+    class_c=40.00,
     must_be_greater=True,
 )
 
 DEFAULT_RETENTION_SPECIFICITY_BOUNDARIES = GradeBoundaries(
-    class_a=78.62,
+    class_a=76.63,
     class_b=49.49,
     class_c=17.63,
     must_be_greater=True,

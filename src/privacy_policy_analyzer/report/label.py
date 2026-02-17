@@ -335,8 +335,12 @@ def _generate_data_processing_section(
         not automated_decision if automated_decision is not None else None
     )
 
-    profiling_symbol, profiling_class = _get_checkmark_symbol(profiling)
-    automated_symbol, automated_class = _get_checkmark_symbol(automated_decision)
+    profiling_symbol, profiling_class = _get_checkmark_symbol(
+        not profiling if profiling is not None else None
+    )
+    automated_symbol, automated_class = _get_checkmark_symbol(
+        not automated_decision if automated_decision is not None else None
+    )
 
     section = """
   <!-- Data Processing Summary -->
