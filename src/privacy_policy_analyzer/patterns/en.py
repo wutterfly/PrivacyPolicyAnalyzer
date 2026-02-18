@@ -544,6 +544,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "PersonalBehaviorData": [
                 "personal behavior",
                 "behavioral (data|information)",
+                "behavior-based",
+                "behavioral\\b",
             ],
             "HabitData": ["\\bhabit(s)?\\b"],
             "InterestData": [
