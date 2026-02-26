@@ -60,6 +60,15 @@ class HierarchyEntry:
 
         return None
 
+    def to_dict(self) -> dict:
+        """Recursively convert HierarchyEntry to dictionary"""
+        return {
+            "types": self.types,
+            "children": [child.to_dict() for child in self.children]
+            if self.children
+            else None,
+        }
+
 
 @dataclass
 class DataHierarchy:
@@ -84,6 +93,10 @@ class DataHierarchy:
 
     def find_data_type(self, data_type: str) -> DataTypePath | None:
         return self.root.find_data_type_in_hierarchy(data_type)
+
+    def to_dict(self) -> dict:
+        """Convert the entire hierarchy to a dictionary"""
+        return self.root.to_dict()
 
 
 DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
