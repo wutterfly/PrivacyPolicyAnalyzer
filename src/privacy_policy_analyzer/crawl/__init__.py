@@ -63,9 +63,7 @@ class CollectedPolicy:
     ]
     text: list[str]
 
-    def as_json(
-        self, html: bool, structured: bool, harmonized: bool, text: bool
-    ) -> dict:
+    def to_json(self) -> dict:
         output: dict = {
             "name": self.name,
             "source": self.source,
@@ -73,17 +71,13 @@ class CollectedPolicy:
             "date": self.date.isoformat(),
         }
 
-        if html:
-            output["html"] = self.html
+        output["html"] = self.html
 
-        if structured:
-            output["structured"] = [asdict(item) for item in self.structured]
+        output["structured"] = [asdict(item) for item in self.structured]
 
-        if harmonized:
-            output["harmonized"] = [asdict(item) for item in self.harmonized]
+        output["harmonized"] = [asdict(item) for item in self.harmonized]
 
-        if text:
-            output["text"] = self.text
+        output["text"] = self.text
 
         return output
 

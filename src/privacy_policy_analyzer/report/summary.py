@@ -1233,6 +1233,7 @@ class SummaryReport:
             third_party=ThirdPartyInformation.from_json(data["third_party"]),
             contact=ContactInformation.from_json(data["contact"]),
             user_rights=UserRightsInformation.from_json(data["user_rights"]),
+            boilerplate=BoilerplateInformation.from_json(data["boilerplate"]),
         )
 
 

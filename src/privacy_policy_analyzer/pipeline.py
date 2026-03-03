@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date as Date
 from typing import Any
 
@@ -115,6 +115,19 @@ class PolicyResult:
             text=text,
             analyzed=analyzed,
         )
+
+    def to_json(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "source": self.source,
+            "language": self.language,
+            "date": self.date.isoformat(),
+            "html": self.html,
+            "structured": [asdict(entry) for entry in self.structured],
+            "harmonized": [asdict(entry) for entry in self.harmonized],
+            "text": self.text,
+            "analyzed": [asdict(entry) for entry in self.analyzed],
+        }
 
 
 class Pipeline:

@@ -21,3 +21,8 @@ if __name__ == "__main__":
         info("Extracted Text:")
         info(result.text)
         info(result.structured)
+
+        with open("debug_crawl.json", "w", encoding="utf-8") as f:
+            import json
+
+            json.dump(result.to_json(), f, ensure_ascii=False, indent=2, default=str)

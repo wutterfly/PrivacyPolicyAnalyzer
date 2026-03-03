@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     name = "OpenAI"
     url = "https://openai.com/policies/row-privacy-policy/"
+    url = "https://tamagotchi-official.com/privacypolicy/toy/uni/en/"
 
     # Or analyze directly from URL
     result: PolicyResult | CrawlError = pipeline.run_with_url(name, url, Language.EN)
@@ -38,3 +39,8 @@ if __name__ == "__main__":
         info(result.text)
         info(result.structured)
         info(result.analyzed)
+
+        with open("debug_analysis.json", "w", encoding="utf-8") as f:
+            import json
+
+            json.dump(result.to_json(), f, ensure_ascii=False, indent=2, default=str)
