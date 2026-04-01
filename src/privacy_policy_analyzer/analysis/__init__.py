@@ -87,6 +87,12 @@ def collect_information(
     extract_attributes(
         entries,
         topic=["ThirdParty"],
+        content="Official",
+        patterns=pattern_config.official,
+    )
+    extract_attributes(
+        entries,
+        topic=["ThirdParty"],
         content="Chosen",
         patterns=pattern_config.chosen,
     )

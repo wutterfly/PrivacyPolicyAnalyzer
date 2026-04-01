@@ -1,11 +1,12 @@
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal
 
 import numpy as np
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 from sklearn.metrics import (
     accuracy_score,
     f1_score,
@@ -33,7 +34,7 @@ from privacy_policy_analyzer.training.data import (
     extract_training_data_context,
     extract_training_data_topics,
     oversample_minority_labels,
-    split_dataset,
+    # split_dataset,
 )
 from privacy_policy_analyzer.training.progress import SimpleProgressBarCallback
 from privacy_policy_analyzer.training.util import (
@@ -157,10 +158,20 @@ def _train_model_on_dataset(
     label2id: dict[str, int],
     model_name: str,
     output_dir: Path,
-    test_eval_split: float,
     oversampling_ratio: float,
     seed: int,
+    train_test_eval_split: tuple[float, float, float] = (0.7, 0.15, 0.15),
 ):
+
+    train_s, test_s, eval_s = train_test_eval_split
+    assert train_s + test_s + eval_s == 1.0
+    logging.info(
+        "Dataset split: train=%.2f%% test=%.2f%% eval=%.2f%%",
+        train_s * 100,
+        test_s * 100,
+        eval_s * 100,
+    )
+
     cleanup_memory()
     start = perf_counter()
     model_output_dir = output_dir / Path(model_name.replace("/", "_"))
@@ -170,10 +181,25 @@ def _train_model_on_dataset(
     id2label = {v: k for k, v in label2id.items()}
 
     # Split and over-sample
-    train, eval = split_dataset(dataset, test_size=test_eval_split, seed=seed)
-    train = oversample_minority_labels(train, ratio=oversampling_ratio)
-    train = train.shuffle(seed=seed)
-    eval = eval.shuffle(seed=seed)
+    # train, eval = split_dataset(dataset, test_size=test_eval_split, seed=seed)
+
+    # First split
+    train_test = dataset.train_test_split(test_size=test_s, seed=seed)
+
+    # Second split
+    eval_ratio = eval_s / (train_s + eval_s)
+    train_eval: DatasetDict = train_test["train"].train_test_split(
+        test_size=eval_ratio, seed=seed
+    )
+
+    train_data: Dataset = train_eval["train"]
+    test_data: Dataset = train_test["test"]
+    eval_data: Dataset = train_eval["test"]
+
+    train_data = oversample_minority_labels(train_data, ratio=oversampling_ratio)
+    train_data = train_data.shuffle(seed=seed)
+    eval_data = eval_data.shuffle(seed=seed)
+    test_data = test_data.shuffle(seed=seed)
 
     # Tokenization
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -183,8 +209,10 @@ def _train_model_on_dataset(
             examples["text"], max_length=512, truncation=True, padding=False
         )
 
-    tokenized_train = train.map(tokenize_function, batched=True)
-    tokenized_eval = eval.map(tokenize_function, batched=True)
+    tokenized_train = train_data.map(tokenize_function, batched=True)
+    tokenized_eval = eval_data.map(tokenize_function, batched=True)
+    tokenized_test = test_data.map(tokenize_function, batched=True)
+
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
 
     # Model Initialization
@@ -254,7 +282,7 @@ def _train_model_on_dataset(
     # Training & Evaluation
     logger.info("Starting training for model=%s output_dir=%s", model_name, output_dir)
     trainer.train()
-    final_metrics = trainer.evaluate()
+    final_metrics = trainer.evaluate(eval_dataset=tokenized_test)
 
     # Find optimal thresholds
     optimal_thresholds = _find_optimal_thresholds(trainer, tokenized_eval, label_names)
@@ -303,7 +331,7 @@ class ModelTrainingConfig:
     labels: list[str]
     scope: Literal["context", "topic", "content"]
     content_topic: str | None
-    test_eval_split: float
+    train_eval_test_split: tuple[float, float, float]
     oversampling_ratio: float
     seed: int
 
@@ -334,7 +362,7 @@ class ModelTrainingConfig:
             label2id=label2id,
             model_name=self.model_name,
             output_dir=self.output_dir,
-            test_eval_split=self.test_eval_split,
+            train_test_eval_split=self.train_eval_test_split,
             oversampling_ratio=self.oversampling_ratio,
             seed=self.seed,
         )

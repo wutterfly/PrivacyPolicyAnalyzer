@@ -37,6 +37,7 @@ class AttributePatterns:
     track_conv: AttributePattern
     method_source: AttributePattern
     descriptive: AttributePattern
+    official: AttributePattern
     country: AttributePattern
     company: AttributePattern
     provide_service: AttributePattern

@@ -116,6 +116,9 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["HeartRateData"], children=None),
                             HierarchyEntry(types=["StepCountData"], children=None),
                             HierarchyEntry(types=["FitnessGoals"], children=None),
+                            HierarchyEntry(
+                                types=["FitnessChallengeResults"], children=None
+                            ),
                             HierarchyEntry(types=["HeartRate"], children=None),
                             HierarchyEntry(types=["BloodPressure"], children=None),
                             HierarchyEntry(types=["BloodSugar"], children=None),
@@ -250,7 +253,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                 types=["PersonalData", "PII"],
                 children=[
                     HierarchyEntry(
-                        types=["Identifier"],
+                        types=["Identifier", "IdentityInformation"],
                         children=[
                             HierarchyEntry(types=["DeviceID"], children=None),
                             HierarchyEntry(types=["SerialNumber"], children=None),
@@ -347,6 +350,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                     HierarchyEntry(types=["Employer"], children=None),
                                 ],
                             ),
+                            HierarchyEntry(types=["CurriculumVitae"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -412,6 +416,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["CallRecords"], children=None),
                             HierarchyEntry(types=["ChatHistory"], children=None),
                         ],
+                    ),
+                    HierarchyEntry(
+                        types=["CandidateInformation"],
+                        children=None,
                     ),
                 ],
             ),
@@ -521,6 +529,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 ],
                             ),
                             HierarchyEntry(types=["ContentUseHistory"], children=None),
+                            HierarchyEntry(types=["EngagementMetrics"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -685,6 +694,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=[
                             HierarchyEntry(types=["CleaningHistory"], children=None),
                             HierarchyEntry(types=["HeatingSchedule"], children=None),
+                            HierarchyEntry(types=["WateringSchedule"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -715,6 +725,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["TextData"], children=None),
                             HierarchyEntry(types=["OtherFileData"], children=None),
                             HierarchyEntry(types=["DesignFiles"], children=None),
+                            HierarchyEntry(types=["Maps"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -726,6 +737,8 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["Reviews"], children=None),
                             HierarchyEntry(types=["Likes"], children=None),
                             HierarchyEntry(types=["Follows"], children=None),
+                            HierarchyEntry(types=["Ratings"], children=None),
+                            HierarchyEntry(types=["Testimonial"], children=None),
                         ],
                     ),
                     HierarchyEntry(
