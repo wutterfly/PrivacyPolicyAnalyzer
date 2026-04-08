@@ -119,6 +119,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(
                                 types=["FitnessChallengeResults"], children=None
                             ),
+                            HierarchyEntry(types=["WorkoutSummaries"], children=None),
                             HierarchyEntry(types=["HeartRate"], children=None),
                             HierarchyEntry(types=["BloodPressure"], children=None),
                             HierarchyEntry(types=["BloodSugar"], children=None),
@@ -411,7 +412,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(types=["UserPreferences"], children=None),
                     HierarchyEntry(types=["Contacts"], children=None),
                     HierarchyEntry(
-                        types=["CommunicationRecords"],
+                        types=["CommunicationRecords", "Messages"],
                         children=[
                             HierarchyEntry(types=["CallRecords"], children=None),
                             HierarchyEntry(types=["ChatHistory"], children=None),
@@ -556,6 +557,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["Errors"], children=None),
                             HierarchyEntry(types=["ActivityLogs"], children=None),
                             HierarchyEntry(types=["MaintenanceLogs"], children=None),
+                            HierarchyEntry(types=["NotificationLogs"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -698,6 +700,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
+                        types=["DeviceAutomations"],
+                        children=None,
+                    ),
+                    HierarchyEntry(
                         types=["MediaData"],
                         children=[
                             HierarchyEntry(
@@ -739,6 +745,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["Follows"], children=None),
                             HierarchyEntry(types=["Ratings"], children=None),
                             HierarchyEntry(types=["Testimonial"], children=None),
+                            HierarchyEntry(types=["ListedItems"], children=None),
                         ],
                     ),
                     HierarchyEntry(

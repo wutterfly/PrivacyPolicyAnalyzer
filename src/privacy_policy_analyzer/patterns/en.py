@@ -262,6 +262,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "timestamp of(.){0,32}activity",
                 "\\bevent log(s)?\\b",
             ],
+            "NotificationLogs": ["notification log(s)?\\b"],
             "MaintenanceLogs": ["maintenance log", "maintenance record"],
             "DrivingEvents": ["driving event"],
             "DeviceEvents": ["device event"],
@@ -276,7 +277,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(device|product) temperature",
                 "temperature of (device|product)",
             ],
-            "ScheduleTimes": ["schedule(.){0,20}time"],
+            "ScheduleTimes": ["schedule(.){0,20}time", "\\bschedules\\b"],
             "Identifier": [
                 "identification number",
                 "personal identifier",
@@ -522,7 +523,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "FitnessChallengeResults": [
                 "fitness challenge result",
                 "exercise challenge result",
+                "personal bests",
             ],
+            "WorkoutSummaries": ["\\bworkout (summaries|summary)"],
             "HeartRate": ["heart rate", "heart-rate"],
             "BloodPressure": ["blood pressure"],
             "BloodSugar": ["blood sugar", "glucose level"],
@@ -608,7 +611,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "FingerprintData": ["fingerprint (data|information)"],
             "Submissions": ["\\bsubmission(s)?\\b"],
             "Feedback": ["\\bfeedback\\b(?! service)"],
-            "Comments": ["\\bcomment(s)?\\b"],
+            "Comments": ["\\bcomment(s)?\\b", "\\breplies you post\\b"],
             "Opinions": ["\\bopinion(s)?\\b"],
             "Reviews": ["(?<!regularly )\\breview(s)?\\b", "\\bstar rating(s)?\\b"],
             "ServicesData": ["service(s)? (data|information)"],
@@ -617,6 +620,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "call(ing)? record",
                 "phone calls",
                 "recording(s)? of(.){0,20}(calls)",
+            ],
+            "Messages": [
+                "chat messages",
+                "\\bencrypted messages\\b",
+                "\\bcontent of(.){0,20}message",
             ],
             "ChatHistory": [
                 "chat history",
@@ -735,6 +743,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "ForumPosts": ["(question|answer)(.){0,48}(forum)"],
             "SharedContent": ["shared content", "content you shared"],
+            "ListedItems": ["listed item(s)?\\b", "\\bitems you have listed"],
             "Likes": ["\\blikes\\b"],
             "Follows": ["(?<!as )\\bfollow(s)?\\b"],
             "Contacts": ["\\bcontacts\\b"],
@@ -744,6 +753,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "malware definition(s)?",
                 "virus definition list",
             ],
+            "DeviceAutomations": ["device automations"],
             "ContestData": ["contest (data|information|entry|detail)"],
             "BusinessInformation": ["\\bbusiness (information|data|detail)\\b"],
             "NumberOfEmployees": ["\\bnumber of employees\\b", "\\bemployee count\\b"],
@@ -772,7 +782,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     method_source=AttributePattern.from_dict(
         {
             "UserProvided": [
-                "\\byou(.){0,20}(provide|submit|enter|upload|give|share|send)",
+                "\\byou(.){0,20}(provide|submit|enter|upload|give|share|send|post)",
                 "\\b(enter|submit|provide)(.){0,20}by you",
                 "\\bto (enter|submit|provide)\\b",
             ],
