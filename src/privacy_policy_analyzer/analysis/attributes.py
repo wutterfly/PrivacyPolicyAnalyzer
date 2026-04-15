@@ -71,6 +71,7 @@ class AttributePatterns:
     chosen: AttributePattern
     profiling: AttributePattern
     automated_decision: AttributePattern
+    certifications: AttributePattern
 
 
     def get_stats(self):

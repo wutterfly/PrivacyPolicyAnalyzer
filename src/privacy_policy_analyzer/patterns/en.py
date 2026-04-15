@@ -110,6 +110,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "hardware (model|type)",
                 "device(.){0,20}\\bmodel\\b",
             ],
+            "ProductInfo": [
+                "product (information|data|detail)",
+                "(information|detail(s)?) about(.){0,20}product",
+            ],
             "ManufacturerInformation": [
                 "manufacturer (information|data|detail)",
                 "(information|detail(s)?) about(.){0,20}manufacturer",
@@ -117,6 +121,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "TechnicalInformation": ["technical (information|data)"],
             "OperatingSystem": ["operating system"],
             "FirmwareVersion": ["firmware version"],
+            "SoftwareVersion": ["software version"],
             "HardwareInformation": [
                 "hardware (information|data|details)",
                 "information (about|on)(.){0,20}(hardware)",
@@ -129,6 +134,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "BrowserType": ["browser(.){0,20}type", "type of browser"],
             "BrowserVersion": ["browser(.){0,20}version", "version of browser"],
             "AppVersion": ["app version"],
+            "AppStatus": ["app (status|state)"],
+            "AppID": ["app(-| )ID", "app identifier"],
             "ActivationTime": ["activation time", "activation date"],
             "PartnerApp": ["partner app", "third(-| )party app"],
             "InternetServiceProvider": ["internet service provider", "\\bISP\\b"],
@@ -136,6 +143,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(?<!media )network(.){0,20}(data|information)",
                 "network activity",
             ],
+            "NetworkStatus": ["network (status|state)"],
+            "NetworkOperator": ["network operator"],
             "CustomerProprietaryNetworkInformation": [
                 "customer proprietary network information",
                 "\\bCPNI\\b",
@@ -144,11 +153,13 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "other electronic network activity information",
                 "\\bOENAI\\b",
             ],
+            "SMSStorage": ["SMS storage"],
             "MobileNetworkData": ["mobile network(.){0,20}(data|information)"],
             "MobileNetworkCode": ["mobile network code"],
             "MobileCountryCode": ["mobile country code"],
             "ConnectionData": ["connection(.){0,20}(data|information)"],
             "DataAmount": ["data amount", "amount of data", "network bandwidth usage"],
+            "NumberOfRequests": ["number of requests", "requests made"],
             "WiFiData": [
                 "Wi(-)?Fi (data|information)",
                 "information about(.){0,20}wi(-)?fi",
@@ -158,13 +169,18 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "SSID": ["SSID", "wi(-)?fi(.){0,20}name", "network name", "wi(-)?fi id"],
             "SignalStrength": ["signal strength", "connectivity stability"],
             "InternetSpeed": ["internet speed", "network speed"],
+            "KeypadInformation": [
+                "keypad (information|data)",
+                "information about(.){0,20}keypad",
+            ],
             "UsageData": [
-                "usage(.){0,20}(data|information|behavior)",
+                "usage(.){0,20}(data|information|behavior|report|detail|pattern|statistic|history)",
                 "(?<!network )usage statistics",
                 "usage of (feature|service|product)",
                 "(your|user(s')?) behavior",
                 "(device|product|app|site) usage",
                 "device activity",
+                "activity data",
                 "actions of(.){0,20}(user|you|visitor|customer)",
                 "track(.){0,20}usage",
                 "(?<!network )activity(.){0,20}(data|information)",
@@ -185,6 +201,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "length of visit",
                 "access duration",
             ],
+            "DownloadHistory": ["download history"],
             "EngagementMetrics": ["engagement (data|information|metric|statistic)"],
             "TelemetryData": ["telemetry (data|information)"],
             "PerformanceData": [
@@ -195,9 +212,14 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "DeviceStatistics": ["device stat(s|istics)"],
             "DeviceInteractions": ["device interaction"],
             "SettingsData": ["settings"],
-            "UserPreferences": ["(user|your) preference", "preferences"],
+            "UserPreferences": ["(user|your|personal) preference", "preferences"],
             "FontSize": ["font size"],
-            "DeviceState": ["device (state|status)"],
+            "DeviceState": [
+                "device (state|status)",
+                "(state|status) of (device|product)",
+                "status information about(.){0,20}device(s)?",
+                "on/off (status|setting)",
+            ],
             "OnlineStatus": ["online status"],
             "BatteryData": ["battery (data|information|status|level|life)"],
             "MemoryUsage": ["memory usage", "RAM usage"],
@@ -222,11 +244,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "ViewedContent": [
                 "viewed content",
                 "content you(.){0,20}(viewed|accessed|watched)",
+                "item(s)? viewed",
             ],
             "VisitedPages": [
                 "visited page",
-                "page(s)?(.){0,20}(visited|viewed|accessed)",
-                "page visit",
+                "(page|site)(s)?(.){0,20}(visit|viewed|accessed)",
             ],
             "ClickedLinks": ["clicked link", "link(.){0,20}click"],
             "MouseMovements": [
@@ -245,6 +267,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "LogData": ["log (data|information)", "\\btechnical logs\\b"],
             "LogFiles": ["log file"],
             "DeviceLogs": ["device log", "device event log(s)?\\b"],
+            "DeviceHistory": ["device history", "history of device"],
             "Errors": [
                 "(crash|error)(.){0,20}(data|information|report|event|message|log|details)",
                 "\\bcrashes\\b",
@@ -257,15 +280,23 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "security log",
             ],
             "ActivityLogs": [
-                "activity log",
+                "activity (log|history)",
                 "account activity",
                 "timestamp of(.){0,32}activity",
                 "\\bevent log(s)?\\b",
             ],
+            "ActivityStatus": [
+                "activity status",
+            ],
             "NotificationLogs": ["notification log(s)?\\b"],
             "MaintenanceLogs": ["maintenance log", "maintenance record"],
             "DrivingEvents": ["driving event"],
+            "AppEvents": ["app event"],
             "DeviceEvents": ["device event"],
+            "DeviceAlerts": [
+                "device alert",
+                "alert(s)? from device",
+            ],
             "DateTime": [
                 "(?<!up to )\\bdate\\b",
                 "(?<!to )(?<!real-)(?<!from )(?<!every )(?<!any )(?<!each )\\btime\\b",
@@ -277,7 +308,12 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(device|product) temperature",
                 "temperature of (device|product)",
             ],
-            "ScheduleTimes": ["schedule(.){0,20}time", "\\bschedules\\b"],
+            "ScheduleTimes": [
+                "schedule(.){0,20}time",
+                "\\bschedules\\b",
+                "scheduling (.){0,20}setup",
+                "wakeup time setup",
+            ],
             "Identifier": [
                 "identification number",
                 "personal identifier",
@@ -294,6 +330,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "device number",
                 "device fingerprint",
             ],
+            "RandomID": ["random ID", "random identifier"],
             "AdvertisingID": ["advertising ID", "advertising identifier", "IDFA"],
             "SessionID": ["session ID", "session identifier"],
             "UserID": ["user ID", "user identifier"],
@@ -311,6 +348,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Referrer": ["referrer", "referring(.){0,20}(URL|website)", "referer"],
             "HostName": ["host name", "hostname"],
             "URL": ["URL", "uniform resource locator", "hyperlink"],
+            "DomainName": ["domain name", "website domain"],
             "Clicks": ["clicks", "click data"],
             "ScrollData": ["scroll data", "\\bscroll(s)?\\b"],
             "Clickstream": ["click( )?stream"],
@@ -327,6 +365,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "AreaCode": ["area code", "zip code", "postal code", "postcode"],
             "City": ["\\bcity\\b"],
+            "Region": ["region", "state", "province", "county"],
             "Country": ["(?<!outside of your )(?<!to the )country"],
             "Language": ["language"],
             "Name": [
@@ -428,9 +467,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "tax ID",
                 "tax identification number",
                 "taxpayer identification number",
+                "\\bVAT (number|information|detail)\\b",
             ],
             "SocialSecurityNumber": ["social security number", "\\bSSN\\b"],
+            "UserInformation": ["user (information|data|detail)"],
             "AccountData": ["(?<!financial )account(.){0,20}(data|information|detail)"],
+            "AccountAge": ["account age", "how long you have had an account"],
+            "AccountNumber": ["(?<!bank )account number"],
+            "AccountSettings": ["account settings", "settings of account"],
+            "SubscriptionData": ["subscription (data|information|detail)"],
             "ProfileData": ["profile (data|information|detail)"],
             "ProfilePicture": ["profile picture", "profile photo", "avatar"],
             "Username": [
@@ -439,6 +484,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "login name",
                 "\\balias\\b",
                 "\\bdisplay name\\b",
+            ],
+            "SocialMediaDetails": [
+                "social media(.){0,20}(data|information|detail)",
+                "information about(.){0,20}social media",
             ],
             "ThirdPartyHandle": [
                 "social media(.){0,64}handle\\b",
@@ -472,6 +521,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "PrecipitationData": ["precipitation", "\\brain\\b"],
             "WindData": ["\\bwind\\b"],
             "AirQualityData": ["air quality"],
+            "WaterReadings": ["water reading(s)?", "water sensor reading(s)?"],
             "CarbonMonoxideData": ["carbon monoxide", "\\bCO(?!-)\\b"],
             "CarbonDioxideData": ["carbon dioxide", "CO2"],
             "SmokeData": ["smoke"],
@@ -519,11 +569,17 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "SnoringData": ["snoring"],
             "HeartRateData": ["heart rate", "heart-rate"],
             "StepCountData": ["step count", "step-count", "steps taken"],
+            "BodyWaterData": ["body water", "hydration data"],
             "FitnessGoals": ["fitness goal", "exercise goal", "activity goal"],
             "FitnessChallengeResults": [
                 "fitness challenge result",
                 "exercise challenge result",
                 "personal bests",
+            ],
+            "PhysicalActivity": [
+                "physical activity",
+                "exercise activity",
+                "workout activity",
             ],
             "WorkoutSummaries": ["\\bworkout (summaries|summary)"],
             "HeartRate": ["heart rate", "heart-rate"],
@@ -533,13 +589,14 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "BMI": ["\\bBMI\\bb", "body mass index"],
             "BodyFat": ["body fat"],
             "MuscleMass": ["muscle mass"],
+            "ProteinContent": ["protein content"],
             "MetabolicInformation": ["metabolic (information|data)"],
             "MenstrualCycleData": ["menstrual cycle", "period (data|information)"],
             "BoneDensity": ["bone density"],
             "DesignFiles": ["design file", "design document", "design specification"],
             "FinancialData": ["financial(.){0,20}(data|information|detail)"],
             "IncomeData": ["income(.){0,20}(data|information|detail)", "salary"],
-            "FinancialStatus": ["(financial|economic)(.){0,20}status"],
+            "FinancialStatus": ["(financial|economic)(.){0,20}(status|situation)"],
             "CreditScore": ["credit(.){0,20}status", "credit score", "credit history"],
             "MembershipData": [
                 "membership (data|information|details|level)",
@@ -548,6 +605,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Maps": [
                 "\\bmap(s)?\\b",
             ],
+            "MapAreaNames": ["area names of map", "map area name(s)?"],
             "AudioData": [
                 "(audio|sound|noise)(.){0,32}(data|signal|recording|information|content|file)",
                 "(recognition|detect)(.){0,48}(audio|sound|voice)",
@@ -579,6 +637,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Music": ["\\bmusic\\b", "musical (data|information|content|file)"],
             "OtherFileData": ["other file(s)?", "other document(s)?", "other content"],
             "TemporaryFiles": ["\\btemporary file(s)?\\b"],
+            "Files": ["file(s)?", "document(s)?"],
+            "GardenDesign": [
+                "(?=.*garden)(?=.*(data|information|detail|created|planned))"
+            ],
             "PersonalBehaviorData": [
                 "personal behavior",
                 "behavioral (data|information)",
@@ -609,6 +671,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(recognition|detect)(.){0,48}voice",
             ],
             "FingerprintData": ["fingerprint (data|information)"],
+            "PersonDetectionInformation": [
+                "person detection (data|information)",
+            ],
             "Submissions": ["\\bsubmission(s)?\\b"],
             "Feedback": ["\\bfeedback\\b(?! service)"],
             "Comments": ["\\bcomment(s)?\\b", "\\breplies you post\\b"],
@@ -625,12 +690,13 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "chat messages",
                 "\\bencrypted messages\\b",
                 "\\bcontent of(.){0,20}message",
+                "\\bprivate message(s)?\\b",
+                "\\bencrypted message(s)?\\b",
             ],
             "ChatHistory": [
-                "chat history",
-                "chat messages",
-                "\\bencrypted messages\\b",
-                "chat transcripts",
+                "\\bchat history",
+                "\\bchat transcript(s)?",
+                "message history",
             ],
             "MessageDrafts": [
                 "message draft(s)?\\b",
@@ -643,13 +709,32 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "communication history",
                 "ticket records",
                 "records(.){0,20}correspondence",
+                "\\bcommunications\\b",
+                "customer service interactions",
             ],
             "RegistrationData": ["registration (data|information|detail)"],
+            "ParticipationData": [
+                "participation (data|information|detail)",
+            ],
+            "NumberOfParticipations": [
+                "number of participations",
+                "number of times you have participated",
+            ],
+            "RewardHistory": [
+                "reward history",
+                "\\brewards(.){0,20}received",
+            ],
+            "FilmingEquipment": [
+                "filming equipment",
+            ],
             "SecurityInformation": [
                 "security(-related)?(.){0,12}(information|data|detail)",
                 "security status",
             ],
             "TamperStatus": ["tamper status", "tampering (data|information)"],
+            "SecurityQuestion": [
+                "security question",
+            ],
             "CredentialData": [
                 "\\bcredential(s)?\\b",
                 "(login|access|authentication) (data|information)",
@@ -668,9 +753,19 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "probate documentation",
                 "valid authori(s|z)ation",
             ],
+            "ConsentStatus": [
+                "records of any consent",
+                "consent (status|record|history)",
+            ],
+            "EmployeeRecord": [
+                "HR record(s)?",
+                "human resource record(s)?",
+                "personnel record(s)?",
+                "employee record(s)?",
+            ],
             "OrderData": [
                 "order (data|information)",
-                "purchas(e|ing)? (data|information)",
+                "purchas(e|ing)? (data|information|details)",
                 "information about(.){0,20}purchase",
             ],
             "OrderHistory": [
@@ -679,6 +774,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "purchase(.){0,20}history",
                 "products purchased",
                 "records of (orders|purchases)",
+                "list of (bought|ordered|purchased)",
             ],
             "OrderNumber": ["order number", "order(s)? id"],
             "InvoiceData": [
@@ -686,7 +782,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "invoicing (data|information|detail)",
             ],
             "PurchaseDate": ["purchase date", "order(s)? date", "order(s)? timestamp"],
-            "PaymentData": ["payment(.){0,20}(data|information|detail)"],
+            "PaymentData": ["payment(.){0,20}(data|information|detail|record)"],
             "PaymentAmount": [
                 "(payment|purchase) (amount|price)",
                 "amount paid",
@@ -700,8 +796,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "purchase receipt",
             ],
             "TransactionData": [
-                "(?!in such )transaction(.){0,20}(data|information|detail)"
+                "(?!in such )(transaction|purchase)(.){0,20}(data|information|detail)"
             ],
+            "TransactionHistory": ["transaction history"],
             "InAppTransactions": ["in(-| )app transaction", "in(-| )app purchase"],
             "ShippingInformation": ["(shipping|delivery)(.){0,20}(information|data)"],
             "CommercialInformation": ["commercial(.){0,20}(information|data|detail)"],
@@ -722,6 +819,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "payment(.){0,20}card(.){0,20}(information|data|detail)"
             ],
             "PaymentCardNumber": ["payment card number"],
+            "CardholderData": [
+                "cardholder (data|information|detail)",
+            ],
             "CardExpiryDate": [
                 "\\bcard expiry date\\b",
                 "\\bcard expiration date\\b",
@@ -732,7 +832,18 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "customer (record|data|information|detail)",
                 "information about(.){0,20}customer",
             ],
-            "ApplicationData": ["job application (data|information)", "\\bCV\\b"],
+            "ApplicationDocuments": [
+                "application (data|information|document)",
+            ],
+            "AppInformation": [
+                "app (data|information|detail)",
+                "(?=.*mobile)(?=.*application)(?=.*data)",
+            ],
+            "AppConfiguration": [
+                "app configuration",
+                "application configuration",
+                "app setup",
+            ],
             "Qualifications": ["qualification(s)?"],
             "CallStatus": ["call status"],
             "AmbientSound": ["ambient sound", "background sound"],
@@ -740,6 +851,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "user(-| )generated content",
                 "\\bUGC\\b",
                 "\\buser content\\b",
+            ],
+            "HistoricalDataRecord": [
+                "historical data record",
+                "historical (data|information|record|detail)",
+                "historical records of your data",
             ],
             "ForumPosts": ["(question|answer)(.){0,48}(forum)"],
             "SharedContent": ["shared content", "content you shared"],
@@ -754,8 +870,13 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "virus definition list",
             ],
             "DeviceAutomations": ["device automations"],
-            "ContestData": ["contest (data|information|entry|detail)"],
+            "ContestData": ["contest (data|information|entry|detail|entries)"],
             "BusinessInformation": ["\\bbusiness (information|data|detail)\\b"],
+            "CompanyInformation": [
+                "\\bcompany (information|data|detail)\\b",
+                "information about(.){0,20}company",
+            ],
+            "CompanyName": ["\\bcompany(.){0,20}name\\b", "\\bname of company\\b"],
             "NumberOfEmployees": ["\\bnumber of employees\\b", "\\bemployee count\\b"],
             "BusinessModel": ["\\bbusiness model\\b"],
         }
@@ -785,6 +906,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\byou(.){0,20}(provide|submit|enter|upload|give|share|send|post)",
                 "\\b(enter|submit|provide)(.){0,20}by you",
                 "\\bto (enter|submit|provide)\\b",
+                "\\b(login|register|sign up|sign in)\\b",
             ],
             "AutomaticallyCollected": [
                 "automatically(.){0,20}(collect|gather|track|record)",
@@ -821,6 +943,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(?=.*when)(?=.*interact)",
                 "(course of)(.){0,32}(relationship)",
                 "\\bduring.*\\b(use|visit)\\b",
+                "\\bcomplete a (form|survey|questionnaire)\\b",
+                "\\b(upload|submit|post)",
             ],
             "VoluntaryProvided": [
                 "\\bvoluntarily\\b",
@@ -839,6 +963,14 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "ServiceProvider": [
                 "service (provider|partner|process(er|or))",
                 "\\bthird(-| )party provider(s)?\\b",
+            ],
+            "InsuranceCompany": [
+                "(insurance)(.){0,64}(company|provider|partner|institution|companies)",
+            ],
+            "Employer": [
+                "\\bemployer\\b",
+                "(company|organization) you work for",
+                "your(.){0,20}company",
             ],
             "Manufacturer": ["manufacturer(s)?\\b", "company that made (the )?product"],
             "PaymentServiceProvider": [
@@ -860,7 +992,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "HostingProvider": ["(hosting)(.){0,64}(provider|partner|service)"],
             "StorageServiceProvider": [
                 "(storage)(.){0,64}(provider|partner|service)",
-                "data centers",
+                "data (center|centre)(s)?\\b",
                 "database management provider",
             ],
             "SocialMediaProvider": [
@@ -870,6 +1002,12 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "Vendor": ["\\bvendor\\b", "\\breseller\\b", "\\bdistributor\\b"],
             "Supplier": ["\\bsupplier(s)?\\b"],
+            "Customer": [
+                "\\bcustomer(s)?\\b",
+                "client(s)?",
+                "user(s)?",
+                "consumer(s)?",
+            ],
             "SubContractors": [
                 "\\bsub[- ]?contractor(s)?\\b",
                 "independent contractor",
@@ -897,7 +1035,6 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "MarketingAffiliate": [
                 "\\bmarketing affiliate(s)?\\b",
-                "\\bmarketing partner(s)?\\b",
                 "affiliate marketing (company|companies|entity|entities|partner|provider)",
             ],
             "AdvertisingAgency": [
@@ -908,6 +1045,12 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "AdvertisingNetwork": [
                 "\\badvertising network(s)?\\b",
                 "\\bad network(s)?\\b",
+                "\\bdata broker(s)?\\b",
+                "commercial list provider",
+            ],
+            "AdvertisingPartner": [
+                "\\badvertising partner(s)?\\b",
+                "\\bmarketing partner(s)?\\b",
             ],
             "SoftwareDeveloper": ["\\bsoftware developer(s)?\\b", "app developer(s)?"],
             "CustomerServiceProvider": [
@@ -990,7 +1133,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\baccountant(s)?\\b",
                 "\\baccounting (firm|service|partner)",
             ],
-            "Auditors": ["\\bauditor(s)?\\b"],
+            "Auditors": ["\\bauditor(s)?\\b", "third-party audit(s)?\\b"],
             "Lawyers": [
                 "\\blawyer(s)?\\b",
                 "\\battorney(s)?\\b",
@@ -1040,6 +1183,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "prosecutorial(.){0,20}(authority|authorities)",
                 "prosecutor(s)?",
             ],
+            "EmergencyServices": [
+                "\\bemergency (service|services)\\b",
+                "\\bfirst responder(s)?\\b",
+                "\\brelief organization(s)?\\b",
+            ],
+            "MunicipalAuthorities": [
+                "\\bmunicipal (authority|authorities|government)\\b",
+                "\\bcity (authority|authorities|government)\\b",
+            ],
             "RegulatoryAgencies": [
                 "\\bregulatory (agency|agencies|authority|authorities|body)\\b",
                 "\\bregulator(s)?\\b",
@@ -1086,6 +1238,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\baround the world\\b",
                 "global(.){0,20}(infrastructure|service|operation|presence|reach|coverage|facilit(y|ies))",
                 "\\boverseas\\b",
+                "third countr(y|ies)\\b",
             ],
             "Residence State": [
                 "\\b(residence|home) (state|country)\\b",
@@ -1098,8 +1251,25 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bnot in\\b",
                 "\\bout (of|the)\\b",
             ],
-            "AndOther": ["\\bother countr(y|ies)\\b"],
+            "AndOther": ["\\bother countr(y|ies)\\b", "\\bother state(s)?\\b"],
             "California": ["\\bcalifornia\\b"],
+            "Washington": ["\\bwashington\\b"],
+            "Colorado": ["\\bcolorado\\b"],
+            "Connecticut": ["\\bconnecticut\\b"],
+            "Florida": ["\\bflorida\\b"],
+            "Georgia": ["\\bgeorgia\\b"],
+            "Texas": ["\\btexas\\b"],
+            "Virginia": ["\\bvirginia\\b"],
+            "New Jersey": ["\\bnew jersey\\b"],
+            "Delaware": ["\\bdelaware\\b"],
+            "Maryland": ["\\bmaryland\\b"],
+            "Oregon": ["\\boregon\\b"],
+            "Nevada": ["\\bnevada\\b"],
+            "Minnesota": ["\\bminnesota\\b"],
+            "New York": ["\\bnew york\\b"],
+            "North Carolina": ["\\bnorth carolina\\b"],
+            "Utah": ["\\butah\\b"],
+            "Nebraska": ["\\bnebraska\\b"],
             "United States": [
                 "\\bunited states\\b",
                 "\\busa\\b",
@@ -1320,7 +1490,6 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Mongolia": ["\\bmongolia\\b"],
             "Armenia": ["\\barmenia\\b"],
             "Azerbaijan": ["\\bazerbaijan\\b"],
-            "Georgia": ["\\bgeorgia\\b"],
         }
     ),
     company=AttributePattern.from_dict(
@@ -1435,6 +1604,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "SAP": ["\\bsap\\b"],
             "Webhelp": ["\\bwebhelp\\b"],
             "GEP": ["\\bgep\\b"],
+            "CloudSecurityAlliance": ["\\bcloud security alliance\\b"],
         }
     ),
     provide_service=AttributePattern.from_dict(
@@ -1549,6 +1719,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\baccess(.){0,20}reliability",
                 "\\bcredit evaluation purpos",
             ],
+            "FraudRiskScoring": [
+                "\\bfraud risk scoring\\b",
+                "\\bassess(ing)?(.){0,20}fraud risk\\b",
+                "\\bevaluate(ing)?(.){0,20}fraud risk\\b",
+            ],
             "Comfort": [
                 "\\bkeep(.){0,32}comfort",
                 "(maintain|provide)(.){0,64}comfort",
@@ -1585,6 +1760,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bgeo(-)?targeting\\b",
                 "(provide|offer|deliver)(.){0,32}(content|service)(.){0,32}(in|for)(.){0,32}(your|my)?(location|region|country|language)",
                 "\\baddress regional\\b",
+            ],
+            "Troubleshoot": [
+                "\\btroubleshoot(ing)?\\b",
+                "(identify|resolve|fix|handle|manage|troubleshoot)(ing)?(.){0,32}(issue|problem|error|bug)",
             ],
             "EstimateBodyMetrics": [
                 "\\bestimate(.){0,48}(body|health|fitness)(.){0,48}metrics"
@@ -1731,6 +1910,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(change|update)(s)?(.){0,32}(service|feature|product)(s)?\\b",
                 "\\binformation about (how|when|what|where|why)\\b",
             ],
+            "UpdateNotifications": [
+                "\\b(update|upgrade) notification(s)?\\b",
+                "\\bnotify(ing)? you (about|of)(.){0,32}(update|upgrade)\\b",
+            ],
             "Notifications": [
                 "\\b(push-)?notification(s)?\\b",
                 "\\balert(s)?\\b",
@@ -1765,7 +1948,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bcontact form\\b",
                 "\\b(solve|answer|respond|handl(e|ing)|deal(ing)?)(.){0,32}(enquirie|question|query|queries|issue|request)(s)?\\b",
                 "support communication",
-                "call(-| )?centre(s)?\\b",
+                "call(-| )?(centre|center)(s)?\\b",
                 "\\bhelp desk\\b",
                 "support (purpose|request|issue|question)(s)?\\b",
                 "\\b(grant|deny)(.){0,20}request",
@@ -1777,6 +1960,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\btechnical help\\b",
                 "\\btroubleshoot (any |your )?(problem|issue)(s)?\\b",
             ],
+            "FanPage": [
+                "\\bfan page(s)?\\b",
+            ],
             "ChatBot": ["\\bchat(-)?bot\\b", "\\bvirtual assistant\\b"],
             "LiveChat": ["\\blive chat\\b", "\\breal[- ]time chat\\b"],
             "AccountVerification": [
@@ -1784,13 +1970,14 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bconfirm(.){0,20}creation(.){0,20}account",
             ],
             "OrderCommunication": [
-                "\\b(order|shipping) (confirmation|notification)(s)?\\b",
+                "\\b(order|shipping|delivery) (confirmation|notification)(s)?\\b",
                 "\\bconfirm(ing)?(.){0,20}order(s)?\\b",
                 "(detail|information|message|notification|alert|notice)(s)?(.){0,20}about( your)? order",
                 "(informing|notify)(.){0,48}(order|shipping)\\b",
                 "(?=.*\\breturn\\b)(?=.*(instruction|detail|information))",
                 "communicati(ng|ion)(.){0,32}(order|shipping|delivery)",
                 "\\bquestion(s)? about (your )?order(s)?\\b",
+                "procurement-related communication",
             ],
             "BillingInquiries": [
                 "\\b(billing|invoice|payment)( )?(inquiry|question|issue|problem)(s)?\\b",
@@ -1819,7 +2006,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "community (platform|page|site|forum)",
                 "company representation page",
             ],
-            "ProductSafety": ["\\bsecurity alert(s)?\\b"],
+            "ProductSafety": ["\\b(security|safety) alert(s)?\\b"],
             "EmergencyContact": ["(?=.*emergency)(?=.*(notify|contact|alert|reach))"],
             "ErrorReporting": [
                 "(notif(i|y)|alert|report)(.){0,32}(error|issue|problem)(s)?",
@@ -1831,6 +2018,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "BirthdayGreeting": ["(?=.*birthday)(?=.*(greeting|message))"],
             "Membership": [
                 "(?=.*(membership|subscription))(?=.*(contact|communication|message|notification|e(-)?mail|alert|detail|notice))"
+            ],
+            "LoyaltyProgram": [
+                "(?=.*loyalty)(?=.*(contact|communication|message|notification|e(-)?mail|alert|detail|notice))"
             ],
         }
     ),
@@ -1866,6 +2056,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "two step verification",
             ],
             "HashedPassword": ["hashed password", "password hashing"],
+            "MutualAuthentication": ["\\bmutual(.){0,20}authentication\\b"],
+            "ProhibitedDefaultPassword": [
+                "(?=.*\\b(prohibit|not allow|disallow|forbid)\\b)(?=.*\\b(default|standart)password\\b)"
+            ],
         }
     ),
     cont_sec=AttributePattern.from_dict(
@@ -1902,6 +2096,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "TrustedIndividual": [
                 "\\b(trusted|selected) (individual|person|contact)(s)?\\b"
             ],
+            "DesignatedAdministrator": ["\\bdesignated administrator\\b"],
+            "FamilyMember": ["\\bfamily member(s)?\\b", "\\brelative(s)?\\b"],
         }
     ),
     profiling=AttributePattern.from_dict(
@@ -1924,6 +2120,17 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "no automated decision(-| )making",
                 "not subject(ed)?to",
             ]
+        }
+    ),
+    certifications=AttributePattern.from_dict(
+        {
+            "ISO/IEC 27001:2013": ["ISO/IEC 27001:2013"],
+            "ISO/IEC 27701:2019": ["ISO/IEC 27701:2019"],
+            "ISO/IEC 27018:2019": ["ISO/IEC 27018:2019"],
+            "SOC 2 Type II": ["SOC 2 Type II"],
+            "PCI DSS": ["PCI DSS"],
+            "ETSI EN 303 645": ["ETSI EN 303 645"],
+            "CSA STAR": ["CSA STAR"],
         }
     ),
 )

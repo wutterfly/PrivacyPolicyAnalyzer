@@ -166,7 +166,7 @@ def _train_model_on_dataset(
 
     train_s, test_s, eval_s = train_test_eval_split
     assert train_s + test_s + eval_s == 1.0
-    logging.info(
+    logger.info(
         "Dataset split: train=%.2f%% test=%.2f%% eval=%.2f%%",
         train_s * 100,
         test_s * 100,
