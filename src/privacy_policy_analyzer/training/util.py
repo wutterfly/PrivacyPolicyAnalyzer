@@ -19,7 +19,10 @@ def set_global_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def get_optimal_precision():
+DEBERTA_MODELS = ("deberta-v3", "deberta-v2")
+
+
+def get_optimal_precision(model_name: str):
     """
     Determine optimal precision with detailed GPU information.
     """
@@ -32,22 +35,46 @@ def get_optimal_precision():
 
     info = f"GPU: {device_name} (compute capability {major}.{minor})"
 
+    # DeBERTa-v3 models have known issues with fp16 on certain architectures, so we prioritize bf16 if available, otherwise fall back to fp32.
+    is_deberta = any(m in model_name.lower() for m in DEBERTA_MODELS)
+    if is_deberta:
+        if major >= 8:
+            # bf16 is safe and efficient
+            return {
+                "precision": {"bf16": True},
+                "optim": "adamw_bnb_8bit",
+                "info": f"{info} - DeBERTa-v3: BF16 (fp16 unstable for this arch)",
+            }
+        else:
+            # Volta/Turing: no bf16, must fall back to fp32
+            return {
+                "precision": {},
+                "optim": "adamw_bnb_8bit",
+                "info": f"{info} - DeBERTa-v3: FP32 forced (fp16 broken, bf16 unavailable)",
+            }
+
     # Ampere and newer (A100, A10, RTX 30xx/40xx, etc.)
     if major >= 8:
         return {
             "precision": {"bf16": True},
-            "info": f"{info} - Using BF16 (better numeric stability)",
+            "optim": "adamw_bnb_8bit",
+            "info": f"{info} - Using BF16 (better numeric stability) & AdamW with 8-bit state",
         }
 
     # Volta and Turing (V100, T4, RTX 20xx, etc.)
     elif major >= 7:
-        return {"precision": {"fp16": True}, "info": f"{info} - Using FP16"}
+        return {
+            "precision": {"fp16": True},
+            "optim": "paged_adamw_32bit",
+            "info": f"{info} - Using FP16 & AdamW with 32-bit state",
+        }
 
     # Pascal and older
     else:
         return {
             "precision": {},
-            "info": f"{info} - Using FP32 (mixed precision not recommended)",
+            "optim": "adamw_torch",
+            "info": f"{info} - Using FP32 (mixed precision not recommended) & AdamW with PyTorch optimizers",
         }
 
 

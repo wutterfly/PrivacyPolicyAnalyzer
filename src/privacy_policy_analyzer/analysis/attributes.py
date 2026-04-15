@@ -28,6 +28,29 @@ class AttributePattern:
                     break
         return matched_attributes
 
+@dataclass
+class PatternStats:
+    count: int
+    patterns: int
+
+@dataclass
+class AttributeStats:
+    data_type: PatternStats
+    track_conv: PatternStats
+    method_source: PatternStats
+    descriptive: PatternStats
+    official: PatternStats
+    country: PatternStats
+    company: PatternStats
+    provide_service: PatternStats
+    communication: PatternStats
+    tech_priv: PatternStats
+    tech_sec: PatternStats
+    cont_sec: PatternStats
+    chosen: PatternStats
+    profiling: PatternStats
+    automated_decision: PatternStats
+
 
 @dataclass
 class AttributePatterns:
@@ -49,6 +72,8 @@ class AttributePatterns:
     profiling: AttributePattern
     automated_decision: AttributePattern
 
+
+    def get_stats(self):
 
 def extract_attributes(
     entries: list[RawEntry], topic: list[str], content: str, patterns: AttributePattern

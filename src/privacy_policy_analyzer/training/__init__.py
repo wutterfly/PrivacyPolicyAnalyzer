@@ -6,6 +6,7 @@ from time import perf_counter
 from typing import Any, Literal
 
 import numpy as np
+import torch
 from datasets import Dataset, DatasetDict
 from sklearn.metrics import (
     accuracy_score,
@@ -225,10 +226,12 @@ def _train_model_on_dataset(
         id2label=id2label,
         label2id=label2id,
         ignore_mismatched_sizes=True,
+        torch_dtype=torch.float32,
     ).to(device)
 
     # Training Configuration
-    config = get_optimal_precision()
+    config = get_optimal_precision(model_name)
+    logger.info("Optimal precision config: %s", config["info"])
     training_args = TrainingArguments(
         output_dir=str(model_output_dir),
         eval_strategy="epoch",
