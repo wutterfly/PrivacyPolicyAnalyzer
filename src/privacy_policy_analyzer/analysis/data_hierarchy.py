@@ -69,6 +69,14 @@ class HierarchyEntry:
             else None,
         }
 
+    def collect_all_types(self) -> set[str]:
+        """Recursively collect all types in the hierarchy"""
+        types = set(self.types)
+        if self.children:
+            for child in self.children:
+                types.update(child.collect_all_types())
+        return types
+
 
 @dataclass
 class DataHierarchy:
@@ -129,6 +137,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["BodyFat"], children=None),
                             HierarchyEntry(types=["MuscleMass"], children=None),
                             HierarchyEntry(types=["ProteinContent"], children=None),
+                            HierarchyEntry(types=["BodyWaterData"], children=None),
                             HierarchyEntry(
                                 types=["MetabolicInformation"], children=None
                             ),
@@ -299,6 +308,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                     HierarchyEntry(types=["TaxID"], children=None),
                                 ],
                             ),
+                            HierarchyEntry(types=["ProofOfIdentity"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -693,6 +703,9 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                         types=["PersonDetectionInformation"],
                                         children=None,
                                     ),
+                                    HierarchyEntry(
+                                        types=["WaterReadings"], children=None
+                                    ),
                                 ],
                             ),
                             HierarchyEntry(types=["MotionData"], children=None),
@@ -800,6 +813,8 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["Ratings"], children=None),
                             HierarchyEntry(types=["Testimonial"], children=None),
                             HierarchyEntry(types=["ListedItems"], children=None),
+                            HierarchyEntry(types=["ForumPosts"], children=None),
+                            HierarchyEntry(types=["SharedContent"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -882,6 +897,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(
                         types=["TemporaryData", "TemporaryFiles"], children=None
                     ),
+                    HierarchyEntry(types=["HistoricalDataRecord"], children=None),
                     HierarchyEntry(types=["SoftwareVersion"], children=None),
                     HierarchyEntry(
                         types=["SubscriptionData"],

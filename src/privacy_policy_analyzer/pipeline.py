@@ -85,6 +85,8 @@ class PolicyResult:
     text: list[str]
     analyzed: list[StructuredEntry]
 
+    stats: dict
+
     @staticmethod
     def from_json(data: dict[str, Any]) -> "PolicyResult":
         name: str = data["name"]
@@ -104,6 +106,8 @@ class PolicyResult:
 
         analyzed = [StructuredEntry.from_dict(item) for item in analyzed_raw]
 
+        stats = data.get("stats", {})
+
         return PolicyResult(
             name=name,
             source=source,
@@ -114,6 +118,7 @@ class PolicyResult:
             harmonized=harmonized,
             text=text,
             analyzed=analyzed,
+            stats=stats,
         )
 
     def to_json(self) -> dict[str, Any]:
@@ -127,6 +132,7 @@ class PolicyResult:
             "harmonized": [asdict(entry) for entry in self.harmonized],
             "text": self.text,
             "analyzed": [asdict(entry) for entry in self.analyzed],
+            "stats": self.stats,
         }
 
 
@@ -237,7 +243,7 @@ class Pipeline:
         entries = mapping.build_structured_entries()
         propagate_headers(entries, skips=DEFAULT_SKIPS)
         entries = combine_table_rows(entries)
-        smooth_context(entries)
+        smoothing_stats = smooth_context(entries)
 
         return PolicyResult(
             name=policy.name,
@@ -249,6 +255,7 @@ class Pipeline:
             harmonized=policy.harmonized,
             text=policy.text,
             analyzed=entries,
+            stats={"smoothing": smoothing_stats},
         )
 
     def run_with_url(

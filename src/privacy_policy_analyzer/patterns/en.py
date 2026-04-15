@@ -201,6 +201,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "length of visit",
                 "access duration",
             ],
+            "DeviceInteractions": [
+                "device interaction",
+                "interaction with (device|product)",
+                "interactions with (device|product)",
+            ],
+            "AppInteraction": [
+                "app interaction",
+                "interaction with app",
+                "interactions with app",
+            ],
             "DownloadHistory": ["download history"],
             "EngagementMetrics": ["engagement (data|information|metric|statistic)"],
             "TelemetryData": ["telemetry (data|information)"],
@@ -210,8 +220,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "DiagnosticData": ["diagnostic(.){0,20}(data|information)"],
             "StatisticalData": ["statistical (data|information)"],
             "DeviceStatistics": ["device stat(s|istics)"],
-            "DeviceInteractions": ["device interaction"],
             "SettingsData": ["settings"],
+            "ConfigurationData": ["configuration (data|information)"],
             "UserPreferences": ["(user|your|personal) preference", "preferences"],
             "FontSize": ["font size"],
             "DeviceState": [
@@ -345,6 +355,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "IMEI": ["IMEI", "International Mobile Equipment Identity"],
             "IMSI": ["IMSI", "International Mobile Subscriber Identity"],
             "SIMInformation": ["SIM(.){0,20}(data|information)"],
+            "WebsiteInformation": ["website (information|data)"],
             "Referrer": ["referrer", "referring(.){0,20}(URL|website)", "referer"],
             "HostName": ["host name", "hostname"],
             "URL": ["URL", "uniform resource locator", "hyperlink"],
@@ -606,6 +617,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bmap(s)?\\b",
             ],
             "MapAreaNames": ["area names of map", "map area name(s)?"],
+            "MediaData": [
+                "(media|multimedia)(.){0,20}(data|information|content|file)",
+            ],
             "AudioData": [
                 "(audio|sound|noise)(.){0,32}(data|signal|recording|information|content|file)",
                 "(recognition|detect)(.){0,48}(audio|sound|voice)",
@@ -636,6 +650,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "Music": ["\\bmusic\\b", "musical (data|information|content|file)"],
             "OtherFileData": ["other file(s)?", "other document(s)?", "other content"],
+            "TemporaryData": ["temporary (data|information|file(s)?)"],
             "TemporaryFiles": ["\\btemporary file(s)?\\b"],
             "Files": ["file(s)?", "document(s)?"],
             "GardenDesign": [
@@ -753,6 +768,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "probate documentation",
                 "valid authori(s|z)ation",
             ],
+            "ProofOfIdentity": [
+                "proof of identity",
+                "identity documentation",
+                "official identification",
+            ],
             "ConsentStatus": [
                 "records of any consent",
                 "consent (status|record|history)",
@@ -858,6 +878,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "historical records of your data",
             ],
             "ForumPosts": ["(question|answer)(.){0,48}(forum)"],
+            "Testimonial": [
+                "\\btestimonial(s)?\\b",
+            ],
+            "Ratings": ["\\brating(s)?\\b", "star rating(s)?\\b"],
             "SharedContent": ["shared content", "content you shared"],
             "ListedItems": ["listed item(s)?\\b", "\\bitems you have listed"],
             "Likes": ["\\blikes\\b"],
@@ -956,6 +980,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Buying": [
                 "(?=.*\\bwe\\b)(?=.*\\b(purchase|buy|acquire)\\b)(?=.*\\b(data|information)\\b)"
             ],
+            "Feedback": [
+                "\\bfeedback\\b",
+                "\\bopinion(s)?\\b",
+                "\\breview(s)?\\b",
+            ],
         }
     ),
     descriptive=AttributePattern.from_dict(
@@ -988,6 +1017,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "TransportCompany": [
                 "(shipping|delivery|logistic|freight)(.){0,64}(company|service|provider|partner)",
                 "\\bcourier",
+            ],
+            "FulfillmentCenter": [
+                "(fulfillment|fulfilment)(.){0,64}(center|centre|service|provider|partner)"
             ],
             "HostingProvider": ["(hosting)(.){0,64}(provider|partner|service)"],
             "StorageServiceProvider": [
@@ -1196,6 +1228,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bregulatory (agency|agencies|authority|authorities|body)\\b",
                 "\\bregulator(s)?\\b",
             ],
+            "CertificationBody": [
+                "\\bcertification (body|bodies)\\b",
+                "\\bcertifying (body|authority)\\b",
+            ],
             "GovernmentAgencies": [
                 "\\bgovernment (agency|agencies|authority|authorities|body)\\b",
                 "public authorit(y|ies)",
@@ -1213,7 +1249,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\border control\\b",
             ],
             "TaxAuthorities": ["\\btax (authority|authorities)\\b"],
-            "FinancialRegulator": [
+            "FinancialRegulators": [
                 "\\bfinancial regulator(s)?\\b",
                 "\\bfinancial supervisory authority(ies)?\\b",
             ],
@@ -1240,7 +1276,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\boverseas\\b",
                 "third countr(y|ies)\\b",
             ],
-            "Residence State": [
+            "ResidenceState": [
                 "\\b(residence|home) (state|country)\\b",
                 "\\b(state|country) of residence\\b",
                 "\\b(state|country) where you live\\b",
@@ -1285,6 +1321,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bbritain\\b",
             ],
             "Canada": ["\\bcanada\\b"],
+            "Québec": ["\\bqu[eé]bec\\b"],
             "Australia": ["\\baustralia\\b"],
             "New Zealand": ["\\bnew zealand\\b"],
             "Germany": ["\\bgermany\\b"],
@@ -1541,7 +1578,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Yandex": ["\\byandex\\b"],
             "Tapjoy": ["\\btapjoy\\b"],
             "AdColony": ["\\badcolony\\b"],
-            "IndusAppstore": ["\\bindusappstore\\b"],
+            "Indus Appstore": ["\\bindusappstore\\b"],
             "Adjust": ["\\badjust\\b"],
             "Appsflyer": ["\\bappsflyer\\b"],
             "Affise": ["\\baffise\\b"],
@@ -1567,8 +1604,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Alibaba": ["\\balibaba\\b", "\\balipay\\b"],
             "Alipay": ["\\balipay\\b"],
             "Visa": ["\\bvisa\\b"],
-            "MasterCard": ["\\bmastercard\\b"],
-            "GarminPay": ["\\bgarmin( )?pay\\b"],
+            "Mastercard": ["\\bmastercard\\b"],
+            "Garmin Pay": ["\\bgarmin( )?pay\\b"],
             "Venmo": ["\\bvenmo\\b"],
             "6Sense": ["\\b6sense\\b"],
             "TransUnion": ["\\btransunion\\b", "\\bsontiq\\b"],
@@ -1597,14 +1634,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Datadog": ["\\bdatadog\\b"],
             "Bazaarvoice": ["\\bbazaarvoice\\b"],
             "StampedIO": ["\\bstamped\\.io\\b"],
-            "RapidResponseMonitoringServices": [
+            "Rapid Response Monitoring Services": [
                 "\\brapid response monitoring services\\b"
             ],
             "Jaggaer": ["\\bjaggaer\\b"],
             "SAP": ["\\bsap\\b"],
             "Webhelp": ["\\bwebhelp\\b"],
             "GEP": ["\\bgep\\b"],
-            "CloudSecurityAlliance": ["\\bcloud security alliance\\b"],
+            "Cloud Security Alliance": ["\\bcloud security alliance\\b"],
+            "Team Internet AG": ["\\bteam internet ag\\b"],
         }
     ),
     provide_service=AttributePattern.from_dict(
@@ -1649,6 +1687,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bloan(ing)?\\b",
                 "\\bcredit(ing)?\\b",
                 "loan eligibility decision(s)?",
+            ],
+            "RiskAssessment": [
+                "\\brisk assessment\\b",
+                "\\bassess(ing)?(.){0,20}risk\\b",
+                "\\bevaluate(ing)?(.){0,20}risk\\b",
             ],
             "Insurance": [
                 "\\binsurance\\b",
@@ -1929,9 +1972,6 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "mandatory (service|system) notification(s)?"
             ],
             "Reminders": ["\\breminder(s)?\\b", "\\bremind you\\b"],
-            "Testimonial": [
-                "\\btestimonial(s)?\\b",
-            ],
             "Feedback": [
                 "\\bfeedback\\b",
                 "\\bsuggestion(s)?\\b",
@@ -2102,7 +2142,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     ),
     profiling=AttributePattern.from_dict(
         {
-            "NoProfiling": [
+            "NotProfiling": [
                 "not performed",
                 "not engage",
                 "(not|other then)(.){0,64}(infer characteristics|profiling)",
@@ -2131,6 +2171,28 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "PCI DSS": ["PCI DSS"],
             "ETSI EN 303 645": ["ETSI EN 303 645"],
             "CSA STAR": ["CSA STAR"],
+        }
+    ),
+    user_responsibility=AttributePattern.from_dict(
+        {
+            "BystanderNotice": [
+                "\\bbystander notice\\b",
+                "notice to bystanders",
+                "inform people around you",
+                "they are also aware",
+                "(?=.*(inform|notify|make aware))(?=.*(people around you|bystanders|others|those around you|anyone))",
+                "(display|post)(.){0,32}(signage|notice|warning)",
+                "\\bprovide(.){0,20}notice\\b",
+                "responsible for (notifying|inform) other(s)?",
+            ],
+            "ParentalResponsibility": [
+                "responsible for supervising(.){0,20}minor\\b",
+                "(?=.*(child|minor|under 18|under the age of majority))(?=.*(responsible|responsibility|liable|liability))\\b",
+            ],
+            "ThirdPartyData": [
+                "data belonging to (third parties|other)",
+                "(other|those) (individual|people|user|person)(.){0,20}(information|data|detail)",
+            ],
         }
     ),
 )

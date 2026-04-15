@@ -1,3 +1,4 @@
+from collections import Counter
 from copy import deepcopy
 from dataclasses import dataclass
 
@@ -189,9 +190,11 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
     return combined_entries
 
 
-def smooth_context(entries: list[StructuredEntry]):
+def smooth_context(entries: list[StructuredEntry]) -> dict[str, int]:
     if len(entries) < 3:
-        return
+        return {}
+
+    added_contexts = Counter()
 
     for i in range(1, len(entries) - 1):
         prev_entry = entries[i - 1]
@@ -202,3 +205,9 @@ def smooth_context(entries: list[StructuredEntry]):
             intersect = set(prev_entry.contexts).intersection(set(next_entry.contexts))
             if intersect:
                 current_entry.contexts = list(intersect)
+                added_contexts.update(intersect)
+
+    smooth_stats = dict(added_contexts)
+    smooth_stats["total"] = sum(added_contexts.values())
+
+    return smooth_stats

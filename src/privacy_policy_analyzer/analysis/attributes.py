@@ -28,28 +28,10 @@ class AttributePattern:
                     break
         return matched_attributes
 
-@dataclass
-class PatternStats:
-    count: int
-    patterns: int
-
-@dataclass
-class AttributeStats:
-    data_type: PatternStats
-    track_conv: PatternStats
-    method_source: PatternStats
-    descriptive: PatternStats
-    official: PatternStats
-    country: PatternStats
-    company: PatternStats
-    provide_service: PatternStats
-    communication: PatternStats
-    tech_priv: PatternStats
-    tech_sec: PatternStats
-    cont_sec: PatternStats
-    chosen: PatternStats
-    profiling: PatternStats
-    automated_decision: PatternStats
+    def get_stats(self) -> dict[str, int]:
+        count: int = len(self.patterns)
+        patterns: int = sum(len(pats) for pats in self.patterns.values())
+        return {"count": count, "patterns": patterns}
 
 
 @dataclass
@@ -72,9 +54,28 @@ class AttributePatterns:
     profiling: AttributePattern
     automated_decision: AttributePattern
     certifications: AttributePattern
+    user_responsibility: AttributePattern
 
+    def get_stats(self) -> dict[str, dict[str, int]]:
+        return {
+            "data_type": self.data_type.get_stats(),
+            "track_conv": self.track_conv.get_stats(),
+            "method_source": self.method_source.get_stats(),
+            "descriptive": self.descriptive.get_stats(),
+            "official": self.official.get_stats(),
+            "country": self.country.get_stats(),
+            "company": self.company.get_stats(),
+            "provide_service": self.provide_service.get_stats(),
+            "communication": self.communication.get_stats(),
+            "tech_priv": self.tech_priv.get_stats(),
+            "tech_sec": self.tech_sec.get_stats(),
+            "cont_sec": self.cont_sec.get_stats(),
+            "chosen": self.chosen.get_stats(),
+            "profiling": self.profiling.get_stats(),
+            "automated_decision": self.automated_decision.get_stats(),
+            "certifications": self.certifications.get_stats(),
+        }
 
-    def get_stats(self):
 
 def extract_attributes(
     entries: list[RawEntry], topic: list[str], content: str, patterns: AttributePattern
