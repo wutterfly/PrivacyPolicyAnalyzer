@@ -105,7 +105,7 @@ def collect_information(
     extract_attributes(
         entries,
         topic=["Audience"],
-        content="SpecificCountry",
+        content="Country",
         patterns=pattern_config.country,
     )
     extract_attributes(
@@ -138,13 +138,29 @@ def collect_information(
         content="ContractualSecurityMeasures",
         patterns=pattern_config.cont_sec,
     )
-    # TODO: Certification
-    #
+    extract_attributes(
+        entries,
+        topic=["Security/Privacy"],
+        content="Certifications",
+        patterns=pattern_config.certifications,
+    )
 
     extract_duration(
         entries,
         topic=["Retention"],
         content="StorageDuration",
+        patterns=duration_pattern_config,
+    )
+    extract_duration(
+        entries,
+        topic=["Deletion"],
+        content="Inactivity",
+        patterns=duration_pattern_config,
+    )
+    extract_duration(
+        entries,
+        topic=["Deletion"],
+        content="WithinTimePeriod",
         patterns=duration_pattern_config,
     )
     extract_date(
@@ -168,7 +184,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     audience=ModelConfig(
         model_name="Wutterfly/albert-privacy-policy-content-audience",
-        thresholds={"SpecificCountry": 0.4},
+        thresholds={"Country": 0.4},
     ),
     contact=ModelConfig(
         model_name="Wutterfly/roberta-privacy-policy-content-contact",

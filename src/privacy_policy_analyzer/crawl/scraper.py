@@ -5,6 +5,7 @@ import threading
 import time
 import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from enum import StrEnum
 from html import unescape
 from http.cookiejar import CookieJar
 from urllib import request
@@ -32,13 +33,42 @@ HEADERS: dict[str, str] = {
     "sec-fetch-mode": "navigate",
     "sec-fetch-site": "none",
     "sec-fetch-user": "?1",
+}
+
+
+HEADERS_EN_US: dict[str, str] = {
+    "Accept-Language": "en-US,en;q=0.5",
     "Cookie": "chosen_country=US;rs_geo=US;rw_locale=%2Fus%2Fen;",
 }
 
-
-HEADERS_EN: dict[str, str] = {
-    "Accept-Language": "en-US,en;q=0.5",
+HEADERS_EN_GB: dict[str, str] = {
+    "Accept-Language": "en-GB,en;q=0.5",
+    "Cookie": "chosen_country=GB;rs_geo=GB;rw_locale=%2Fgb%2Fen;",
 }
+
+HEADERS_DE: dict[str, str] = {
+    "Accept-Language": "de-DE,de;q=0.5",
+    "Cookie": "chosen_country=DE;rs_geo=DE;rw_locale=%2Fde%2Fde;",
+}
+
+
+class ScraperLang(StrEnum):
+    """Enumeration of supported languages."""
+
+    EN_US = "en-US"
+    EN_GB = "en-GB"
+    DE_DE = "de-DE"
+
+    @staticmethod
+    def from_str(s: str) -> "ScraperLang":
+        if s.lower() == "en-US":
+            return ScraperLang.EN_US
+        elif s.lower() == "en-GB":
+            return ScraperLang.EN_GB
+        elif s.lower() == "de-DE":
+            return ScraperLang.DE_DE
+
+        assert False, f"Unsupported language: {s}"
 
 
 class WebScraper:
@@ -46,13 +76,14 @@ class WebScraper:
     playwright_timeout: int
     min_content_length: int
     playwright_wait_after_load: float
-    language_setting: str
+    language_setting: ScraperLang
 
     headers: dict[str, str]
     opener: request.OpenerDirector
 
     def __init__(
         self,
+        language_setting: ScraperLang = ScraperLang.EN_US,
         request_timeout: int = 10,
         playwright_timeout: int = 15000,
         min_content_length: int = 400,
@@ -63,11 +94,20 @@ class WebScraper:
         self.min_content_length = min_content_length
         self.playwright_wait_after_load = playwright_wait_after_load
 
-        # Default headers to mimic a real browser
-        self.headers = HEADERS
-        self.headers.update(HEADERS_EN)
+        self.language_setting = language_setting
 
-        self.language_setting = "en-US"
+        match language_setting:
+            case ScraperLang.EN_US:
+                self.headers = HEADERS.copy()
+                self.headers.update(HEADERS_EN_US)
+            case ScraperLang.EN_GB:
+                self.headers = HEADERS.copy()
+                self.headers.update(HEADERS_EN_GB)
+            case ScraperLang.DE_DE:
+                self.headers = HEADERS.copy()
+                self.headers.update(HEADERS_DE)
+            case _:
+                assert False, f"Unsupported language setting: {language_setting}"
 
         # Create context that doesn't verify certificates
         ctx = ssl.create_default_context()

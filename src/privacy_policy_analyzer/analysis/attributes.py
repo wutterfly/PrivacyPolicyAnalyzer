@@ -48,6 +48,7 @@ class AttributePatterns:
     chosen: AttributePattern
     profiling: AttributePattern
     automated_decision: AttributePattern
+    certifications: AttributePattern
 
 
 def extract_attributes(

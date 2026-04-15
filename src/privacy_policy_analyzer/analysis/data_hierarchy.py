@@ -116,6 +116,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["HeartRateData"], children=None),
                             HierarchyEntry(types=["StepCountData"], children=None),
                             HierarchyEntry(types=["FitnessGoals"], children=None),
+                            HierarchyEntry(types=["PhysicalActivity"], children=None),
                             HierarchyEntry(
                                 types=["FitnessChallengeResults"], children=None
                             ),
@@ -127,6 +128,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["BMI"], children=None),
                             HierarchyEntry(types=["BodyFat"], children=None),
                             HierarchyEntry(types=["MuscleMass"], children=None),
+                            HierarchyEntry(types=["ProteinContent"], children=None),
                             HierarchyEntry(
                                 types=["MetabolicInformation"], children=None
                             ),
@@ -163,6 +165,9 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                         types=["TransactionData"], children=None
                                     ),
                                     HierarchyEntry(
+                                        types=["TransactionHistory"], children=None
+                                    ),
+                                    HierarchyEntry(
                                         types=["InAppTransactions"],
                                         children=None,
                                     ),
@@ -184,7 +189,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 ],
                             ),
                             HierarchyEntry(
-                                types=["CreditCardInformation"],
+                                types=["CreditCardInformation", "CardholderData"],
                                 children=[
                                     HierarchyEntry(
                                         types=["CreditCardNumber"],
@@ -240,6 +245,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["Password"], children=None),
                             HierarchyEntry(types=["SecurityPin"], children=None),
                             HierarchyEntry(types=["AuthToken"], children=None),
+                            HierarchyEntry(types=["SecurityQuestion"], children=None),
                         ],
                     ),
                     HierarchyEntry(types=["EmergencyData"], children=None),
@@ -256,6 +262,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(
                         types=["Identifier", "IdentityInformation"],
                         children=[
+                            HierarchyEntry(types=["RandomID"], children=None),
                             HierarchyEntry(types=["DeviceID"], children=None),
                             HierarchyEntry(types=["SerialNumber"], children=None),
                             HierarchyEntry(types=["AccountID"], children=None),
@@ -321,6 +328,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["AreaCode"], children=None),
                             HierarchyEntry(types=["City"], children=None),
                             HierarchyEntry(types=["Country"], children=None),
+                            HierarchyEntry(types=["Region"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -354,14 +362,17 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["CurriculumVitae"], children=None),
                         ],
                     ),
+                    HierarchyEntry(types=["ApplicationDocuments"], children=None),
                     HierarchyEntry(
-                        types=["AccountData"],
+                        types=["AccountData", "UserInformation"],
                         children=[
                             HierarchyEntry(types=["ProfileData"], children=None),
                             HierarchyEntry(types=["Username"], children=None),
                             HierarchyEntry(types=["ProfilePicture"], children=None),
-                            HierarchyEntry(types=["ThirdPartyHandle"], children=None),
                             HierarchyEntry(types=["RegistrationData"], children=None),
+                            HierarchyEntry(types=["AccountSettings"], children=None),
+                            HierarchyEntry(types=["AccountAge"], children=None),
+                            HierarchyEntry(types=["AccountNumber"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -406,6 +417,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(
                                 types=["NotificationPermissions"], children=None
                             ),
+                            HierarchyEntry(types=["SMSStorage"], children=None),
                         ],
                     ),
                     HierarchyEntry(types=["WrittenPermissions"], children=None),
@@ -416,11 +428,19 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=[
                             HierarchyEntry(types=["CallRecords"], children=None),
                             HierarchyEntry(types=["ChatHistory"], children=None),
+                            HierarchyEntry(types=["MessageDrafts"], children=None),
                         ],
                     ),
                     HierarchyEntry(
                         types=["CandidateInformation"],
                         children=None,
+                    ),
+                    HierarchyEntry(types=["EmployeeRecord"], children=None),
+                    HierarchyEntry(
+                        types=["SocialMediaDetails"],
+                        children=[
+                            HierarchyEntry(types=["ThirdPartyHandle"], children=None),
+                        ],
                     ),
                 ],
             ),
@@ -428,7 +448,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                 types=["NPII", "GeneralInformation"],
                 children=[
                     HierarchyEntry(
-                        types=["DeviceInformation"],
+                        types=["DeviceInformation", "ProductInfo"],
                         children=[
                             HierarchyEntry(
                                 types=["TechnicalInformation"],
@@ -447,6 +467,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                     ),
                                     HierarchyEntry(
                                         types=["OperatingSystem"], children=None
+                                    ),
+                                    HierarchyEntry(
+                                        types=["KeypadInformation"],
+                                        children=None,
                                     ),
                                 ],
                             ),
@@ -478,6 +502,9 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["AppVersion"], children=None),
                             HierarchyEntry(types=["AppName"], children=None),
                             HierarchyEntry(types=["PartnerApp"], children=None),
+                            HierarchyEntry(types=["AppStatus"], children=None),
+                            HierarchyEntry(types=["AppID"], children=None),
+                            HierarchyEntry(types=["AppConfiguration"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -492,6 +519,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["ScrollData"], children=None),
                             HierarchyEntry(types=["MouseMovements"], children=None),
                             HierarchyEntry(types=["Keystrokes"], children=None),
+                            HierarchyEntry(types=["DomainName"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -517,9 +545,13 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                     HierarchyEntry(
                                         types=["PageInteractions"], children=None
                                     ),
+                                    HierarchyEntry(
+                                        types=["DownloadHistory"], children=None
+                                    ),
                                 ],
                             ),
                             HierarchyEntry(types=["DeviceInteractions"], children=None),
+                            HierarchyEntry(types=["DeviceHistory"], children=None),
                             HierarchyEntry(
                                 types=["AppInteraction"],
                                 children=[
@@ -531,6 +563,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             ),
                             HierarchyEntry(types=["ContentUseHistory"], children=None),
                             HierarchyEntry(types=["EngagementMetrics"], children=None),
+                            HierarchyEntry(types=["ActivityStatus"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -571,6 +604,8 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 types=["OtherElectronicNetworkActivityInformation"],
                                 children=None,
                             ),
+                            HierarchyEntry(types=["NetworkOperator"], children=None),
+                            HierarchyEntry(types=["NetworkStatus"], children=None),
                             HierarchyEntry(
                                 types=["MobileNetworkData"],
                                 children=[
@@ -584,6 +619,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             ),
                             HierarchyEntry(types=["ConnectionData"], children=None),
                             HierarchyEntry(types=["DataAmount"], children=None),
+                            HierarchyEntry(types=["NumberOfRequests"], children=None),
                             HierarchyEntry(types=["InternetSpeed"], children=None),
                             HierarchyEntry(
                                 types=["InternetServiceProvider"], children=None
@@ -653,6 +689,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                         types=["AmbientLightData"], children=None
                                     ),
                                     HierarchyEntry(types=["Lighting"], children=None),
+                                    HierarchyEntry(
+                                        types=["PersonDetectionInformation"],
+                                        children=None,
+                                    ),
                                 ],
                             ),
                             HierarchyEntry(types=["MotionData"], children=None),
@@ -704,7 +744,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=None,
                     ),
                     HierarchyEntry(
-                        types=["MediaData"],
+                        types=["MediaData", "Files"],
                         children=[
                             HierarchyEntry(
                                 types=["AudioData"],
@@ -730,8 +770,22 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             ),
                             HierarchyEntry(types=["TextData"], children=None),
                             HierarchyEntry(types=["OtherFileData"], children=None),
-                            HierarchyEntry(types=["DesignFiles"], children=None),
-                            HierarchyEntry(types=["Maps"], children=None),
+                            HierarchyEntry(
+                                types=["DesignFiles"],
+                                children=[
+                                    HierarchyEntry(
+                                        types=["GardenDesign"], children=None
+                                    ),
+                                ],
+                            ),
+                            HierarchyEntry(
+                                types=["Maps"],
+                                children=[
+                                    HierarchyEntry(
+                                        types=["MapAreaNames"], children=None
+                                    )
+                                ],
+                            ),
                         ],
                     ),
                     HierarchyEntry(
@@ -780,7 +834,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["ApplicationData"],
+                        types=["ApplicationDocuments"],
                         children=None,
                     ),
                     HierarchyEntry(
@@ -791,10 +845,11 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["BusinessInformation"],
+                        types=["BusinessInformation", "CompanyInformation"],
                         children=[
                             HierarchyEntry(types=["NumberOfEmployees"], children=None),
                             HierarchyEntry(types=["BusinessModel"], children=None),
+                            HierarchyEntry(types=["CompanyName"], children=None),
                         ],
                     ),
                     HierarchyEntry(types=["DateTime"], children=None),
@@ -803,15 +858,38 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=[
                             HierarchyEntry(types=["DeviceEvents"], children=None),
                             HierarchyEntry(types=["DrivingEvents"], children=None),
+                            HierarchyEntry(types=["DeviceAlerts"], children=None),
+                            HierarchyEntry(types=["AppEvents"], children=None),
                         ],
                     ),
-                    HierarchyEntry(types=["ContestData"], children=None),
+                    HierarchyEntry(
+                        types=["ContestData", "ParticipationData"],
+                        children=[
+                            HierarchyEntry(types=["RewardHistory"], children=None),
+                            HierarchyEntry(
+                                types=["NumberOfParticipations"], children=None
+                            ),
+                        ],
+                    ),
                     HierarchyEntry(
                         types=["Status"],
                         children=[
                             HierarchyEntry(types=["OnlineStatus"], children=None),
                             HierarchyEntry(types=["CallStatus"], children=None),
+                            HierarchyEntry(types=["ConsentStatus"], children=None),
                         ],
+                    ),
+                    HierarchyEntry(
+                        types=["TemporaryData", "TemporaryFiles"], children=None
+                    ),
+                    HierarchyEntry(types=["SoftwareVersion"], children=None),
+                    HierarchyEntry(
+                        types=["SubscriptionData"],
+                        children=None,
+                    ),
+                    HierarchyEntry(
+                        types=["FilmingEquipment"],
+                        children=None,
                     ),
                 ],
             ),

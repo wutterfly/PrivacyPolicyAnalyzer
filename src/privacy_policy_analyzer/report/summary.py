@@ -225,7 +225,7 @@ def extract_user_rights_information(
 
             if tpc.topic == "Audience":
                 for cnt in tpc.contents:
-                    if cnt.content == "SpecificCountry":
+                    if cnt.content == "Country":
                         if "California" in cnt.attributes:
                             california_specific = True
 
@@ -330,7 +330,7 @@ def extract_audience_information(data: list[StructuredEntry]) -> AudienceInforma
                 continue
 
             for cnt in tpc.contents:
-                if cnt.content == "SpecificCountry":
+                if cnt.content == "Country":
                     audience_countries.update(cnt.attributes)
 
     audience_countries.discard("ResidenceState")
