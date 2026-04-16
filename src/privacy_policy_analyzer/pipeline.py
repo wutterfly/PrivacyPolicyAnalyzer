@@ -241,7 +241,7 @@ class Pipeline:
         logger.debug("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
-        propagate_headers(entries, skips=DEFAULT_SKIPS)
+        propagate_stats = propagate_headers(entries, skips=DEFAULT_SKIPS)
         entries = combine_table_rows(entries)
         smoothing_stats = smooth_context(entries)
 
@@ -255,7 +255,7 @@ class Pipeline:
             harmonized=policy.harmonized,
             text=policy.text,
             analyzed=entries,
-            stats={"smoothing": smoothing_stats},
+            stats={"smoothing": smoothing_stats, "propagate": propagate_stats},
         )
 
     def run_with_url(
