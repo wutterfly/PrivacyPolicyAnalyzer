@@ -2236,22 +2236,22 @@ EN_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
 
 EN_DATE_PATTERN_CONFIG: DatePattern = DatePattern(
     {
-        "%Y-%m-%d": "\\b(\\d{4})-(\\d{1,2})-(\\d{1,2})\\b",
-        "%Y/%m/%d": "\\b(\\d{4})/(\\d{1,2})/(\\d{1,2})\\b",
-        "%m/%d/%Y": "\\b(\\d{1,2})/(\\d{1,2})/(\\d{4})\\b",
-        "%m-%d-%Y": "\\b(\\d{1,2})-(\\d{1,2})-(\\d{4})\\b",
-        "%d.%m.%Y": "\\b(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})\\b",
-        "%d/%m/%Y": "\\b(\\d{1,2})/(\\d{1,2})/(\\d{4})\\b",
-        "%d-%m-%Y": "\\b(\\d{1,2})-(\\d{1,2})-(\\d{4})\\b",
-        "%B %d, %Y": "\\b(January|February|March|April|May|June|July|August|September|October|November|December)\\s+(\\d{1,2}),?\\s+(\\d{4})\\b",
-        "%d %B %Y": "\\b(\\d{1,2})\\s+(January|February|March|April|May|June|July|August|September|October|November|December)\\s+(\\d{4})\\b",
-        "%b %d, %Y": "\\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s+(\\d{1,2}),?\\s+(\\d{4})\\b",
-        "%d %b %Y": "\\b(\\d{1,2})\\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s+(\\d{4})\\b",
-        "%m/%d/%y": "\\b(\\d{1,2})/(\\d{1,2})/(\\d{2})\\b",
-        "%d.%m.%y": "\\b(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2})\\b",
-        "%Y%m%d": "\\b(\\d{4})(\\d{2})(\\d{2})\\b",
-        "%B %Y": "\\b(January|February|March|April|May|June|July|August|September|October|November|December),?\\s+(\\d{4})\\b",
-        "%b %Y": "\\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s*,?\\s+(\\d{4})\\b",
+        "%Y-%m-%d": "\\b\\d{4}-\\d{1,2}-\\d{1,2}\\b",
+        "%Y/%m/%d": "\\b\\d{4}/\\d{1,2}/\\d{1,2}\\b",
+        "%m/%d/%Y": "\\b\\d{1,2}/\\d{1,2}/\\d{4}\\b",
+        "%m-%d-%Y": "\\b\\d{1,2}-\\d{1,2}-\\d{4}\\b",
+        "%d.%m.%Y": "\\b\\d{1,2}\\.\\d{1,2}\\.\\d{4}\\b",
+        "%d/%m/%Y": "\\b\\d{1,2}/\\d{1,2}/\\d{4}\\b",
+        "%d-%m-%Y": "\\b\\d{1,2}-\\d{1,2}-\\d{4}\\b",
+        "%B %d, %Y": "\\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{1,2},?\\s+\\d{4}\\b",
+        "%d %B %Y": "\\b\\d{1,2}\\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\\s+\\d{4}\\b",
+        "%b %d, %Y": "\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s+\\d{1,2},?\\s+\\d{4}\\b",
+        "%d %b %Y": "\\b\\d{1,2}\\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s+\\d{4}\\b",
+        "%m/%d/%y": "\\b\\d{1,2}/\\d{1,2}/\\d{2}\\b",
+        "%d.%m.%y": "\\b\\d{1,2}\\.\\d{1,2}\\.\\d{2}\\b",
+        "%Y%m%d": "\\b\\d{8}\\b",
+        "%B %Y": "\\b(?:January|February|March|April|May|June|July|August|September|October|November|December),?\\s+\\d{4}\\b",
+        "%b %Y": "\\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\.?\\s*,?\\s+\\d{4}\\b",
     }
 )
 """ English language date patterns. """

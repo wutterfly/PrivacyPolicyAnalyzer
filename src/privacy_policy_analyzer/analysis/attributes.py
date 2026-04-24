@@ -155,11 +155,11 @@ def extract_date(
                     if cnt.content == content:
                         # check for matching date pattern
                         for format, pat in patterns.format_pattern.items():
-                            matches = re.search(pat, entry.text, re.IGNORECASE)
-                            if matches:
-                                matched_txt = matches.group()
+                            matches = re.findall(pat, entry.text, re.IGNORECASE)
+
+                            for match in matches:
                                 try:
-                                    cleaned_txt = _clean(matched_txt, format)
+                                    cleaned_txt = _clean(match, format)
                                     dt = datetime.strptime(cleaned_txt, format)
                                     date = dt.date().isoformat()
                                     cnt.attributes.append(date)
