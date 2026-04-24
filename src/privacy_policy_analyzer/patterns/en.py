@@ -1767,6 +1767,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bassess(ing)?(.){0,20}fraud risk\\b",
                 "\\bevaluate(ing)?(.){0,20}fraud risk\\b",
             ],
+            "ContentSharing": [
+                "\\bcontent sharing\\b",
+                "(share|sharing)(.){0,32}(content|information|data)",
+            ],
             "Comfort": [
                 "\\bkeep(.){0,32}comfort",
                 "(maintain|provide)(.){0,64}comfort",
