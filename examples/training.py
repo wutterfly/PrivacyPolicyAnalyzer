@@ -28,9 +28,9 @@ if __name__ == "__main__":
     model_name = "distilbert-base-uncased"
 
     # input and output paths
-    training_folder: Path = Path("../../policies/en/web/labeled")
-    annotation_schema_file: Path = Path("../../annotation_schema.json")
-    output_dir: Path = Path("../../models/en")
+    training_folder: Path = Path(...)
+    annotation_schema_file: Path = Path(...)
+    output_dir: Path = Path(...)
 
     # read training data and annotation schema
     training_files: list[list[RawEntry]] = read_training_data(training_folder)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             labels=schema.context,
             scope="context",
             content_topic=None,
-            test_eval_split=0.2,
+            train_eval_test_split=(0.7, 0.15, 0.15),
             oversampling_ratio=0.5,
             seed=SEED,
         ),
@@ -61,7 +61,7 @@ if __name__ == "__main__":
             labels=schema.topics,
             scope="topic",
             content_topic=None,
-            test_eval_split=0.2,
+            train_eval_test_split=(0.7, 0.15, 0.15),
             oversampling_ratio=0.5,
             seed=SEED,
         ),
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             labels=schema.topicContents["UserRights"],
             scope="content",
             content_topic="UserRights",
-            test_eval_split=0.2,
+            train_eval_test_split=(0.7, 0.15, 0.15),
             oversampling_ratio=0.7,
             seed=SEED,
         ),
