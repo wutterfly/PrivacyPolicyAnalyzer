@@ -178,7 +178,7 @@ set_logging("training.log", level=logging.INFO)
 model_name = "distilbert-base-uncased"
 
 # input and output paths
-training_folder: Path = Path("../../policies/en/web/labeled")
+training_folder: Path = Path("../../policies/en/labeled")
 annotation_schema_file: Path = Path("../../annotation_schema.json")
 output_dir: Path = Path("../../models/en")
 
@@ -241,9 +241,9 @@ The default model configurations can be imported from `privacy_policy_analyzer.a
 They use pre-trained models hosted on HuggingFace.
 
 - [Context Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-context)
-- [Topic Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-topic)
+- [Topic Classifier](https://huggingface.co/Wutterfly/privbert-privacy-policy-topic)
 - Content Classifiers for each topic, e.g.:
-  - [User Rights Content Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-content-userrights)
+  - [User Rights Content Classifier](https://huggingface.co/Wutterfly/privbert-privacy-policy-content-userrights)
   - ...
 
 #### **Pattern Configs**
