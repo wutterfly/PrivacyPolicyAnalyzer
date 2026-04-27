@@ -175,67 +175,67 @@ def collect_information(
 
 DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     context=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-context",
+        model_name="Wravn/roberta-privacy-policy-context",
         thresholds={},
     ),
     topic=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-topic",
+        model_name="Wravn/privbert-privacy-policy-topic",
         thresholds={"Purpose": 0.4, "Sharing": 0.6, "ThirdParty": 0.6, "Selling": 0.65},
     ),
     audience=ModelConfig(
-        model_name="Wutterfly/albert-privacy-policy-content-audience",
+        model_name="Wravn/albert-privacy-policy-content-audience",
         thresholds={"Country": 0.4},
     ),
     contact=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-content-contact",
+        model_name="Wravn/roberta-privacy-policy-content-contact",
         thresholds={},
     ),
     control=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-control",
+        model_name="Wravn/privbert-privacy-policy-content-control",
         thresholds={},
     ),
     deletion=ModelConfig(
-        model_name="Wutterfly/distilbert-privacy-policy-content-deletion",
+        model_name="Wravn/distilbert-privacy-policy-content-deletion",
         thresholds={},
     ),
     legal_basis=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-legalbasis",
+        model_name="Wravn/privbert-privacy-policy-content-legalbasis",
         thresholds={},
     ),
     policy=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-content-policy",
+        model_name="Wravn/roberta-privacy-policy-content-policy",
         thresholds={"Change": 0.4, "External": 0.65},
     ),
     processing=ModelConfig(
-        model_name="Wutterfly/albert-privacy-policy-content-processing",
+        model_name="Wravn/albert-privacy-policy-content-processing",
         thresholds={},
     ),
     purpose=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-purpose",
+        model_name="Wravn/privbert-privacy-policy-content-purpose",
         thresholds={},
     ),
     retention=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-content-retention",
+        model_name="Wravn/roberta-privacy-policy-content-retention",
         thresholds={"StorageDuration": 0.4},
     ),
     security_privacy=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-securityprivacy",
+        model_name="Wravn/privbert-privacy-policy-content-securityprivacy",
         thresholds={"SecurityHints": 0.4},
     ),
     selling=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-content-selling",
+        model_name="Wravn/roberta-privacy-policy-content-selling",
         thresholds={},
     ),
     sharing=ModelConfig(
-        model_name="Wutterfly/roberta-privacy-policy-content-sharing",
+        model_name="Wravn/roberta-privacy-policy-content-sharing",
         thresholds={},
     ),
     third_party=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-thirdparty",
+        model_name="Wravn/privbert-privacy-policy-content-thirdparty",
         thresholds={"Company": 0.3, "Descriptive": 0.4},
     ),
     user_rights=ModelConfig(
-        model_name="Wutterfly/privbert-privacy-policy-content-userrights",
+        model_name="Wravn/privbert-privacy-policy-content-userrights",
         thresholds={},
     ),
 )
