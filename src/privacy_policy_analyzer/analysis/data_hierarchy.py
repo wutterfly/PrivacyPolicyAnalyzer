@@ -309,6 +309,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 ],
                             ),
                             HierarchyEntry(types=["ProofOfIdentity"], children=None),
+                            HierarchyEntry(types=["StudentID"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -574,6 +575,25 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["ContentUseHistory"], children=None),
                             HierarchyEntry(types=["EngagementMetrics"], children=None),
                             HierarchyEntry(types=["ActivityStatus"], children=None),
+                            HierarchyEntry(types=["DrivingBehavior"], children=None),
+                        ],
+                    ),
+                    HierarchyEntry(
+                        types=["VehicleInformation"],
+                        children=[
+                            HierarchyEntry(types=["VehicleType"], children=None),
+                            HierarchyEntry(types=["VehicleID"], children=None),
+                            HierarchyEntry(types=["OilLevel"], children=None),
+                            HierarchyEntry(types=["TirePressure"], children=None),
+                            HierarchyEntry(types=["FuelEconomy"], children=None),
+                            HierarchyEntry(types=["OdometerReadings"], children=None),
+                            HierarchyEntry(types=["BatteryUsage"], children=None),
+                            HierarchyEntry(types=["VehicleSpeed"], children=None),
+                            HierarchyEntry(types=["SeatBeltUse"], children=None),
+                            HierarchyEntry(types=["BreakingHabits"], children=None),
+                            HierarchyEntry(types=["CollisionData"], children=None),
+                            HierarchyEntry(types=["VehicleID"], children=None),
+                            HierarchyEntry(types=["VehicleID"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -756,6 +776,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         types=["DeviceAutomations"],
                         children=None,
                     ),
+                    HierarchyEntry(types=["PairedMobileDevices"], children=[]),
                     HierarchyEntry(
                         types=["MediaData", "Files"],
                         children=[

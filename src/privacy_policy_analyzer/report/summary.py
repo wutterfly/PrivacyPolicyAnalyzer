@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 
 from privacy_policy_analyzer.analysis.data_hierarchy import (
@@ -1235,6 +1235,9 @@ class SummaryReport:
             user_rights=UserRightsInformation.from_json(data["user_rights"]),
             boilerplate=BoilerplateInformation.from_json(data["boilerplate"]),
         )
+
+    def to_json(self) -> dict:
+        return asdict(self)
 
 
 def create_summary_report(

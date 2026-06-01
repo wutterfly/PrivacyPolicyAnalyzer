@@ -19,6 +19,14 @@ The taxonomy can be viewed here: [Taxonomy](./taxonomy.png)
 
 ## Using the Package
 
+# Installation
+
+The default installation does not include all the dependencies nessary for analysis and training on GPUs. To install the package with all optional dependencies, please run:
+
+```bash
+privacy_policy_analyzer[gpu]
+```
+
 ## Post-Installation
 
 This package uses playwright for web crawling. After installing the package, please run the following command to install the necessary browser binaries:

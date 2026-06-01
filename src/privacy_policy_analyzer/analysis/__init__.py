@@ -180,7 +180,13 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     topic=ModelConfig(
         model_name="Wravn/privbert-privacy-policy-topic",
-        thresholds={"Purpose": 0.4, "Sharing": 0.6, "ThirdParty": 0.6, "Selling": 0.65},
+        thresholds={
+            "Purpose": 0.4,
+            "Sharing": 0.6,
+            "ThirdParty": 0.6,
+            "Selling": 0.65,
+            "Audience": 0.7,
+        },
     ),
     audience=ModelConfig(
         model_name="Wravn/albert-privacy-policy-content-audience",
@@ -224,7 +230,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     selling=ModelConfig(
         model_name="Wravn/roberta-privacy-policy-content-selling",
-        thresholds={},
+        thresholds={"NotSelling": 0.90},
     ),
     sharing=ModelConfig(
         model_name="Wravn/roberta-privacy-policy-content-sharing",

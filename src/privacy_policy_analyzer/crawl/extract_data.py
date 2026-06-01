@@ -105,11 +105,19 @@ def _parse_row(tr: Tag, is_header_section: bool = False) -> TableRow | None:
         content = cell.get_text(strip=True, separator=" ")
         is_header = cell.name == "th" or is_header_section
 
-        strong = cell.find("strong")
-        if strong is not None:
-            strong_text = strong.get_text(strip=True, separator=" ")
-            if strong_text == content:
-                is_header = True
+        if not is_header:
+            strong = cell.find("strong")
+            if strong is not None:
+                strong_text = strong.get_text(strip=True, separator=" ")
+                if strong_text == content:
+                    is_header = True
+
+        if not is_header:
+            bold = cell.find("b")
+            if bold is not None:
+                bold_text = bold.get_text(strip=True, separator=" ")
+                if bold_text == content:
+                    is_header = True
 
         cells.append(TableCell(content=content, is_header=is_header))
 
