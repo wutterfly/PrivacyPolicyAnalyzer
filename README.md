@@ -27,6 +27,8 @@ The default installation does not include all the dependencies nessary for analy
 privacy_policy_analyzer[gpu]
 ```
 
+Additonally, the correct version of PyTorch must be installed for the specific GPU and CUDA version. Please refer to the [PyTorch installation guide](https://pytorch.org/get-started/locally/) to install the appropriate version.
+
 ## Post-Installation
 
 This package uses playwright for web crawling. After installing the package, please run the following command to install the necessary browser binaries:

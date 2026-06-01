@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "privacy-policy-analyzer"
-version = "0.2.1"
+version = "0.2.2"
 description = "Tools to crawl, analyze and report on website privacy policies using NLP models and rule-based patterns."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -13,9 +13,9 @@ keywords = ["privacy", "nlp", "crawler", "privacy-policy", "classification"]
 requires-python = ">=3.12"
 dependencies = [
     # ML/Analysis
-    "torch~=2.10.0",
-    "transformers~=5.0.0",
-    "datasets~=4.5.0",
+    "torch>=2.10.0",
+    "transformers>=5.0.0",
+    "datasets>=4.5.0",
     "huggingface-hub",
     "numpy",
     "accelerate",
@@ -24,15 +24,15 @@ dependencies = [
     "sentencepiece",
 
     # Crawler
-    "beautifulsoup4~=4.14.3",
-    "playwright==1.58.0",
-    "requests~=2.32.0",
+    "beautifulsoup4>=4.14.3",
+    "playwright>=1.58.0",
+    "requests>=2.32.0",
     "html5lib",
     "langdetect",
 
     # Visualization
     "matplotlib",
-    "pandas==2.3.3",
+    "pandas>=2.3.0",
 ]
 
 
