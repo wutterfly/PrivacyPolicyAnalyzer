@@ -8,6 +8,7 @@ from privacy_policy_analyzer.analysis.attributes import (
     AttributePatterns,
     DatePattern,
     DurationPattern,
+    EmailPattern,
 )
 from privacy_policy_analyzer.analysis.classification import (
     ModelConfigs,
@@ -26,6 +27,7 @@ from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
 from privacy_policy_analyzer.crawl.splitter import SplitterPattern
+from privacy_policy_analyzer.patterns import DEFAULT_EMAIL_PATTERN_CONFIG
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
     AddressOutput,
@@ -150,6 +152,7 @@ class Pipeline:
     pattern_configs: AttributePatterns
     duration_pattern_configs: DurationPattern
     date_pattern_config: DatePattern
+    email_pattern_config: EmailPattern
 
     onnx: bool
     cache_load_models: bool
@@ -162,6 +165,7 @@ class Pipeline:
         pattern_configs: AttributePatterns | None,
         duration_pattern_configs: DurationPattern | None,
         date_pattern_config: DatePattern | None,
+        email_pattern_config: EmailPattern | None,
         onnx: bool,
         cache_load_models: bool = True,
     ):
@@ -204,6 +208,11 @@ class Pipeline:
         else:
             assert False, f"Unsupported language: {language}"
 
+        if email_pattern_config is None:
+            self.email_pattern_config = DEFAULT_EMAIL_PATTERN_CONFIG
+        else:
+            self.email_pattern_config = email_pattern_config
+
         if onnx:
             logger.info("Using device: %s", "CPU (ONNX)")
 
@@ -235,6 +244,7 @@ class Pipeline:
             pattern_config=self.pattern_configs,
             duration_pattern_config=self.duration_pattern_configs,
             date_pattern_config=self.date_pattern_config,
+            email_pattern_config=self.email_pattern_config,
             onnx=self.onnx,
             cached=self.cache_load_models,
         )

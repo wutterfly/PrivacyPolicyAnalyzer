@@ -168,3 +168,25 @@ def extract_date(
 
                         # if multiple pattern matched, remove potential  duplicates
                         cnt.attributes = list(set(cnt.attributes))
+
+
+@dataclass
+class EmailPattern:
+    """Holds compiled regex patterns for email attributes."""
+
+    pattern: str
+
+
+def extract_email(
+    entries: list[RawEntry], topic: list[str], content: str, patterns: EmailPattern
+):
+    email_regex = re.compile(patterns.pattern, re.IGNORECASE)
+    for entry in entries:
+        # check if topic matches
+        for tpc in entry.topics:
+            if tpc.topic in topic:
+                # check if content matches
+                for cnt in tpc.contents:
+                    if cnt.content == content:
+                        matches = email_regex.findall(entry.text)
+                        cnt.attributes.extend(matches)

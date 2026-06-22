@@ -23,13 +23,13 @@ if __name__ == "__main__":
         pattern_configs=EN_PATTERN_CONFIG,
         duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
         date_pattern_config=EN_DATE_PATTERN_CONFIG,
+        email_pattern_config=None,
         onnx=False,
         cache_load_models=True,
     )
 
     name = "OpenAI"
     url = "https://openai.com/policies/row-privacy-policy/"
-    url = "https://tamagotchi-official.com/privacypolicy/toy/uni/en/"
 
     # Or analyze directly from URL
     result: PolicyResult | CrawlError = pipeline.run_with_url(name, url, Language.EN)

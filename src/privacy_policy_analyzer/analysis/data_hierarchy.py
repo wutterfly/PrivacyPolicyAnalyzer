@@ -505,6 +505,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["StorageUsage"], children=None),
                             HierarchyEntry(types=["CpuUsage"], children=None),
                             HierarchyEntry(types=["DeviceTemperature"], children=None),
+                            HierarchyEntry(types=["ChargingData"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -587,13 +588,11 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["TirePressure"], children=None),
                             HierarchyEntry(types=["FuelEconomy"], children=None),
                             HierarchyEntry(types=["OdometerReadings"], children=None),
-                            HierarchyEntry(types=["BatteryUsage"], children=None),
                             HierarchyEntry(types=["VehicleSpeed"], children=None),
                             HierarchyEntry(types=["SeatBeltUse"], children=None),
                             HierarchyEntry(types=["BreakingHabits"], children=None),
                             HierarchyEntry(types=["CollisionData"], children=None),
-                            HierarchyEntry(types=["VehicleID"], children=None),
-                            HierarchyEntry(types=["VehicleID"], children=None),
+                            HierarchyEntry(types=["VehicleStatus"], children=None),
                         ],
                     ),
                     HierarchyEntry(

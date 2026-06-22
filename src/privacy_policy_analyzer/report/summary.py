@@ -1096,6 +1096,9 @@ class ContactInformation:
     website: bool
     address: bool
 
+    email_addresses: list[str]
+    phone_numbers: list[str]
+
     @staticmethod
     def from_json(data: dict) -> "ContactInformation":
         return ContactInformation(
@@ -1103,6 +1106,8 @@ class ContactInformation:
             phone=bool(data["phone"]),
             website=bool(data["website"]),
             address=bool(data["address"]),
+            email_addresses=list(data.get("email_addresses", [])),
+            phone_numbers=list(data.get("phone_numbers", [])),
         )
 
 
@@ -1111,6 +1116,8 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
     phone = False
     website = False
     address = False
+    emails = []
+    phone_numbers = []
 
     for entry in data:
         # skip references to external policy
@@ -1131,6 +1138,11 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
             for cnt in tpc.contents:
                 if cnt.content == "Email":
                     mail = True
+                    for attr in cnt.attributes:
+                        if "@" in attr:
+                            emails.append(attr)
+                    emails = list(set(emails))
+
                 elif cnt.content == "Phone":
                     phone = True
                 elif cnt.content == "Website":
@@ -1143,6 +1155,8 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
         phone=phone,
         website=website,
         address=address,
+        email_addresses=emails,
+        phone_numbers=phone_numbers,
     )
 
 

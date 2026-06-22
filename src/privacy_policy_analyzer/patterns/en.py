@@ -231,7 +231,11 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "on/off (status|setting)",
             ],
             "OnlineStatus": ["online status"],
-            "BatteryData": ["battery (data|information|status|level|life)"],
+            "BatteryData": [
+                "battery (usage|use)\\b",
+                "battery (consumption|charging|deterioration)\\b",
+                "battery (data|information|status|level|life)",
+            ],
             "MemoryUsage": ["memory usage", "RAM usage"],
             "StorageUsage": [
                 "(storage|disk) (usage|utilization)",
@@ -505,11 +509,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "mileage",
                 "distance traveled",
             ],
-            "BatteryUsage": [
-                "battery (usage|use)\\b",
-                "battery (consumption|charging|deterioration)\\b",
-                "charging (data|information)\\b",
-            ],
+            "ChargingData": ["\\bcharg(ing|e) (data|information|status)"],
             "VehicleSpeed": ["vehicle speed", "driving speed", "aproximate speed"],
             "SeatBeltUse": [
                 "seat belt use",
@@ -522,6 +522,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(data|information) about collision(s)?",
                 "airbag deployment",
             ],
+            "VehicleStatus": ["vehicle (status|condition)"],
             "PairedMobileDevices": [
                 f"paired(.){0, 20}mobile device(s)?",
             ],

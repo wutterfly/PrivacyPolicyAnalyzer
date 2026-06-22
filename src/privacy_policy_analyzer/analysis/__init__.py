@@ -2,9 +2,11 @@ from privacy_policy_analyzer.analysis.attributes import (
     AttributePatterns,
     DatePattern,
     DurationPattern,
+    EmailPattern,
     extract_attributes,
     extract_date,
     extract_duration,
+    extract_email,
 )
 from privacy_policy_analyzer.analysis.classification import (
     ModelConfig,
@@ -25,6 +27,7 @@ def collect_information(
     pattern_config: AttributePatterns,
     duration_pattern_config: DurationPattern,
     date_pattern_config: DatePattern,
+    email_pattern_config: EmailPattern,
     onnx: bool,
     cached: bool,
 ):
@@ -170,6 +173,13 @@ def collect_information(
         patterns=date_pattern_config,
     )
 
+    extract_email(
+        entries,
+        topic=["Contact"],
+        content="Email",
+        patterns=email_pattern_config,
+    )
+
     logger.debug("Attribute extraction completed")
 
 
@@ -194,7 +204,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     contact=ModelConfig(
         model_name="Wravn/roberta-privacy-policy-content-contact",
-        thresholds={},
+        thresholds={"Website": 0.4},
     ),
     control=ModelConfig(
         model_name="Wravn/privbert-privacy-policy-content-control",
@@ -214,7 +224,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     processing=ModelConfig(
         model_name="Wravn/albert-privacy-policy-content-processing",
-        thresholds={},
+        thresholds={"Method/Source": 0.4},
     ),
     purpose=ModelConfig(
         model_name="Wravn/privbert-privacy-policy-content-purpose",
