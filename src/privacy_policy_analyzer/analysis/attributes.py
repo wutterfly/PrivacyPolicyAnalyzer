@@ -140,7 +140,39 @@ class DatePattern:
 def _clean(text: str, fmt: str) -> str:
     if "," not in fmt:
         text = text.replace(",", "")
+
+    if "." not in fmt:
+        text = text.replace(".", "")
+
+    if "th" not in fmt:
+        text = text.replace("th", "")
+
+    if "st" not in fmt:
+        text = text.replace("st", "")
+
+    if "nd" not in fmt:
+        text = text.replace("nd", "")
+
+    if "rd" not in fmt:
+        text = text.replace("rd", "")
+
     return text
+
+
+def get_date(text: str, patterns: DatePattern) -> None | datetime:
+    for format, pat in patterns.format_pattern.items():
+        matches: list[str] = re.findall(pat, text, re.IGNORECASE)
+
+        for match in matches:
+            try:
+                cleaned_txt = _clean(match, format)
+                dt = datetime.strptime(cleaned_txt, format)
+                return dt
+            except Exception as e:
+                print(f"Failed to parse date '{match}' with format '{format}': {e}")
+                continue
+
+    return None
 
 
 def extract_date(
@@ -153,18 +185,10 @@ def extract_date(
                 # check if content matches
                 for cnt in tpc.contents:
                     if cnt.content == content:
-                        # check for matching date pattern
-                        for format, pat in patterns.format_pattern.items():
-                            matches = re.findall(pat, entry.text, re.IGNORECASE)
-
-                            for match in matches:
-                                try:
-                                    cleaned_txt = _clean(match, format)
-                                    dt = datetime.strptime(cleaned_txt, format)
-                                    date = dt.date().isoformat()
-                                    cnt.attributes.append(date)
-                                except Exception as _:
-                                    continue
+                        dt = get_date(entry.text, patterns)
+                        if dt:
+                            date = dt.date().isoformat()
+                            cnt.attributes.append(date)
 
                         # if multiple pattern matched, remove potential  duplicates
                         cnt.attributes = list(set(cnt.attributes))

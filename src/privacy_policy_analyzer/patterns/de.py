@@ -22,7 +22,7 @@ from privacy_policy_analyzer.crawl.splitter import SplitterPattern
 
 DE_SPLITTER_CONFIG: SplitterPattern = SplitterPattern.from_parts(
     replace_words=[
-        ("„", "\"" ),
+        ("„", '"'),
         ("z\\. B\\.", "z.B."),
         ("d\\. h\\.", "d.h."),
         ("U\\. S\\.", "USA"),
@@ -99,12 +99,12 @@ DE_SPLITTER_CONFIG: SplitterPattern = SplitterPattern.from_parts(
         "para\\. [0-9]\\. s\\.$",
         "Art\\. [0-9] para\\.\\s*[0-9] s\\.$",
         "Art\\. [0-9] para\\. [0-9]\\.( s\\.)?$",
-        "Art\\. [0-9] para\\. s\\.$"
+        "Art\\. [0-9] para\\. s\\.$",
     ],
 )
 """ German language splitter configuration. """
 
-#------------------------------------------
+# ------------------------------------------
 
 EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     data_type=AttributePattern.from_dict(
@@ -113,110 +113,90 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(?<!nicht[- ])(?<!sensitive)(?<!sensitive[rn])(?<!sensible)(?<!sensible[rn]).{0,20}(Daten|Informationen|Details)",
                 "(?<!Spezialkategorien von )(persönliche[rn]?|personenbezogene[rn]?).{0,20}(Daten|Informationen|Details)",
                 "Ihren?.{0,20}(Daten|Informationen|Details)",
-                "(Daten|Informationen|Details) über Sie"
+                "(Daten|Informationen|Details) über Sie",
             ],
-            "SensitiveData": [
-                "sentitive[rn]?.{0,20}(Daten|Informationen|Details)"
-            ],
+            "SensitiveData": ["sentitive[rn]?.{0,20}(Daten|Informationen|Details)"],
             "SpecialCategoryData": [
                 "Spezialkategorie von (persönlichen|personenbezogenen) Daten",
-                "Spezialkategorie (persönlicher|personenbezogener) Daten"
+                "Spezialkategorie (persönlicher|personenbezogener) Daten",
             ],
-            "GeneralInformation": [
-                "allgemeine[rn]?.{0,20}(Daten|Informationen)"
-            ],
+            "GeneralInformation": ["allgemeine[rn]?.{0,20}(Daten|Informationen)"],
             "PII": [
                 "PII",
                 "(?<!nicht[- ])persönlich identifizierbare[rn]? Informationen",
                 "(Daten|Informationen)(.){0,30}(?!die sie nicht) identifizieren",
                 "Identifizierung (.){0,20} natürlichen Person",
-                "natürliche Person zu identifizieren" ##U
+                "natürliche Person zu identifizieren",  ##U
             ],
             "NPII": [
                 "NPII",
                 "non-personally identifiable information",
-                "nicht[- ]personenbezogene Informationen"
+                "nicht[- ]personenbezogene Informationen",
             ],
             "SetupInformation": [
                 "Setup[- ]?information",
             ],
             "DeviceInformation": [
                 "Geräte?(information|daten)",
-                "(Informationen|Daten).{0,20}(ü|ue)ber.{0,20}(Gerät|Produkt)"
+                "(Informationen|Daten).{0,20}(ü|ue)ber.{0,20}(Gerät|Produkt)",
             ],
             "DeviceName": [
                 "(Geräte|Produkt|Modell)name",
                 "Name des (Geräte?s|Produkte?s)",
-                "Kameraname"
+                "Kameraname",
             ],
             "DeviceType": [
                 "(Geräte|Produkt)(typ|modell|art)",
                 "(Typ|Modell|Art) des (Geräte?s|Produkte?s)",
                 "Tele(f|ph)onmodel",
-                "Hardware(modell|typ|art)"
+                "Hardware(modell|typ|art)",
             ],
             "ProductInfo": [
                 "Produkt(information|daten|detail)",
-                "(Information(en)?|Details?) über .{0,20}Produkt"
+                "(Information(en)?|Details?) über .{0,20}Produkt",
             ],
             "ManufacturerInformation": [
                 "(Geräte)?[Hh]ersteller(informationen|details)",
                 "(Informationen|Details).{0,20}Herstellers?",
             ],
             "TechnicalInformation": ["technische (Informationen|Daten)"],
-            "OperatingSystem": [
-                "Betriebssystem",
-                "operatives System"
-                ],
+            "OperatingSystem": ["Betriebssystem", "operatives System"],
             "FirmwareVersion": ["Firmware[- ]?version"],
             "SoftwareVersion": ["Software[- ]?version"],
             "HardwareInformation": [
                 "Hardware(informationen|daten|details)",
-                "(Informationen|Details).{0,20}hardware"
+                "(Informationen|Details).{0,20}hardware",
             ],
             "HardwareVersion": ["Hardware[- ]?version"],
             "BrowserInformation": [
                 "Browser(informationen|daten)",
-                "Informationen.{0,20}Browser"
+                "Informationen.{0,20}Browser",
             ],
             "BrowserType": [
                 "Browsertyp",
                 "verwendente[rn]? Browsers?",
-                "(Typ|Art) des Browsers?"
+                "(Typ|Art) des Browsers?",
             ],
-            "BrowserVersion": [
-                "Browserversion",
-                "Version des.{0,20}Browsers"
-            ],
-            "AppVersion": [
-                "Appversion",
-                "Version der.{0,20}Apps?"
-            ],
+            "BrowserVersion": ["Browserversion", "Version des.{0,20}Browsers"],
+            "AppVersion": ["Appversion", "Version der.{0,20}Apps?"],
             "AppStatus": ["Appstatus"],
-            "AppID": [
-                "App[- ]ID",
-                "App identifier",
-                "App[- ]Identifizierer"
-            ],
+            "AppID": ["App[- ]ID", "App identifier", "App[- ]Identifizierer"],
             "ActivationTime": [
                 "(Geräte)?Aktivierungszeit",
                 "(Geräte)?Aktivierungsdatum",
             ],
-            "PartnerApp": [
-                "Partner[- ]?App",
-                "Third(-| )Party App"
-            ],
+            "PartnerApp": ["Partner[- ]?App", "Third(-| )Party App"],
             "InternetServiceProvider": [
                 "Internet(dienst)?anbieter",
                 "Internetdienstleister",
                 "Internetprovider",
-                "\\bISP\\b"
+                "\\bISP\\b",
             ],
             "NetworkData": [
                 "(?<!media )network(.){0,20}(data|information)",
                 "network activity",
                 "(?<!soziale )(?<!sozialen )Netzwerk(daten|dateien|information(en)?)",
-                "Netzwerkanfrageinformation(en)?"
+                "Netzwerkanfrageinformation(en)?",
             ],
             "NetworkStatus": ["Netzwerkstatus"],
             "NetworkOperator": ["Neth(werk)?betreiber"],
@@ -234,41 +214,27 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "MobileNetworkData": ["mobilen? Netzwerk(-.{0,20})?(daten|informationen)"],
             "MobileNetworkCode": [
                 "Mobilfunknetzcode",
-                "mobilen? Netzwerk(-.{0,20})?code"
+                "mobilen? Netzwerk(-.{0,20})?code",
             ],
-            "MobileCountryCode": [
-                "Mobilfunk-Ländercode",
-                "mobilen?.{0,20}Ländercode"
-            ],
+            "MobileCountryCode": ["Mobilfunk-Ländercode", "mobilen?.{0,20}Ländercode"],
             "ConnectionData": ["Verbindungs(daten|informationen)"],
             "DataAmount": [
                 "Datenmenge",
                 "Menge.{0,10}Daten",
-                "Netzwerkbandbreitennutzung"
+                "Netzwerkbandbreitennutzung",
             ],
-            "NumberOfRequests": [
-                "(An)?zahl der Abfragen",
-                "getätigte Abfragen"
-            ],
-            "WiFiData": [
-                "Wi(-)?Fi (Daten|Informationen)"
-            ],
+            "NumberOfRequests": ["(An)?zahl der Abfragen", "getätigte Abfragen"],
+            "WiFiData": ["Wi(-)?Fi (Daten|Informationen)"],
             "WiFiStatus": ["(Wi(-)?Fi|WLAN)[- ]Status"],
             "WiFiHeatmap": ["(Wi(-)?Fi|WLAN)[- ]Heatmap"],
             "SSID": [
                 "SSID",
                 "(Wi(-)?Fi|WLAN)[- ]name",
                 "(Wi(-)?Fi|WLAN)[- ]ID",
-                "Netzwerkname"
+                "Netzwerkname",
             ],
-            "SignalStrength": [
-                "Signalstärke",
-                "Verbindungsstabilität"
-            ],
-            "InternetSpeed": [
-                "Internetgeschwindigkeit",
-                "Netzwerkgeschwindigkeit"
-            ],
+            "SignalStrength": ["Signalstärke", "Verbindungsstabilität"],
+            "InternetSpeed": ["Internetgeschwindigkeit", "Netzwerkgeschwindigkeit"],
             "KeypadInformation": [
                 "(Geräte)?tastaturinformationen",
                 "Informationen.{0,20}Tastatur",
@@ -282,44 +248,43 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "UsageDuration": [
                 "(Seiten)?verweils(dauer|zeitraum)",
                 "Zugriffs(dauer|zeitraum)",
-                "(Dauer|Zeitraum).{0,20}(App|Dienst|Funktion|(Web)?Seite(nzugriffs?))"
+                "(Dauer|Zeitraum).{0,20}(App|Dienst|Funktion|(Web)?Seite(nzugriffs?))",
             ],
             "DeviceInteractions": [
                 "Geräteinteraktionen",
-                "Interaktionen mit (Produkten|Geräten)"
+                "Interaktionen mit (Produkten|Geräten)",
             ],
             "AppInteraction": [
                 "App[- ]Interaktionen",
                 "Interaktionen.{0,10}Apps?",
             ],
             "DownloadHistory": ["Download(-.{0,15})?verlauf"],
-            "EngagementMetrics": ["engagement (data|information|metric|statistic)"], ##X
+            "EngagementMetrics": [
+                "engagement (data|information|metric|statistic)"
+            ],  ##X
             "TelemetryData": ["Telemetrie(informationen|daten)"],
             "PerformanceData": [
-                "(?<!conversion )performance(.){0,20}(data|information|metric|statistics)" ##X
+                "(?<!conversion )performance(.){0,20}(data|information|metric|statistics)"  ##X
             ],
             "DiagnosticData": ["Diagnose(daten|informationen)"],
             "StatisticalData": ["statistische[rn]? (Daten|Informationen)"],
             "DeviceStatistics": [
                 "(Geräte|Produkt)statistik",
-                "Statistik.{0,10}(Gerät|Produkt)"
+                "Statistik.{0,10}(Gerät|Produkt)",
             ],
-            "SettingsData": ["Einstellungen"], ##U
+            "SettingsData": ["Einstellungen"],  ##U
             "ConfigurationData": ["Konfigurations(daten|informationen)"],
             "UserPreferences": [
                 "(Deine[rn]?|Ihre[rn]?|persönliche[rn]?) (Präferenzen|Vorlieben)",
                 "(Nutzer)?Präferenzen",
-                "(Nutzer)?Vorlieben"
+                "(Nutzer)?Vorlieben",
             ],
-            "FontSize": [
-                "font size",
-                "Schriftgröße"
-            ],
+            "FontSize": ["font size", "Schriftgröße"],
             "DeviceState": [
                 "Gerätestatus",
                 "Status des Geräte?s",
                 "Statusinformationen über.{0,15}Gerät(e|e?s)",
-                "an/aus (Status|Einstellung)"
+                "an/aus (Status|Einstellung)",
             ],
             "OnlineStatus": ["Onlinestatus"],
             "BatteryData": ["(Batterie|Akku)(daten|informationen|status|verbrauch)"],
@@ -327,16 +292,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "StorageUsage": [
                 "(Speicher|Festplatten)(nutzung|auslastung)",
                 "verwendete Speicherkapazität",
-                "Nutzungsinformationen.{0,20}Speicher"
+                "Nutzungsinformationen.{0,20}Speicher",
             ],
             "CpuUsage": [
                 "(CPU|Prozessor)[- ](nutzung|auslastung)",
-                "Nutzungsinformationen.{0,20}CPU"
+                "Nutzungsinformationen.{0,20}CPU",
             ],
             "ScreenUnlocks": [
                 "(Bildschirm|Gerät).{0,20}entsperr(en|ung)",
                 "Anzahl der Entsperrungen",
-                "Bildschirmaktivierung(en)?"
+                "Bildschirmaktivierung(en)?",
             ],
             "UsageFrequency": [
                 "Nutzungshäufigkeit",
@@ -345,7 +310,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "BrowsingActivity": [
                 "Browser(aktivität|verlauf|historie)",
-                "Browsing[- ](aktivität|verlauf|historie)"
+                "Browsing[- ](aktivität|verlauf|historie)",
             ],
             "ViewedContent": [
                 "angesehene Inhalte",
@@ -357,22 +322,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(aufgerufene|angesehene|besuchte) (Seiten|Websites)"
                 "(Websites|Seiten).{0,20}(aufgerufen|angesehen|besucht) haben",
             ],
-            "ClickedLinks": [
-                "angeklickte Links",
-                "Links.{0,20}geklickt haben"
-            ],
+            "ClickedLinks": ["angeklickte Links", "Links.{0,20}geklickt haben"],
             "MouseMovements": [
                 "Mausbewegung(en)?",
                 "Mausaktivität(en)?",
                 "(Maus|mouse)[- ]Tracking",
                 "mouse-over",
             ],
-            "Keystrokes": ["keystroke", "key press", "keyboard input"], ##X
-            "SearchHistory": [
-                "Such(verlauf|historie)",
-                "Suchanfrage"
-            ],
-            "PageInteractions": [ ##X
+            "Keystrokes": ["keystroke", "key press", "keyboard input"],  ##X
+            "SearchHistory": ["Such(verlauf|historie)", "Suchanfrage"],
+            "PageInteractions": [  ##X
                 "page interaction",
                 "website interaction",
                 "site interaction",
@@ -380,9 +339,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "LogData": [
                 "((Standard-)?System|Netzwerk|Geräte|Absturz-)protokoll(e|daten)?",
                 "Protokoll(e|daten|informationen)",
-                "Sitzungsereignisse"
+                "Sitzungsereignisse",
             ],
-            "LogFiles": ["log file"],##X
+            "LogFiles": ["log file"],  ##X
             "DeviceLogs": ["Geräteprotokoll(daten)?"],
             "DeviceHistory": ["Geräte(verlauf|historie)"],
             "Errors": [
@@ -390,14 +349,14 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(Absturz|Abstürze)\\b",
                 "\\bFehler\\b",
             ],
-            "AccessLogs": [ ##X
+            "AccessLogs": [  ##X
                 "Zugriffsprotokolle?",
                 "access log",
                 "access report",
                 "access message",
                 "security log",
             ],
-            "ActivityLogs": [ ##X
+            "ActivityLogs": [  ##X
                 "activity (log|history)",
                 "account activity",
                 "timestamp of(.){0,32}activity",
@@ -406,18 +365,18 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "ActivityStatus": [
                 "Aktivität(s|en)status",
             ],
-            "NotificationLogs": ["notification log(s)?\\b"], ##X
-            "MaintenanceLogs": ["maintenance log", "maintenance record"], ##X
-            "DrivingEvents": ["driving event"], ##X
-            "AppEvents": ["app event"], ##X
-            "DeviceEvents": ["device event"], ##X
+            "NotificationLogs": ["notification log(s)?\\b"],  ##X
+            "MaintenanceLogs": ["maintenance log", "maintenance record"],  ##X
+            "DrivingEvents": ["driving event"],  ##X
+            "AppEvents": ["app event"],  ##X
+            "DeviceEvents": ["device event"],  ##X
             "DeviceAlerts": [
                 "Gerätebenachrichtigung(en)?",
                 "Benachrichtigungen.{0,10}Geräte?s",
             ],
             "DateTime": [
                 "(?<!jeder )(?<!echt)(?<!von )(?<!zur )(?<!irgendeiner )zeit\\b",
-                "datum\\b"
+                "datum\\b",
             ],
             "MACAddress": ["MAC[- ]Adresse"],
             "IPAddress": ["IP[- ]Adressen?", "\\bIP\\b"],
@@ -426,7 +385,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(Geräte|Produkt)temperatur",
                 "Temperatur des (Geräte?s|Produkte?s)",
             ],
-            "ScheduleTimes": [ ##X
+            "ScheduleTimes": [  ##X
                 "schedule(.){0,20}time",
                 "\\bschedules\\b",
                 "scheduling (.){0,20}setup",
@@ -438,171 +397,109 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bIdentifizierer\\b",
                 "ID-Nummer",
                 "Kennnummer",
-                "Kundennummer"
+                "Kundennummer",
             ],
             "AccountID": ["Konto[- ]ID"],
             "DeviceID": [
                 "(Geräte|Produkt)[- ]U?ID",
                 "Gerätenummer",
-                "Geräteidentifizierung"
+                "Geräteidentifizierung",
             ],
-            "RandomID": ["random ID", "random identifier"], ##X
-            "AdvertisingID": [
-                "Werbe[- ]ID",
-                "IDFA"
-            ],
+            "RandomID": ["random ID", "random identifier"],  ##X
+            "AdvertisingID": ["Werbe[- ]ID", "IDFA"],
             "SessionID": ["Sitzungs[- ]ID"],
             "UserID": ["(Be)?Nutzer[- ]ID"],
-            "OpenID": [
-                "open( |-)ID",
-                "open identifier",
-                "\\bO(A)?ID\\b"
-            ],
-            "GoogleAdID": [
-                "Google (ad|advertising) ID",
-                "GAID"
-            ],
+            "OpenID": ["open( |-)ID", "open identifier", "\\bO(A)?ID\\b"],
+            "GoogleAdID": ["Google (ad|advertising) ID", "GAID"],
             "WindowsAdID": ["Windows (ad|advertising) ID"],
-            "AndroidID": [
-                "Android[- ]ID",
-                "\\bAAID\\b"
-                ],
-            "FCMToken": [
-                "FCM[- ]token",
-                "Firebase Cloud Messaging token"
-            ],
+            "AndroidID": ["Android[- ]ID", "\\bAAID\\b"],
+            "FCMToken": ["FCM[- ]token", "Firebase Cloud Messaging token"],
             "SpaceID": ["Space( |-)ID"],
             "ClickID": ["click[- ]ID"],
-            "ICCID": [
-                "ICCID",
-                "Integrated Circuit Card Identifier"
-            ],
-            "IMEI": [
-                "IMEI",
-                "International Mobile Equipment Identity"
-            ],
-            "IMSI": [
-                "IMSI",
-                "International Mobile Subscriber Identity"
-            ],
+            "ICCID": ["ICCID", "Integrated Circuit Card Identifier"],
+            "IMEI": ["IMEI", "International Mobile Equipment Identity"],
+            "IMSI": ["IMSI", "International Mobile Subscriber Identity"],
             "SIMInformation": ["SIM.{0,20}(daten|informationen|fehler)"],
             "WebsiteInformation": [
                 "Website[- ](informationen|daten)",
-                "Webseiten(informationen|daten)"
+                "Webseiten(informationen|daten)",
             ],
-            "Referrer": ["referrer", "referring(.){0,20}(URL|website)", "referer"], ##X
-            "HostName": ["host name", "hostname"], ##X
-            "URL": ["URL", "uniform resource locator", "hyperlink"], ##X
-            "DomainName": ["domain name", "website domain"], ##X
-            "Clicks": [
-                "Klicks", 
-                "(Seiten|Schaltflächen)klicks"
-            ],
-            "ScrollData": ["scroll data", "\\bscroll(s)?\\b"], ##X
-            "Clickstream": ["click( )?stream"],##X
-            "PageResponseTime": ["page response time", "website response time"], ##X
+            "Referrer": ["referrer", "referring(.){0,20}(URL|website)", "referer"],  ##X
+            "HostName": ["host name", "hostname"],  ##X
+            "URL": ["URL", "uniform resource locator", "hyperlink"],  ##X
+            "DomainName": ["domain name", "website domain"],  ##X
+            "Clicks": ["Klicks", "(Seiten|Schaltflächen)klicks"],
+            "ScrollData": ["scroll data", "\\bscroll(s)?\\b"],  ##X
+            "Clickstream": ["click( )?stream"],  ##X
+            "PageResponseTime": ["page response time", "website response time"],  ##X
             "ScreenResolution": ["(Bildschirm|Anzeige)auflösung"],
             "LocationData": [
                 "Standort(daten|informationen|bereich|berechtigung)",
                 "Standort.{0,20}(?<!Meta)(Informationen|Daten|Diensten?)",
-                "Ihre[nm].{0,15}Standort"
+                "Ihre[nm].{0,15}Standort",
             ],
             "LocationHistory": ["Standort(verlauf|historie)"],
             "GPSData": ["GPS[- ](daten|informationen|koordinaten)"],
-            "Coordinates": [
-                "Koordinaten",
-                "Längengrad",
-                "Breitengrad"
-            ],
-            "AltitudeData": ["Höhendaten", "Erhöhungsdaten"], ##U
+            "Coordinates": ["Koordinaten", "Längengrad", "Breitengrad"],
+            "AltitudeData": ["Höhendaten", "Erhöhungsdaten"],  ##U
             "Timezone": ["Zeitzonen?"],
             "Address": [
                 "(?<!Email[ -])(?<!E-mail[ -])(?<!IP[ -])Address",
-                "(Liefer|Kontakt|Empfänger|Sender)addresse"
+                "(Liefer|Kontakt|Empfänger|Sender)addresse",
             ],
-            "AreaCode": [
-                "Ländercode",
-                "PLZ",
-                "Postleitzahl",
-                "Standortbereichscode"
-            ],
-            "City": ["\\bStadt\\b"], ##U
-            "Region": ["Region", "Land", "Bundesland", "Landkreis"], ##U
-            "Country": [ ##U
+            "AreaCode": ["Ländercode", "PLZ", "Postleitzahl", "Standortbereichscode"],
+            "City": ["\\bStadt\\b"],  ##U
+            "Region": ["Region", "Land", "Bundesland", "Landkreis"],  ##U
+            "Country": [  ##U
                 "(?<!outside of your )(?<!to the )Land",
-                "\\bLand\\b"
-                ], 
-            "Language": [
-                "Sprache",
-                "Spracheinstellung(en)?",
-                "Systemsprache"
+                "\\bLand\\b",
             ],
+            "Language": ["Sprache", "Spracheinstellung(en)?", "Systemsprache"],
             "Name": [
-                "(?<!Geräte)(?<!Produkt)(?<!App)(?<!Vor)(?<!Nach)(?<!Nick)(?<!Spitz)(?<!Benutzer)(?<!Nutzer)(?<!Firmen)(?<!Halter)name\\b(?!:)(?! (des|der))(?! (Ihrer|Ihres))(?! (von|vom))", ##U
+                "(?<!Geräte)(?<!Produkt)(?<!App)(?<!Vor)(?<!Nach)(?<!Nick)(?<!Spitz)(?<!Benutzer)(?<!Nutzer)(?<!Firmen)(?<!Halter)name\\b(?!:)(?! (des|der))(?! (Ihrer|Ihres))(?! (von|vom))",  ##U
                 "vollständiger name",
             ],
             "FirstName": ["Vornamen?"],
-            "LastName": [
-                "Nachname",
-                "Familienname"
-            ],
-            "Nickname": [
-                "Nickname",
-                "Spitzname"
-            ],
+            "LastName": ["Nachname", "Familienname"],
+            "Nickname": ["Nickname", "Spitzname"],
             "DemographicData": ["demografische(.){0,20}(Daten|Informationen)"],
-            "LifestyleInformation": ["lifestyle(.){0,20}(information|data)"],##X
-            "NumberOfChildren": [
-                "Kinder(an)?zahl",
-                "(Anz)?zahl (der|Ihrer) Kinder"
-            ],
+            "LifestyleInformation": ["lifestyle(.){0,20}(information|data)"],  ##X
+            "NumberOfChildren": ["Kinder(an)?zahl", "(Anz)?zahl (der|Ihrer) Kinder"],
             "PetInformation": [
                 "Hautsier(informationen|daten)",
                 "(Informationen|Daten) über(.){0,20}Haustiere?",
             ],
-            "NumberOfPets": [
-                "Haustier(an)?zahl",
-                "(Anz)?zahl (der|Ihrer) Haustiere"
-            ],
+            "NumberOfPets": ["Haustier(an)?zahl", "(Anz)?zahl (der|Ihrer) Haustiere"],
             "Age": ["\\bAlter\\b"],
-            "DateOfBirth": [
-                "Geburtsdatum",
-                "Geburtstag"
-            ],
-            "PhysicalBodyMetrics": [##X
+            "DateOfBirth": ["Geburtsdatum", "Geburtstag"],
+            "PhysicalBodyMetrics": [  ##X
                 "physical body(.){0,20}(metric|measurement)",
                 "body composition (data|information)",
             ],
-            "Height": [
-                "\\bGröße\\b",
-                "Körpergröße"
-            ],
-            "Weight": [
-                "\\bGewicht\\b",
-                "Körpergewicht"
-            ],
+            "Height": ["\\bGröße\\b", "Körpergröße"],
+            "Weight": ["\\bGewicht\\b", "Körpergewicht"],
             "Gender": ["\\bGeschlecht\\b"],
             "Nationality": [
                 "\\bNationalität\\b",
                 "\\bStaatsbürgerschaft\\b",
-                "\\bStaatsangehörigkeit\\b"
+                "\\bStaatsangehörigkeit\\b",
             ],
-            "SexualOrientation": ["sexuelle Orientierung"],##U
+            "SexualOrientation": ["sexuelle Orientierung"],  ##U
             "SexualLife": ["\\bSexualleben\\b"],
             "BiographicInformation": ["biografische (Informationen|Daten)"],
             "EducationalBackground": [
                 "Bildungshintergrund",
                 "Bildungsgrad",
                 "Bildungsstand",
-                "Bildungsniveau,"
+                "Bildungsniveau,",
             ],
-            "EmploymentBackground": [ ##X
+            "EmploymentBackground": [  ##X
                 "employment(.){0,20}background",
                 "job title",
                 "occupation",
                 "work history",
             ],
-            "Employer": [ ##U
+            "Employer": [  ##U
                 "\\bArbeitgeber\\b",
                 "company you work for",
                 "organization you work for",
@@ -619,7 +516,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "kriminelle Vergangenheit",
             ],
             "CurriculumVitae": ["\\bLebenslauf\\b"],
-            "CandidateInformation": ["\\bcandidate (information|data)\\b"], ##X
+            "CandidateInformation": ["\\bcandidate (information|data)\\b"],  ##X
             "TradeUnionMembership": ["\\bGewerkschaftsmitgliedschaft(en)?\\b"],
             "SocialAssistanceData": ["\\bsoziale Hilfen?\\b"],
             "ContactInformation": ["Kontakt(informationen|info|daten|details)"],
@@ -631,16 +528,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Telefonnummer",
                 "Mobilfunknummer",
                 "Mobiltelefonnummer",
-                "Festnetznummer"
+                "Festnetznummer",
             ],
-            "EmergencyData": ["emergency(.){0,20}(contact|information|data)"], ##X
-            "FamilyInformation": [ ##X
+            "EmergencyData": ["emergency(.){0,20}(contact|information|data)"],  ##X
+            "FamilyInformation": [  ##X
                 "family(.){0,20}(information|data|details)",
                 "information about(.){0,20}family",
                 "family member(s)?",
                 "family relationship",
             ],
-            "FriendsInformation": [ ##X
+            "FriendsInformation": [  ##X
                 "friend(s)?(.){0,20}(information|data)",
                 "information about(.){0,20}friend",
             ],
@@ -648,66 +545,45 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Identitäts(informationen|daten|details)",
                 "Informationen über(.){0,20}Ihre Identität",
                 "(physisch|physiologisch|genetisch|psychisch|wirtschaftlich|kulturell|sozial)en Identität",
-                "Informationen.{0,60}identifiziert werden (kann|können)" ##U
+                "Informationen.{0,60}identifiziert werden (kann|können)",  ##U
             ],
             "GovernmentID": [
-                "nationale Identifikationsnummer"##U
+                "nationale Identifikationsnummer"  ##U
             ],
             "Passport": ["\\b(Personal)Ausweis\\b"],
-            "DriverLicense": [
-                "Führerschein"
-            ],
-            "TaxID": [
-                "Steuernummer",
-                "Steueridentifikationsnummer",
-                "Steuer-ID"
-            ],
-            "SocialSecurityNumber": [
-                "Sozialversicherungsnummer",
-                "\\bSV-Nummer\\b"
-            ],
+            "DriverLicense": ["Führerschein"],
+            "TaxID": ["Steuernummer", "Steueridentifikationsnummer", "Steuer-ID"],
+            "SocialSecurityNumber": ["Sozialversicherungsnummer", "\\bSV-Nummer\\b"],
             "UserInformation": [
                 "(Be)Nutzer(information(en)?|daten|details)",
-                "(Informationen|Daten|Details) des (Be)?Nutzers"
-                ],
+                "(Informationen|Daten|Details) des (Be)?Nutzers",
+            ],
             "AccountData": [
                 "\\b((Be)?nutzer)?Konto(daten|informationen|details)",
-                "(Daten|Informationen|Details).{0,20}Kontos?"
+                "(Daten|Informationen|Details).{0,20}Kontos?",
             ],
-            "AccountAge": ["account age", "how long you have had an account"], ##X
-            "AccountNumber": [
-                "\\bKontonummer"
-                "\\bKonto-.{0,20}nummer"
-            ],
+            "AccountAge": ["account age", "how long you have had an account"],  ##X
+            "AccountNumber": ["\\bKontonummer\\bKonto-.{0,20}nummer"],
             "AccountSettings": ["Kontoeinstellungen"],
-            "SubscriptionData": ["Abonnements"], ##U
+            "SubscriptionData": ["Abonnements"],  ##U
             "ProfileData": ["Profil(daten|informationen|details)"],
             "ProfilePicture": ["Profilbild", "Profilfoto", "Avatar"],
-            "Username": [
-                "Benutzername",
-                "Nutzername"
-            ],
+            "Username": ["Benutzername", "Nutzername"],
             "SocialMediaDetails": [
-                "(Details|Informationen).{0,40}soziale[rn]? (Medien|Netzwerke)" ##U
+                "(Details|Informationen).{0,40}soziale[rn]? (Medien|Netzwerke)"  ##U
             ],
-            "ThirdPartyHandle": [ ##X
+            "ThirdPartyHandle": [  ##X
                 "social media(.){0,64}handle\\b",
                 "third(-| )party(.){0,64}handle\\b",
             ],
-            "PermissionsData": [
-                "\\bZugriffsrechte",
-                "Berechtigungen"
-            ],
+            "PermissionsData": ["\\bZugriffsrechte", "Berechtigungen"],
             "CameraPermissions": ["\\bKamerazugriffsrechte?\\b"],
             "MicrophonePermissions": ["\\bMikrofonzugriffsrechte\\b"],
             "LocationPermissions": ["\\bStandortzugriffsrechte\\b"],
             "ContactsPermissions": ["\\bKontaktzugriffsrechte\\b"],
             "StoragePermissions": ["\\bSpeicherzugriffsrechte\\b"],
             "NotificationPermissions": ["\\bBenachrichtigungszugangsrechte\\b"],
-            "Lighting": [
-                "\\bBeleuchtung\\b",
-                "\\bBelichtung\\b"
-            ],
+            "Lighting": ["\\bBeleuchtung\\b", "\\bBelichtung\\b"],
             "SensorData": ["Sensor(daten|informationen)"],
             "EnvironmentalData": [
                 "(Umwelt|Umgebungs)(daten|informationen|details)",
@@ -715,92 +591,81 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bECV\\b",
             ],
             "MotionData": [
-                "\\bBewegungsdaten\\b" ##U
+                "\\bBewegungsdaten\\b"  ##U
             ],
-            "PresenceData": ["presence"], ##X
-            "AmbientLightData": ["ambient light"], ##X
+            "PresenceData": ["presence"],  ##X
+            "AmbientLightData": ["ambient light"],  ##X
             "TemperatureData": ["Temperatur"],
             "HumidityData": ["Luftfeuchtigkeit"],
             "MoistureData": ["\\bFeuchtigkeit"],
-            "NoiseLevel": ["Geräusch(level|niveua|pegel)"], ##U
-            "PrecipitationData": ["precipitation", "\\brain\\b"], ##X
+            "NoiseLevel": ["Geräusch(level|niveua|pegel)"],  ##U
+            "PrecipitationData": ["precipitation", "\\brain\\b"],  ##X
             "WindData": ["\\bWind\\b"],
             "AirQualityData": ["Luftqualität"],
-            "WaterReadings": ["water reading(s)?", "water sensor reading(s)?"], ##X
-            "CarbonMonoxideData": [
-                "Kohlenstoffmonoxid",
-                "\\bCO(?!-)\\b"
-            ],
-            "CarbonDioxideData": [
-                "Kohlenstoffdioxid",
-                "CO2"
-            ],
-            "SmokeData": ["\\bRauch"], ##U
-            "OutdoorData": ["outdoor (data|information|detail)"], ##X
+            "WaterReadings": ["water reading(s)?", "water sensor reading(s)?"],  ##X
+            "CarbonMonoxideData": ["Kohlenstoffmonoxid", "\\bCO(?![-.])\\b"],
+            "CarbonDioxideData": ["Kohlenstoffdioxid", "CO2"],
+            "SmokeData": ["\\bRauch"],  ##U
+            "OutdoorData": ["outdoor (data|information|detail)"],  ##X
             "WeatherData": ["Wetter(daten|informationen|details)"],
             "WaterConsumptionData": ["Wasserverbrauch"],
-            "WateringSchedule": ["watering schedule", "watering timetable"], ##X
+            "WateringSchedule": ["watering schedule", "watering timetable"],  ##X
             "GasConsumptionData": ["Gasverbrauch"],
-            "DirtLevel": ["dirt level", "dust level", "level(s)? of dirt"], ##X
-            "PresenceOfPeople": [ ##X
+            "DirtLevel": ["dirt level", "dust level", "level(s)? of dirt"],  ##X
+            "PresenceOfPeople": [  ##X
                 "presence of(.){0,20}people",
                 "people detected",
                 "(humand|people|person)(s)? (detected|present|detection|presence)",
                 "where (human|people|person)(s)? are (located|present)",
             ],
-            "PresenceOfPets": ["presence of(.){0,20}pet", "pets detected"], ##X
-            "CleaningHistory": ["cleaning history"], ##X
-            "HeatingSchedule": ["heating schedule", "heating timetable"], ##X
-            "AppName": [
-                "App(.){0,16}name",
-                "App-Bezeichnung"
-            ],
-            "HomeName": ["home(.){0,16}name", "name of home"], ##X
-            "FloorplanData": ["floorplan"], ##X
-            "FloorType": ["floor type", "type(s)? of floor"], ##X
-            "ObjectData": [ ##X
+            "PresenceOfPets": ["presence of(.){0,20}pet", "pets detected"],  ##X
+            "CleaningHistory": ["cleaning history"],  ##X
+            "HeatingSchedule": ["heating schedule", "heating timetable"],  ##X
+            "AppName": ["App(.){0,16}name", "App-Bezeichnung"],
+            "HomeName": ["home(.){0,16}name", "name of home"],  ##X
+            "FloorplanData": ["floorplan"],  ##X
+            "FloorType": ["floor type", "type(s)? of floor"],  ##X
+            "ObjectData": [  ##X
                 "object (data|information|detail)",
                 "type(s)? of object",
                 "obstacle",
             ],
-            "RoomName": ["room name", "name of room"], ##X
-            "OperatingPowerData": ["operating power"], ##X
-            "EnergyConsumptionData": [
-                "Energieverbrauch"
-            ],
-            "VoltageData": ["Spannung"], ##U
-            "EnergyProductivityData": ["energy productivity", "energy production data"], ##X
+            "RoomName": ["room name", "name of room"],  ##X
+            "OperatingPowerData": ["operating power"],  ##X
+            "EnergyConsumptionData": ["Energieverbrauch"],
+            "VoltageData": ["Spannung"],  ##U
+            "EnergyProductivityData": [
+                "energy productivity",
+                "energy production data",
+            ],  ##X
             "HealthData": [
-                "(?<!öffentliche )(?<!öffentlichen )(Gesundheit)" ##U
+                "(?<!öffentliche )(?<!öffentlichen )(Gesundheit)"  ##U
             ],
-            "HealthStatus": ["health(.){0,20}status"], ##X
-            "SleepData": [##X
+            "HealthStatus": ["health(.){0,20}status"],  ##X
+            "SleepData": [  ##X
                 "sleep(.){0,20}(data|information)",
                 "nap (data|information|pattern)",
             ],
             "CoughingData": ["Husten"],
             "SnoringData": ["Schnarch(en)?"],
-            "HeartRateData": [
-                "Herzrate",
-                "Puls"
-            ],
+            "HeartRateData": ["Herzrate", "Puls"],
             "StepCountData": [
                 "Schrittzähler",
                 "Schrittzahl",
             ],
-            "BodyWaterData": ["body water", "hydration data"], ##X
-            "FitnessGoals": ["fitness goal", "exercise goal", "activity goal"], ##X
-            "FitnessChallengeResults": [ ##X
+            "BodyWaterData": ["body water", "hydration data"],  ##X
+            "FitnessGoals": ["fitness goal", "exercise goal", "activity goal"],  ##X
+            "FitnessChallengeResults": [  ##X
                 "fitness challenge result",
                 "exercise challenge result",
                 "personal bests",
             ],
-            "PhysicalActivity": [ ##X
+            "PhysicalActivity": [  ##X
                 "physical activity",
                 "exercise activity",
                 "workout activity",
             ],
-            "WorkoutSummaries": ["\\bworkout (summaries|summary)"], ##X
+            "WorkoutSummaries": ["\\bworkout (summaries|summary)"],  ##X
             "BloodPressure": ["Blutdruck"],
             "BloodSugar": ["Blutzucker(spiegel)?"],
             "BloodOxygenLevel": ["Blutsauerstoff", "SpO2"],
@@ -811,32 +676,36 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "MetabolicInformation": ["metabolische (informationen|daten)"],
             "MenstrualCycleData": [
                 "Menstruationszyklus",
-                "Periode(daten|informationen)" ##U
+                "Periode(daten|informationen)",  ##U
             ],
             "BoneDensity": ["Knochendichte"],
-            "DesignFiles": ["design file", "design document", "design specification"], ##X
-            "FinancialData": ["Finanzdaten"], ##U
-            "IncomeData": ["Einkommen"], ##U
+            "DesignFiles": [
+                "design file",
+                "design document",
+                "design specification",
+            ],  ##X
+            "FinancialData": ["Finanzdaten"],  ##U
+            "IncomeData": ["Einkommen"],  ##U
             "FinancialStatus": ["Finanzstatus"],
             "CreditScore": ["Kreditwürdigkeit", "Bonität"],
-            "MembershipData": [ ##X
+            "MembershipData": [  ##X
                 "membership (data|information|details|level)",
                 "membership status",
             ],
-            "Maps": [ ##X
+            "Maps": [  ##X
                 "\\bmap(s)?\\b",
             ],
-            "MapAreaNames": ["area names of map", "map area name(s)?"], ##X
+            "MapAreaNames": ["area names of map", "map area name(s)?"],  ##X
             "MediaData": [
                 "(Medien|Multimedia)(daten|informationen|dateien)",
-                "(Multi)?mediale (Daten|Dateien|Informationen|Details)"
+                "(Multi)?mediale (Daten|Dateien|Informationen|Details)",
             ],
             "AudioData": [
                 "(Audio|Geräusch|Klang)(daten|signale?|aufnahmen?|informationen|wiedergabe|dateien)"
             ],
             "VideoData": [
                 "video(daten|signale?|aufnahmen?|dateien|informationen|aufzeichnungen)",
-                "Videos"
+                "Videos",
             ],
             "ImageData": [
                 "(Bild|Foto|Photo)(.){0,20}data",
@@ -844,14 +713,13 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(F|Ph)otos?\\b",
                 "(F|Ph)otografien?\\b",
             ],
-            "Screenshots": [
-                "Screenshot",
-                "Bildschirmfoto"
+            "Screenshots": ["Screenshot", "Bildschirmfoto"],
+            "TouchData": [
+                "\\bTouch(.){0,20}(daten|informationen|interaktionen|signale)"
             ],
-            "TouchData": ["\\bTouch(.){0,20}(daten|informationen|interaktionen|signale)"],
-            "VoiceCommands": ["Sprachbefehle?"], ##U
-            "VoiceCharacteristics": ["voice characteristic", "voice feature"], ##X
-            "TextData": ["\\btext(.){0,20}(data|information|content)"], ##X
+            "VoiceCommands": ["Sprachbefehle?"],  ##U
+            "VoiceCharacteristics": ["voice characteristic", "voice feature"],  ##X
+            "TextData": ["\\btext(.){0,20}(data|information|content)"],  ##X
             "Drawings": [
                 "(?<!Auf)Zeichnung(en)?",
                 "Skizzen?",
@@ -859,33 +727,37 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "Music": [
                 "\\bMusic\\b",
-                "Musik(daten|informationen|dienst(e|en)?|dateien)"
+                "Musik(daten|informationen|dienst(e|en)?|dateien)",
             ],
-            "OtherFileData": ["other file(s)?", "other document(s)?", "other content"], ##X
+            "OtherFileData": [
+                "other file(s)?",
+                "other document(s)?",
+                "other content",
+            ],  ##X
             "TemporaryData": ["temporäre (daten|informationen)"],
             "TemporaryFiles": ["\\btemporäre datei(en)?\\b"],
-            "Files": ["\\bDatei(en)?\\b", "\\bDokumente?\\b"], ##X too general!
-            "GardenDesign": [ ##X
+            "Files": ["\\bDatei(en)?\\b", "\\bDokumente?\\b"],  ##X too general!
+            "GardenDesign": [  ##X
                 "(?=.*garden)(?=.*(data|information|detail|created|planned))"
             ],
             "PersonalBehaviorData": [
-                "Verhalten", ## zu allgemein!
-                "Verhaltens(daten|informationen)"
+                "Verhalten",  ## zu allgemein!
+                "Verhaltens(daten|informationen)",
             ],
-            "HabitData": ["Gewohnheiten\\b"], ##U
+            "HabitData": ["Gewohnheiten\\b"],  ##U
             "InterestData": [
-                "\\bInteressen\\b", ##X zu allgemein!
+                "\\bInteressen\\b",  ##X zu allgemein!
                 "interessensbezogene (Daten|Informationen|Details)",
             ],
-            "HobbyData": [
-                "\\bHobby\\b",
-                "\\bHobbies\\b"
-            ],
-            "PurchaseMotivation": ["purchase motivation", "motivation for purchase"], ##X
+            "HobbyData": ["\\bHobby\\b", "\\bHobbies\\b"],
+            "PurchaseMotivation": [
+                "purchase motivation",
+                "motivation for purchase",
+            ],  ##X
             "BiometricData": [
-                "biometrische (Daten|informationen)" ##U
+                "biometrische (Daten|informationen)"  ##U
             ],
-            "FacialData": [ ##X
+            "FacialData": [  ##X
                 "facial (data|information|feature)",
                 "scan of(.){0,20}face",
                 "(recognition|detect)(.){0,48}face",
@@ -893,93 +765,77 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "facial (scan|image)",
                 "face prints",
             ],
-            "VoiceData": [ ##U
+            "VoiceData": [  ##U
                 "Sprach(aufnahmen?|aufzeichnung(en)?|eingaben?)"
             ],
-            "FingerprintData": ["fingerprint (data|information)"], ##X
-            "PersonDetectionInformation": [ ##X
+            "FingerprintData": ["fingerprint (data|information)"],  ##X
+            "PersonDetectionInformation": [  ##X
                 "person detection (data|information)",
             ],
-            "Submissions": ["\\bsubmission(s)?\\b"], ##X
-            "Feedback": [
-                "((Be)?nutzer)Feedback",
-                "Rückmeldungen",
-                "Vorschläge"
-            ],
+            "Submissions": ["\\bsubmission(s)?\\b"],  ##X
+            "Feedback": ["((Be)?nutzer)Feedback", "Rückmeldungen", "Vorschläge"],
             "Comments": ["\\bKommentare?\\b"],
-            "Opinions": [ ##U
+            "Opinions": [  ##U
                 "\\bMeinung(en)?\\b",
-                "Kommentaren?\\b"
+                "Kommentaren?\\b",
             ],
-            "Reviews": ["Bewertung(en)?"], ## U --too general
+            "Reviews": ["Bewertung(en)?"],  ## U --too general
             "ServicesData": [
                 "Service(daten|informationen)",
-                "(Daten|Informationen).{0,50}Diensten" ##U
+                "(Daten|Informationen).{0,50}Diensten",  ##U
             ],
-            "ServiceType": ["service type", "type of service"], ##X
-            "CallRecords": [
-                "Anrufaufzeichnungen",
-                "Telefonanrufe"
-            ],
+            "ServiceType": ["service type", "type of service"],  ##X
+            "CallRecords": ["Anrufaufzeichnungen", "Telefonanrufe"],
             "Messages": [
-                "(Chat|Gesprächs|SMS-)?Nachrichten(?!verlauf)(?!empfänger)(?!dienst)(?!berichten)", ## too general?
+                "(Chat|Gesprächs|SMS-)?Nachrichten(?!verlauf)(?!empfänger)(?!dienst)(?!berichten)",  ## too general?
                 "(Details|Informationen).{0,20}(Nachrichten|Messenger|Messaging)",
-                "Chat-Eingaben"
+                "Chat-Eingaben",
             ],
-            "ChatHistory": [
-                "Chat(verlauf|historie)",
-                "Nachrichten(verlauf|historie)"
-            ],
-            "MessageDrafts": [ ##X
+            "ChatHistory": ["Chat(verlauf|historie)", "Nachrichten(verlauf|historie)"],
+            "MessageDrafts": [  ##X
                 "message draft(s)?\\b",
                 "unsent message(s)?",
                 "\\bdraft message(s)?",
                 "\\bunsent form data\\b",
             ],
-            "CommunicationRecords": [ ##U
+            "CommunicationRecords": [  ##U
                 "Kommunikations(verlauf|historie)"
             ],
-            "RegistrationData": ["Registrierungs(daten|informationen|details)"], ##U
+            "RegistrationData": ["Registrierungs(daten|informationen|details)"],  ##U
             "ParticipationData": [
                 "Teilnehmer(daten|informationen|details)",
                 "Teilnahme(daten|informationen|details)",
-                "(Daten|Informationen|Details).{0,10}Teilnehmer"
+                "(Daten|Informationen|Details).{0,10}Teilnehmer",
             ],
-            "NumberOfParticipations": [
-                "Anzahl.{0,10}(Teilnahmen|Teilnehmer)"
-            ],
-            "RewardHistory": [ ##X
+            "NumberOfParticipations": ["Anzahl.{0,10}(Teilnahmen|Teilnehmer)"],
+            "RewardHistory": [  ##X
                 "reward history",
                 "\\brewards(.){0,20}received",
             ],
-            "FilmingEquipment": [ ##U
+            "FilmingEquipment": [  ##U
                 "Filmausrüstung",
             ],
             "SecurityInformation": [
                 "sicherheitsrelevante Informationen",
                 "Sicherheits(daten|informationen|details)",
                 "Sicherheitsanmeldedaten",
-                "Sicherheitsstatus"
+                "Sicherheitsstatus",
             ],
-            "TamperStatus": ["tamper status", "tampering (data|information)"], ##U
+            "TamperStatus": ["tamper status", "tampering (data|information)"],  ##U
             "SecurityQuestion": [
                 "Sicherheitsfragen?",
             ],
             "CredentialData": [
                 "(?<!Sicherheits)(Login|Anmelde|Authentifikations)(daten|informationen)",
             ],
-            "SecurityPin": [
-                "Sicherheits-PIN",
-                "PIN-Code",
-                "\\bPIN\\b"
-            ],
+            "SecurityPin": ["Sicherheits-PIN", "PIN-Code", "\\bPIN\\b"],
             "Password": ["Passwort"],
-            "AuthToken": [ ##X
+            "AuthToken": [  ##X
                 "\\bauth token(s)?\\b",
                 "\\bauthentication token(s)?\\b",
                 "\\bsession token(s)?\\b",
             ],
-            "WrittenPermissions": [ ##X
+            "WrittenPermissions": [  ##X
                 "\\bwritten permission\\b",
                 "\\bwritten consent\\b",
                 "signed declaration confirming your authorization",
@@ -989,13 +845,13 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "ProofOfIdentity": [
                 "(Nachweis|Verifikation|Überprüfung|Beweis).{0,10}Identität",
                 "Identitätsnachweis",
-                "Identität.{0,20}(nach(zu)?weisen|verifizieren|überprüfen)"
+                "Identität.{0,20}(nach(zu)?weisen|verifizieren|überprüfen)",
             ],
             "ConsentStatus": [
                 "(Aufzeichnungen|Datensätze).{0,15}(Zustimmungen|Einwilligungen)",
                 "Einwilligungserklärung(en)?",
             ],
-            "EmployeeRecord": [ ##X
+            "EmployeeRecord": [  ##X
                 "HR record(s)?",
                 "human resource record(s)?",
                 "personnel record(s)?",
@@ -1006,128 +862,117 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Bestell(details|informationen|daten)",
                 "Bestellungen",
                 "Dokumente über Einkäufe",
-                "gekaufte (Artikel|Produkte)"
+                "gekaufte (Artikel|Produkte)",
             ],
-            "OrderHistory": [
-                "(Einkaufs|kauf)historie",
-                "(Einkaufs|kauf)verlauf"
-            ],
+            "OrderHistory": ["(Einkaufs|kauf)historie", "(Einkaufs|kauf)verlauf"],
             "OrderNumber": ["Bestellnummer"],
-            "InvoiceData": [
-                "Rechnungs(daten|informationen|details|datensätze)"
+            "InvoiceData": ["Rechnungs(daten|informationen|details|datensätze)"],
+            "PurchaseDate": ["Kaufdatum"],  ##U
+            "PaymentData": [
+                "Zahlungs(daten|informationen|details|aufzeichnungen|datensätze)"
             ],
-            "PurchaseDate": ["Kaufdatum"], ##U
-            "PaymentData": ["Zahlungs(daten|informationen|details|aufzeichnungen|datensätze)"],
-            "PaymentAmount": [
-                "(Zahlungs|Kauf|Transaktions)(betrag|preis)"
-            ],
+            "PaymentAmount": ["(Zahlungs|Kauf|Transaktions)(betrag|preis)"],
             "PaymentMethod": ["Zahlungsmethode"],
-            "BillingData": ["billing(.){0,20}(data|information|detail)"], ##X -- InvoiceData?
-            "BillingReceipts": [ ##X
+            "BillingData": [
+                "billing(.){0,20}(data|information|detail)"
+            ],  ##X -- InvoiceData?
+            "BillingReceipts": [  ##X
                 "billing receipt",
                 "payment receipt",
                 "purchase receipt",
             ],
-            "TransactionData": [
-                "Transaktions(daten|informationen|details)"
-            ],
+            "TransactionData": ["Transaktions(daten|informationen|details)"],
             "TransactionHistory": ["Transaktions(historie|verlauf)"],
-            "InAppTransactions": ["in(-| )app transaction", "in(-| )app purchase"], ##X
-            "ShippingInformation": ["(shipping|delivery)(.){0,20}(information|data)"], ##X
-            "CommercialInformation": ["kommerzielle(.){0,20}(informationen|daten|details)"], ##U
-            "CreditCardInformation": [
-                "Kreditkarten(informationen|daten|details)"
-            ],
-            "CreditCardNumber": [
-                "Kreditkartennummer",
-                "Kredit(karten)?-.{0,20}nummer"
-            ],
-            "DebitCardInformation": [ ##X
+            "InAppTransactions": ["in(-| )app transaction", "in(-| )app purchase"],  ##X
+            "ShippingInformation": [
+                "(shipping|delivery)(.){0,20}(information|data)"
+            ],  ##X
+            "CommercialInformation": [
+                "kommerzielle(.){0,20}(informationen|daten|details)"
+            ],  ##U
+            "CreditCardInformation": ["Kreditkarten(informationen|daten|details)"],
+            "CreditCardNumber": ["Kreditkartennummer", "Kredit(karten)?-.{0,20}nummer"],
+            "DebitCardInformation": [  ##X
                 "debit(.){0,20}card(.){0,20}(information|data|detail)"
             ],
-            "BankAccountInformation": [ ##U
+            "BankAccountInformation": [  ##U
                 "Bankkonto(informationen|daten|details)"
             ],
             "BankAccountNumber": [
                 "(Bank)?Kontonummer",
                 "Konto-.{0,20}nummer",
                 "Banknummer",
-                "IBAN"
+                "IBAN",
             ],
-            "BankHolderName": [
-                "Namen?.{0,10}Kontoinhabers",
-                "Kontoinhabername"
-            ],
+            "BankHolderName": ["Namen?.{0,10}Kontoinhabers", "Kontoinhabername"],
             "PaymentCardInformation": [
-                "payment(.){0,20}card(.){0,20}(information|data|detail)" ##X
+                "payment(.){0,20}card(.){0,20}(information|data|detail)"  ##X
             ],
-            "PaymentCardNumber": ["Bezahlkartennummer"], ##?U
+            "PaymentCardNumber": ["Bezahlkartennummer"],  ##?U
             "CardholderData": [
                 "Karteninhaber(daten|informationen|details)",
-                "Name.{0,20}Karteninhaber"
+                "Name.{0,20}Karteninhaber",
             ],
-            "CardExpiryDate": [ ##U
+            "CardExpiryDate": [  ##U
                 "Ablaufdatum der Karte"
             ],
-            "CustomerList": ["Kundenliste"], ##U
-            "CustomerRecords": [ ##U
+            "CustomerList": ["Kundenliste"],  ##U
+            "CustomerRecords": [  ##U
                 "Kunden(aufzeichnungen|aufnahmen|daten|informationen|details)"
             ],
             "ApplicationDocuments": [
                 "Bewerbungs(daten|informationen|dokumente|unterlagen)",
-                "Lebenslauf" ##U
+                "Lebenslauf",  ##U
             ],
             "AppInformation": [
-                "App-(Daten|Informationen|Details|Herkunft)", ##U
-                "(Daten|Informationen|Details).{0,20}App"
+                "App-(Daten|Informationen|Details|Herkunft)",  ##U
+                "(Daten|Informationen|Details).{0,20}App",
             ],
-            "AppConfiguration": [
-                "App-(Konfiguration|Einstellung)"
-            ],
+            "AppConfiguration": ["App-(Konfiguration|Einstellung)"],
             "Qualifications": ["Qualifikationen"],
-            "CallStatus": ["call status"], ##X
-            "AmbientSound": ["Hintergrundgeräusche?"], ##U
-            "UserGeneratedContent": [ ##X
+            "CallStatus": ["call status"],  ##X
+            "AmbientSound": ["Hintergrundgeräusche?"],  ##U
+            "UserGeneratedContent": [  ##X
                 "user(-| )generated content",
                 "\\bUGC\\b",
                 "\\buser content\\b",
             ],
-            "HistoricalDataRecord": [ ##X
+            "HistoricalDataRecord": [  ##X
                 "historical data record",
                 "historical (data|information|record|detail)",
                 "historical records of your data",
             ],
-            "ForumPosts": ["(question|answer)(.){0,48}(forum)"], ##X
-            "Testimonial": [ ##X
+            "ForumPosts": ["(question|answer)(.){0,48}(forum)"],  ##X
+            "Testimonial": [  ##X
                 "\\btestimonial(s)?\\b",
             ],
-            "Ratings": ["\\bBewertung\\b"], ##U
-            "SharedContent": [
-                "(geteile|freigegebene)[rn]? Inhalte?",
-                "Freigaben"
-            ],
-            "ListedItems": ["listed item(s)?\\b", "\\bitems you have listed"], ##X
-            "Likes": [
-                "\\blikes\\b",
-                "Gefällt-mir-(Informationen|Daten)"
-            ],
-            "Follows": ["\\bfollow(s)?\\b"], ##U
+            "Ratings": ["\\bBewertung\\b"],  ##U
+            "SharedContent": ["(geteile|freigegebene)[rn]? Inhalte?", "Freigaben"],
+            "ListedItems": ["listed item(s)?\\b", "\\bitems you have listed"],  ##X
+            "Likes": ["\\blikes\\b", "Gefällt-mir-(Informationen|Daten)"],
+            "Follows": ["\\bfollow(s)?\\b"],  ##U
             "Contacts": ["Kontakte?\\b"],
-            "ContentUseHistory": ["content use history", "content viewing history"], ##X
-            "VirusDefinitions": [ ##X
+            "ContentUseHistory": [
+                "content use history",
+                "content viewing history",
+            ],  ##X
+            "VirusDefinitions": [  ##X
                 "virus definition(s)?",
                 "malware definition(s)?",
                 "virus definition list",
             ],
-            "DeviceAutomations": ["device automations"], ##X
-            "ContestData": ["contest (data|information|entry|detail|entries)"], ##X
+            "DeviceAutomations": ["device automations"],  ##X
+            "ContestData": ["contest (data|information|entry|detail|entries)"],  ##X
             "BusinessInformation": ["\\bGeschäfts(informationen|daten|details)\\b"],
             "CompanyInformation": [
                 "\\bUnternehmens(informationen|daten|details)\\b",
                 "Unternehmens?",
             ],
-            "CompanyName": ["\\bcompany(.){0,20}name\\b", "\\bname of company\\b"], ##X
-            "NumberOfEmployees": ["\\bAnzahl.{0,10}Mitarbeiter\\b", "\\bMitarbeiter(an)?zahl\\b"],
+            "CompanyName": ["\\bcompany(.){0,20}name\\b", "\\bname of company\\b"],  ##X
+            "NumberOfEmployees": [
+                "\\bAnzahl.{0,10}Mitarbeiter\\b",
+                "\\bMitarbeiter(an)?zahl\\b",
+            ],
             "BusinessModel": ["\\bGeschäftsmodell\\b"],
         }
     ),
@@ -1138,36 +983,32 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "TrackingPixel": [
                 "\\btracking pixel(s)?\\b",
                 "\\bPixel\\b",
-                "\\bZählpixel\\b"
-                #"(?=.*pixel)(?=.*(html|email|cookie|tracking))",
+                "\\bZählpixel\\b",
+                # "(?=.*pixel)(?=.*(html|email|cookie|tracking))",
             ],
-            "ClearGIF": [
-                "\\bClear-GIFs?\\b",
-                "\\bone-pixel gifs\\b"
-            ],
+            "ClearGIF": ["\\bClear-GIFs?\\b", "\\bone-pixel gifs\\b"],
             "SDK": ["\\bSDKs?(?!-Version)\\b"],
             "SimilarTechnologies": [
                 "\\b(ähnlichen?|verwandten?) Technologien?\\b",
                 "\\banderen? Identifizierungstechnologien\\b",
-                "\\b(anderen?|verwandten?) Tracking-Technologien\\b"
+                "\\b(anderen?|verwandten?) Tracking-Technologien\\b",
             ],
         }
     ),
     method_source=AttributePattern.from_dict(
         {
-            "UserProvided": [ ##U
+            "UserProvided": [  ##U
                 "\\bzur Verfügung (zu)? (stellen|gestellt (haben|werden))\\b",
-                "\\bnach eigenem Ermessen\\b"
-                "\\bAngabe(?=.*(Daten|Informationen))\\b",
+                "\\bnach eigenem Ermessen\\b\\bAngabe(?=.*(Daten|Informationen))\\b",
                 "\\b(müssen|können|sollten) Sie (?=.*(angeben|einreichen|übermitteln|bereitstellen|mitteilen))\\b",
                 "\\bSie (?=.*(angeben|einreichen|übermitteln|bereitstellen|mitteilen))\\b",
-                "\\bvon Ihnen(?=.*(angegebenen?|eingereichen?|übermittelten?|bereitgestellten?|stammen|weitergegeben))\\b"
+                "\\bvon Ihnen(?=.*(angegebenen?|eingereichen?|übermittelten?|bereitgestellten?|stammen|weitergegeben))\\b",
             ],
-            "AutomaticallyCollected": [ ##U
+            "AutomaticallyCollected": [  ##U
                 "(automatisierten|automatische) Verarbeitung",
-                "(automatisiert|automatisch) verarbeitet"
+                "(automatisiert|automatisch) verarbeitet",
             ],
-            "ThirdPartyProvided": [ ##U
+            "ThirdPartyProvided": [  ##U
                 "(?=.*(obtain|receive|collect from))(?=.*(third(-| )party|external source))",
                 "\\breceive.*from.*(partner|vendor|affiliate|provider)\\b",
                 "(Drittpartei(en)?|Dritte[rn]?|Drittanbietern?)(?=.*(erhalten|bekommen|erwerben|erfassen))",
@@ -1177,42 +1018,41 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bkombinieren\\b",
                 "\\bkombinierte?\\b",
             ],
-            "AIAnalysis": [ ##X
+            "AIAnalysis": [  ##X
                 "(?=.*\\b(use|using|through)\\b)(?=.*\\b(artificial intelligence|AI|machine learning|ML)\\b)"
             ],
-            "SocialMedia": [ ## Gardena 295?
+            "SocialMedia": [  ## Gardena 295?
                 "\\bsocial media\\b",
                 "\\bsoziale[rn]? Medien\\b",
                 "\\bsoziales Medium\\b",
                 "\\bsoziale[rnms]? Netzwerke?\\b",
-                "Fan(seite|page)"
+                "Fan(seite|page)",
             ],
             "IndirectCollection": [
                 "(?=.*\\bindirekt)(?=.*(gesammelt|erhalten|bekommen))",
-                "(?=.*(Informationen|Daten|Details)(?=.*nicht).{0,20}(angefordert|gesammelt|))" ##U
+                "(?=.*(Informationen|Daten|Details)(?=.*nicht).{0,20}(angefordert|gesammelt|))",  ##U
             ],
             "Public": [
                 "(Daten|Informationen|Details)(?=.*veröffentlichen)",
                 "öffentlich (?=.*(posten|gepostet|bereitstellen|bereitgestellt|machen|gemacht|teilen|geteilten|veröffentlicht|bekannt (geben|gegeben)))",
-                "öffentliche[rn]? (Quellen|Bekanntmachungen)"
+                "öffentliche[rn]? (Quellen|Bekanntmachungen)",
             ],
-            "Interaction": [ ## gardena 32?
+            "Interaction": [  ## gardena 32?
                 "\\bInteraktion(en)?\\b",
                 "(?=.*(wenn|während))(?=.*(interagieren|nutzen|besuchen))",
-                #"(Formular|Umfrage|Fragebogen)",
+                # "(Formular|Umfrage|Fragebogen)",
             ],
             "VoluntaryProvided": [
                 "\\bfreiwillig\\b",
-                "Sie können(?=.*(Angaben|Daten|Informationen|Details))"
-                "\\bvoluntary\\b",
+                "Sie können(?=.*(Angaben|Daten|Informationen|Details))\\bvoluntary\\b",
                 "\\byou (choose|elect|opt) to\\b",
                 "\\boptional\\b",
                 "(?=.*\\b(right to choose|not obliged))(?=.*(provide|share|submit|give|upload))",
             ],
-            "Buying": [##X
+            "Buying": [  ##X
                 "(?=.*\\bwe\\b)(?=.*\\b(purchase|buy|acquire)\\b)(?=.*\\b(data|information)\\b)"
             ],
-            "Feedback": [ ##U
+            "Feedback": [  ##U
                 "\\bFeedback\\b"
             ],
         }
@@ -1224,44 +1064,47 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Anbieter[sn]?\\b",
                 "Drittanbieter[sn]?\\b",
                 "Drittanbieterplattform",
-                "Dienste.{0,20}Dritte[rn]"
+                "Dienste.{0,20}Dritte[rn]",
             ],
             "InsuranceCompany": [
                 "Versicherungsunternehmen",
             ],
-            "Employer": [ ##X
+            "Employer": [  ##X
                 "\\bemployer\\b",
                 "(company|organization) you work for",
                 "your(.){0,20}company",
             ],
-            "Manufacturer": ["manufacturer(s)?\\b", "company that made (the )?product"], ##X
+            "Manufacturer": [
+                "manufacturer(s)?\\b",
+                "company that made (the )?product",
+            ],  ##X
             "PaymentServiceProvider": [
                 "Zahlungsdienst(leister[sn]?)?",
                 "Zahlungs-.{0,20}dienst(leister[sn]?)?",
                 "Zahlungsinstitut[es]?",
-                "Zahlungsabwicklungsdienste?"
+                "Zahlungsabwicklungsdienste?",
             ],
             "CreditInstitution": [
                 "Kredit(auskunfteien|institut|anbieter)",
-                "Kredit-Auskunfteien"
+                "Kredit-Auskunfteien",
             ],
             "InternetServiceProvider": [
                 "(Internet)?-?Provider",
-                "(Mobil(gerät|telefon)|Internet)(?=.*(Anbieter|Dienstleister))", ##U
+                "(Mobil(gerät|telefon)|Internet)(?=.*(Anbieter|Dienstleister))",  ##U
                 "\\bisp\\b",
             ],
             "TransportCompany": [
                 "(shipping|delivery|logistic|freight)(.){0,64}(company|service|provider|partner)",
-                "(Paket|Liefer|Versand|Logistik)(dienste|unternehmen|partner|zusteller|dienstleister)"
+                "(Paket|Liefer|Versand|Logistik)(dienste|unternehmen|partner|zusteller|dienstleister)",
             ],
-            "FulfillmentCenter": [ ##X
+            "FulfillmentCenter": [  ##X
                 "(fulfillment|fulfilment)(.){0,64}(center|centre|service|provider|partner)"
             ],
-            "HostingProvider": [ ##U
+            "HostingProvider": [  ##U
                 "Hostingdienstleistungen",
-                "Dienste?.{0,10}Hosting"
+                "Dienste?.{0,10}Hosting",
             ],
-            "StorageServiceProvider": [ ##X
+            "StorageServiceProvider": [  ##X
                 "(storage)(.){0,64}(provider|partner|service)",
                 "data (center|centre)(s)?\\b",
                 "database management provider",
@@ -1270,171 +1113,162 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Social-?Media-?(Plattformen?|Schaltflächen?|Anbietern?|Diensten?|Funktion(en)?|PlugIns|(Web)?seiten|Partner|Dienstleister|Netzwerk)"
                 "soziale[rn] (Netzwerken?|Medien)",
                 "\\bsoziales Netzwerkkonto\\b",
-                "Social Plugins"
+                "Social Plugins",
             ],
-            "Vendor": [ ##U
+            "Vendor": [  ##U
                 "Einzelhändlern"
             ],
             "Supplier": ["\\bLieferant(en)?\\b"],
-            "Customer": [ ##X
+            "Customer": [  ##X
                 "\\bcustomer(s)?\\b",
                 "client(s)?",
                 "user(s)?",
                 "consumer(s)?",
             ],
-            "SubContractors": [
-                "\\bUnterauftragnehmer\\b"
-            ],
-            "Adviser": [
-                "Berater\\b"
-            ],
-            "Buyer/Investor": [ ##U
+            "SubContractors": ["\\bUnterauftragnehmer\\b"],
+            "Adviser": ["Berater\\b"],
+            "Buyer/Investor": [  ##U
                 "Nachfolgeunternehmen",
-                "(Fusion|Zusammenschluss|Übernahme)", ##U
-                "(Investor(s|en)?|Käufer[sn]?)(?=.*Unternehmens?)"
+                "(Fusion|Zusammenschluss|Übernahme)",  ##U
+                "(Investor(s|en)?|Käufer[sn]?)(?=.*Unternehmens?)",
             ],
-            "RatingPlatform": [ ##X
+            "RatingPlatform": [  ##X
                 "\\brating platform(s)?\\b",
                 "\\breview platform(s)?\\b",
             ],
-            "RecruitmentPlatform": [ ##X
+            "RecruitmentPlatform": [  ##X
                 "\\brecruitment platform(s)?\\b",
                 "\\bapplicant tracking system",
             ],
-            "MarketingAffiliate": [ ##X
+            "MarketingAffiliate": [  ##X
                 "\\bmarketing affiliate(s)?\\b",
                 "affiliate marketing (company|companies|entity|entities|partner|provider)",
             ],
-            "AdvertisingAgency": [ ##U
+            "AdvertisingAgency": [  ##U
                 "\\bWerbeagentur(en)?\\b",
-                "Drittanbietern(?=.*Werbung)"
+                "Drittanbietern(?=.*Werbung)",
             ],
-            "AdvertisingNetwork": [ ##U
+            "AdvertisingNetwork": [  ##U
                 "\\bWerbenetzwerke?\\b"
             ],
             "AdvertisingPartner": [
                 "\\bWerbepartnern?\\b",
                 "\\bMarketing[- ]?Partnern?\\b",
             ],
-            "SoftwareDeveloper": [ ##U
+            "SoftwareDeveloper": [  ##U
                 "Softwareentwicklern?",
-                "App-Entwicklern?"
+                "App-Entwicklern?",
             ],
-            "CustomerServiceProvider": [ ##U
+            "CustomerServiceProvider": [  ##U
                 "\\bKunden(dienst|support)(anbieter|partner|service)\\b"
             ],
             "BusinessPartner": ["Geschäftspartnern?"],
             "CloudService": [
                 "Cloud-service-(Anbieter|Dienstleister)",
-                "cloudbasierte.{0,20}(Dienste|Anwendungen)"
+                "cloudbasierte.{0,20}(Dienste|Anwendungen)",
             ],
             "AnalyticsService": [
                 "Analyse-?(service|dienst|anbieter|dienstanbieter|plattform|tool)",
                 "Analyse-.{0,20}(service|dienst|anbieter|dienstanbieter|plattform|tool)",
-                "Anbieter von Analysen"
+                "Anbieter von Analysen",
             ],
-            "CompatibleApp": [ ##U
+            "CompatibleApp": [  ##U
                 "Drittanbieter-Apps",
-                "App eines Drittanbieters"
+                "App eines Drittanbieters",
             ],
-            "CompatibleDevice": [ ##X
+            "CompatibleDevice": [  ##X
                 "third(-| )party(.){0,20}(device|product)",
                 "\\bdevice made by (third(-| )party|external)",
                 "kompatible[rsnm] Geräte[ns]?",
             ],
-            "CompatibleService": [ ##X
+            "CompatibleService": [  ##X
                 "third(-| )party(.){0,20}service",
                 "\\bservice made by (third(-| )party|external)",
                 "(compatible|external) service",
             ],
             "PartnerIntegrations": [
                 "Partnerintegration\\b",
-                "Integration.{0,15}(Geräte|Produkte)", ##U
+                "Integration.{0,15}(Geräte|Produkte)",  ##U
                 "\\bintegrated service(s)?\\b",
                 "\\bwho integrate with\\b",
             ],
-            "ExternalAccount": [ ##U
+            "ExternalAccount": [  ##U
                 "externes ((Be)?nutzer?Konto)\\b",
-                "Partner-Benutzerkonto"
+                "Partner-Benutzerkonto",
             ],
-            "ThirdPartySite": [
-                "Drittanbieter-Site"
-            ],
-            "ThirdPartyStore": [ ##X
+            "ThirdPartySite": ["Drittanbieter-Site"],
+            "ThirdPartyStore": [  ##X
                 "third(-| )party(.){0,20}(store|marketplace)",
                 "external (app|software|online) store",
-                "Marktplätze Dritter"
+                "Marktplätze Dritter",
             ],
-            "DataPartner": ["\\bDatenpartnern?\\b"], ##U
-            "FraudPreventionService": [ ##X
+            "DataPartner": ["\\bDatenpartnern?\\b"],  ##U
+            "FraudPreventionService": [  ##X
                 "fraud (prevention|detection) (service|provider|partner)"
             ],
-            "SmartAssistant": ["\\bsmart assistant(s)?\\b"], ##X
-            "VoiceAssistant": ["\\bSprachassistent(e|en)?\\b"], ##U
-            "AiServices": [ ##X
+            "SmartAssistant": ["\\bsmart assistant(s)?\\b"],  ##X
+            "VoiceAssistant": ["\\bSprachassistent(e|en)?\\b"],  ##U
+            "AiServices": [  ##X
                 "(service|provider|partner|compan(y|ies))(.){0,64}(artificial intelligence|AI|machine learning|ML)",
                 "\\bAI service(s)?\\b",
                 "\\bartificial intelligence service(s)?\\b",
             ],
-            "ContentProvider": [ ##X
+            "ContentProvider": [  ##X
                 "\\bcontent provider(s)?\\b",
                 "(provider|contributor)(s)? of content",
             ],
             "Affiliates": [
                 "\\bPartnerunternehmen\\b",
-                "verbundenen? (Unternehmen|Geschäftsbereiche|Gesellschaften|Partner)"
+                "verbundenen? (Unternehmen|Geschäftsbereiche|Gesellschaften|Partner)",
             ],
-            "ParentCompany": ["\\bMutterkonzern"], ##U
+            "ParentCompany": ["\\bMutterkonzern"],  ##U
             "Subsidiaries": ["\\bTochter(konzern|unternehmen|gesellschaften)\\b"],
-            "ContentDeliveryNetwork": [ ##X
+            "ContentDeliveryNetwork": [  ##X
                 "\\bcdn\\b",
                 "\\bcontent delivery network(s)?\\b",
             ],
-            "NetworkOperator": [ ##U
+            "NetworkOperator": [  ##U
                 "Netzwerkbetreiber"
             ],
-            "EcosystemCompanies": [ ##X
+            "EcosystemCompanies": [  ##X
                 "companies forming(.){0,20}ecosystem",
                 "ecosystem (companies|entities|partners)",
             ],
-            "Partners": [ ##U
-                "(Vertrags|Kanal)partnern",  
-                " Partnern?[\\., ]"
+            "Partners": [  ##U
+                "(Vertrags|Kanal)partnern",
+                " Partnern?[\\., ]",
             ],
             "Accountant": [
                 "\\bWirtschaftsprüfern?",
                 "\\bBuchhaltern?",
             ],
             "Auditors": ["\\bAuditor(en)?\\b"],
-            "Lawyers": [
-                "Rechtsanwalt",
-                "Rechtsanwälten?",
-                "Anwalt",
-                "Anwälten?"
-            ],
-            "DataController": [ ##X
+            "Lawyers": ["Rechtsanwalt", "Rechtsanwälten?", "Anwalt", "Anwälten?"],
+            "DataController": [  ##X
                 "\\bdata controller(s)?\\b",
                 "\\bjoint controller(s)?\\b",
             ],
-            "AttributionCompanies": [ ##X
+            "AttributionCompanies": [  ##X
                 "\\battribution (company|companies|entity|entities)\\b"
             ],
             "ThirdPartyEmployee": [
                 "(Angesteller|Mitarbeiter) einer Drittpartei",
-                "externer (Angesteller|Mitarbeiter)"
+                "externer (Angesteller|Mitarbeiter)",
             ],
-            "BackupService": ["\\bbackup (service|provider|partner)\\b"], ##X
-            "CustomerRelationshipManagement": [ ##X
+            "BackupService": ["\\bbackup (service|provider|partner)\\b"],  ##X
+            "CustomerRelationshipManagement": [  ##X
                 "\\bcrm\\b",
                 "customer relationship manag(e|ement)",
             ],
-            "ECommercePlatform": ["\\be-commerce platform(s)?\\b"], ##X
-            "EmailServiceProvider": ["\\bemail (service|provider|partner)\\b"], ##X
-            "SecurityServiceProvider": ["security (service provider|provider|partner)"], ##X
-            "IdentityVerificationService": [ ##X
+            "ECommercePlatform": ["\\be-commerce platform(s)?\\b"],  ##X
+            "EmailServiceProvider": ["\\bemail (service|provider|partner)\\b"],  ##X
+            "SecurityServiceProvider": [
+                "security (service provider|provider|partner)"
+            ],  ##X
+            "IdentityVerificationService": [  ##X
                 "identity verification (service|provider|partner)"
             ],
-            "Insurer": [ ##U
+            "Insurer": [  ##U
                 "Versicherung(en)?",
                 "\\binsurance (company|companies|provider)(s)?\\b",
             ],
@@ -1442,82 +1276,67 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     ),
     official=AttributePattern.from_dict(
         {
-            "SecurityAuthorities": ["\\b(security|safety) authority(ies)?\\b"], ##X
-            "Court": [
-                "Gerichte?",
-                "Gerichtsverfahren"
-            ],
+            "SecurityAuthorities": ["\\b(security|safety) authority(ies)?\\b"],  ##X
+            "Court": ["Gerichte?", "Gerichtsverfahren"],
             "Tribunal": ["Tribunal(e|en)?"],
             "LawEnforcement": [
                 "\\bStraf(verfolgung|vollzug)sbehörden\\b",
                 "Strafverfolgung",
-                "\\bStraftaten\\b", # ein Fehler
+                "\\bStraftaten\\b",  # ein Fehler
                 "Verletzung(?=.*(Recht|Gesetz|Verordnung))",
             ],
-            "EmergencyServices": [ ##X
+            "EmergencyServices": [  ##X
                 "\\bemergency (service|services)\\b",
                 "\\bfirst responder(s)?\\b",
                 "\\brelief organization(s)?\\b",
             ],
-            "MunicipalAuthorities": [ ##U
+            "MunicipalAuthorities": [  ##U
                 "\\bKommunalbehörden\\b"
             ],
             "RegulatoryAgencies": [
                 "\\b(Aufsichts|Regulierungs)behörden\\b",
                 "\\bRegulierungsbefugnissen\\b",
             ],
-            "CertificationBody": [ ##X
+            "CertificationBody": [  ##X
                 "\\bcertification (body|bodies)\\b",
                 "\\bcertifying (body|authority)\\b",
             ],
-            "GovernmentAgencies": [ ##U
+            "GovernmentAgencies": [  ##U
                 "\\bRegierungs(behörden|agencies|authority|authorities|body)\\b",
                 "\\bBehörden\\b",
                 "\\bRegierungen\\b",
                 "staatliche Einrichtungen",
-                "nationale Verteidigung"
+                "nationale Verteidigung",
             ],
-            "PublicHealthAuthorities": [ ##X
+            "PublicHealthAuthorities": [  ##X
                 "\\bpublic health (authority|authorities)\\b",
                 "\\bhealth department(s)?\\b",
             ],
-            "ChildProtectionServices": [ ##X
+            "ChildProtectionServices": [  ##X
                 "\\bchild protection (service|agency|authority|authorities)\\b",
                 "\\bchild welfare (service|agency|authority)\\b",
             ],
-            "ImmigrationAuthorities": [ ##X
+            "ImmigrationAuthorities": [  ##X
                 "\\bimmigration (authority|authorities)\\b",
                 "\\border control\\b",
             ],
-            "TaxAuthorities": ["\\btax (authority|authorities)\\b"], ##X
-            "FinancialRegulators": [ ##U
+            "TaxAuthorities": ["\\btax (authority|authorities)\\b"],  ##X
+            "FinancialRegulators": [  ##U
                 "\\bFinanzamt\\b"
             ],
         }
     ),
     country=AttributePattern.from_dict(
         {
-            "North America": [
-                "\\bNordamerika\\b",
-                "\\bNord-.{0,20}amerika"
-            ],
-            "South America": [
-                "\\bSüdamerika\\b",
-                "\\bSüd-.{0,20}amerika"
-            ],
+            "North America": ["\\bNordamerika\\b", "\\bNord-.{0,20}amerika"],
+            "South America": ["\\bSüdamerika\\b", "\\bSüd-.{0,20}amerika"],
             "Central America": [
                 "\\b(Zentral|Mittel)amerika\\b",
-                "(Zentral|Mittel)-.{0,20}amerika"
+                "(Zentral|Mittel)-.{0,20}amerika",
             ],
             "Europe": ["\\bEuropa\\b"],
-            "European Union": [
-                "\\bEuropäische Union\\b",
-                "\\bEU\\b"
-            ],
-            "EEA": [
-                "\\bEWR\\b",
-                "\\bEuropäischer Wirtschaftsraum\\b"
-            ],
+            "European Union": ["\\bEuropäische Union\\b", "\\bEU\\b"],
+            "EEA": ["\\bEWR\\b", "\\bEuropäischer Wirtschaftsraum\\b"],
             "Asia": ["\\bAsien\\b"],
             "Africa": ["\\bAfrika\\b"],
             "Oceania": ["\\bOzeanien\\b"],
@@ -1531,15 +1350,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "ResidenceState": [
                 "Wohnsitz",
                 "in dem sie (sich befinden|wohnen|leben)",
-                "\\b Ihre[srnm] (Landes|Stadt|Standort|Provinz|Territorium|Region|Gerichtsbarkeit)"
+                "\\b Ihre[srnm] (Landes|Stadt|Standort|Provinz|Territorium|Region|Gerichtsbarkeit)",
             ],
             "CountriesOutsideOf": [
                 "\\banderen? (Ländern|Gebieten|Staaten)\\b",
                 "\\baußerhalb (Ihrer|Ihres|des|der|von) \\b",
                 "\\bnicht-EU\\b",
-                "Landes abweichen"
+                "Landes abweichen",
             ],
-            "AndOther": ["\\bandere Länder\\b"], ##U
+            "AndOther": ["\\bandere Länder\\b"],  ##U
             "California": ["\\bKalifornien\\b", "\\bCCPA\\b"],
             "Washington": ["\\bWashington\\b"],
             "Colorado": ["\\bColorado\\b"],
@@ -1562,7 +1381,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bVereinigte Staaten\\b",
                 "\\bUSA?\\b",
                 "\\bu\\.s\\.a\\.\\b",
-                "\\bu\\.s\\.\\b"
+                "\\bu\\.s\\.\\b",
             ],
             "United Kingdom": [
                 "\\bVereinigtes Königreich\\b",
@@ -1610,7 +1429,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Belarus": ["\\bBelarus\\b", "\\bWeißrussland\\b"],
             "Moldova": ["\\bMoldau\\b"],
             "Serbia": ["\\bSerbien\\b"],
-            "Bosnia and Herzegovina": ["\\bBosnien\\b", "\\bBosnien und Herzegowina\\b"],
+            "Bosnia and Herzegovina": [
+                "\\bBosnien\\b",
+                "\\bBosnien und Herzegowina\\b",
+            ],
             "Albania": ["\\bAlbanien\\b"],
             "North Macedonia": ["\\bNordmazedonien\\b", "\\bMazedonien\\b"],
             "Montenegro": ["\\bMontenegro\\b"],
@@ -1624,8 +1446,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "South Korea": ["\\bSüdkorea\\b"],
             "North Korea": [
                 "\\bNordkorea\\b",
-                "\\bDemokratische Volksrepublik Korea\\b"
-                "\\bDVRK\\b"
+                "\\bDemokratische Volksrepublik Korea\\b\\bDVRK\\b",
             ],
             "Taiwan": ["\\bTaiwan\\b"],
             "Hong Kong": ["\\bHongkong\\b"],
@@ -1696,7 +1517,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "Congo": ["\\bKongo\\b"],
             "Democratic Republic of Congo": [
                 "\\bDemokratische Republik Kongo\\b",
-                "\\bDRK\\b"
+                "\\bDRK\\b",
             ],
             "Angola": ["\\bAngola\\b"],
             "Zambia": ["\\bSambia\\b"],
@@ -1809,10 +1630,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "Facebook": [
                 "\\bfacebook(s)?\\b",
-                #"\\bmeta\\b", ## -> Meta attribute
+                # "\\bmeta\\b", ## -> Meta attribute
                 "\\binstagram\\b",
                 "\\bwhatsapp\\b",
-                #"\\bmeta pixel\\b",
+                # "\\bmeta pixel\\b",
                 "\\bfacebook pixel\\b",
             ],
             "SmartThings": ["\\bsmartthing(s)?\\b"],
@@ -1906,19 +1727,19 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Einzelhandelsdienste",
             ],
             "PaymentProcessing": [
-                "Einzelhandelsdienste", ##U
+                "Einzelhandelsdienste",  ##U
                 "Zahlung(en|sabwicklung(en)?)?\\b",
                 "Transaktion(en)?\\b",
-                "Verarbeitung Ihrer Zahlungsangaben" ##U
+                "Verarbeitung Ihrer Zahlungsangaben",  ##U
             ],
             "Shipping": [
                 "Versands?\\b",
                 "Liefer(ung|zweck)",
-                "liefern" ##U
-            ],###
+                "liefern",  ##U
+            ],  ###
             "ReturnOrder": [
                 "\\bzurück(zu)?(geben|schicken|senden)\\b",
-                "Rück(sendung|gabe|erstattung)"
+                "Rück(sendung|gabe|erstattung)",
             ],
             "OrderTracking": ["(Paket|Sende)verfolgung"],
             "WarrantyService": ["Garantie(?!zeit)(?!rt)(?!ren)"],
@@ -2448,7 +2269,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
 )
 """ English language attribute patterns. """
 
-#------------------------------------------
+# ------------------------------------------
 
 DE_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
     unit=AttributePattern.from_dict(
@@ -2479,8 +2300,16 @@ DE_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
             "30": [r"\b30\b", r"\bdrei(ß|ss)ig\b"],
             "60": [r"\b60\b", r"\bsechzig\b"],
             "90": [r"\b90\b", r"\bneunzig\b"],
-            "180": [r"\b180\b", r"\bein[- ]?hundert (und )?achtzig\b", "einhundertachzig"],
-            "365": [r"\b365\b", r"\bein[- ]?hundert (und )?fünf[- ]? (und )?sechzig\b", "dreihundertfünfundsechzig"],
+            "180": [
+                r"\b180\b",
+                r"\bein[- ]?hundert (und )?achtzig\b",
+                "einhundertachzig",
+            ],
+            "365": [
+                r"\b365\b",
+                r"\bein[- ]?hundert (und )?fünf[- ]? (und )?sechzig\b",
+                "dreihundertfünfundsechzig",
+            ],
         }
     ),
 )
