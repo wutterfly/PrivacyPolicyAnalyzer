@@ -74,6 +74,7 @@ class AttributePatterns:
             "profiling": self.profiling.get_stats(),
             "automated_decision": self.automated_decision.get_stats(),
             "certifications": self.certifications.get_stats(),
+            "user_responsibility": self.user_responsibility.get_stats(),
         }
 
 
