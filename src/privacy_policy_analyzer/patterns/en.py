@@ -1260,6 +1260,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\binsurer(s)?\\b",
                 "\\binsurance (company|companies|provider)(s)?\\b",
             ],
+            "SmartHomePlatform": [
+                "\\bsmart home platform(s)?\\b",
+                "\\bhome automation platform(s)?\\b",
+            ],
         }
     ),
     official=AttributePattern.from_dict(
