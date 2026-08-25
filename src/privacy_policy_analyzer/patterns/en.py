@@ -454,6 +454,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(?<!by )(?<!to )(?<!send you )(?<!via )e(-)?mail(?! protected)",
             ],
             "PhoneNumber": ["phone number", "telephone number", "mobile number"],
+            "FaxNumber": ["\\bfax number"],
             "EmergencyData": ["emergency(.){0,20}(contact|information|data)"],
             "FamilyInformation": [
                 "family(.){0,20}(information|data|details)",

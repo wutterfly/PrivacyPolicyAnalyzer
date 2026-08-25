@@ -10,6 +10,18 @@ from privacy_policy_analyzer.shared.logging import get_logger
 
 logger = get_logger(__name__)
 
+# -------------- Definition Entry -----------------
+
+
+def is_definition_entry(entry: StructuredEntry) -> bool:
+    for tpc in entry.topics:
+        if tpc.topic == "Policy":
+            for cnt in tpc.contents:
+                if cnt.content == "Definition":
+                    return True
+    return False
+
+
 # --------------- Security/Privacy -----------------
 
 
@@ -173,7 +185,7 @@ def extract_legal_basis_information(
     )
 
 
-#
+# --------------- User Rights -----------------
 
 
 @dataclass
@@ -708,6 +720,9 @@ def extract_processing_information(
     method_source = set()
 
     for entry in data:
+        if is_definition_entry(entry):
+            continue
+
         for tpc in entry.topics:
             if tpc.topic != "Processing":
                 continue
@@ -766,6 +781,9 @@ def extract_sharing_information(
     sharing_types = set()
 
     for entry in data:
+        if is_definition_entry(entry):
+            continue
+
         for tpc in entry.topics:
             if tpc.topic != "Sharing":
                 continue
@@ -815,19 +833,13 @@ def extract_selling_information(
     selling_not_merger_acquisition = False
 
     for entry in data:
+        if is_definition_entry(entry):
+            continue
+
         selling = False
-        is_definition = False
         is_merger_acquisition = False
         is_not_selling = False
         items = set()
-
-        # check whether this entry is a definition (of selling)
-        for tpc in entry.topics:
-            if tpc.topic == "Policy":
-                for cnt in tpc.contents:
-                    if cnt.content == "Definition":
-                        is_definition = True
-                        break
 
         # extract selling information
         for tpc in entry.topics:
@@ -846,12 +858,6 @@ def extract_selling_information(
 
         # skip if not selling is done
         if not selling or is_not_selling:
-            continue
-
-        # Skip if this is a definition
-        # Here just the definition of selling might be given,
-        # but not actually stated that selling occurs
-        if is_definition:
             continue
 
         # classify selling type
@@ -903,6 +909,9 @@ def extract_retention_information(
     countries = set()
 
     for entry in data:
+        if is_definition_entry(entry):
+            continue
+
         for tpc in entry.topics:
             if tpc.topic != "Retention":
                 continue

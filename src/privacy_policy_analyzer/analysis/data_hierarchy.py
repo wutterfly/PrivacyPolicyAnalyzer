@@ -143,6 +143,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             ),
                             HierarchyEntry(types=["MenstrualCycleData"], children=None),
                             HierarchyEntry(types=["BoneDensity"], children=None),
+                            HierarchyEntry(types=["VainData"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -246,6 +247,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 types=["VoiceData", "VoiceCharacteristics"],
                                 children=None,
                             ),
+                            HierarchyEntry(types=["IrisData"], children=None),
                         ],
                     ),
                     HierarchyEntry(
