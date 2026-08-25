@@ -143,7 +143,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             ),
                             HierarchyEntry(types=["MenstrualCycleData"], children=None),
                             HierarchyEntry(types=["BoneDensity"], children=None),
-                            HierarchyEntry(types=["VainData"], children=None),
+                            HierarchyEntry(types=["VeinData"], children=None),
                         ],
                     ),
                     HierarchyEntry(
@@ -327,6 +327,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=[
                             HierarchyEntry(types=["EmailAddress"], children=None),
                             HierarchyEntry(types=["PhoneNumber"], children=None),
+                            HierarchyEntry(types=["FaxNumber"], children=None),
                         ],
                     ),
                     HierarchyEntry(
