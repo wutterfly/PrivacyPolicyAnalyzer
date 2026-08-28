@@ -1,28 +1,13 @@
 from dataclasses import asdict, dataclass
 from datetime import date as Date
-from typing import Any
+from typing import Any, Dict, Optional
 
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.analysis import collect_information
-from privacy_policy_analyzer.analysis.attributes import (
-    AttributePatterns,
-    DatePattern,
-    DurationPattern,
-    EmailPattern,
-)
-from privacy_policy_analyzer.analysis.classification import (
-    ModelConfigs,
-)
-from privacy_policy_analyzer.analysis.post_processing import (
-    DEFAULT_SKIPS,
-    combine_table_rows,
-    propagate_headers,
-    smooth_context,
-)
-from privacy_policy_analyzer.analysis.structure import (
-    StructuredEntry,
-    StructuredTextMappings,
-)
+from privacy_policy_analyzer.analysis.attributes import AttributePatterns, DatePattern, DurationPattern, EmailPattern
+from privacy_policy_analyzer.analysis.classification import ModelConfigs
+from privacy_policy_analyzer.analysis.post_processing import DEFAULT_SKIPS, combine_table_rows, propagate_headers, smooth_context
+from privacy_policy_analyzer.analysis.structure import StructuredEntry, StructuredTextMappings
 from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
@@ -30,26 +15,74 @@ from privacy_policy_analyzer.crawl.splitter import SplitterPattern
 from privacy_policy_analyzer.patterns import DEFAULT_EMAIL_PATTERN_CONFIG
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
-    AddressOutput,
-    HeaderOutput,
-    LinkOutput,
-    ListItemOutput,
-    ListOutput,
-    ParagraphOutput,
-    StyledTextOutput,
-    TableOutput,
-    TableRowOutput,
+    AddressOutput, HeaderOutput, LinkOutput, ListItemOutput, 
+    ListOutput, ParagraphOutput, StyledTextOutput, TableOutput, TableRowOutput
 )
 from privacy_policy_analyzer.shared.util import get_device
 
 logger = get_logger(__name__)
+
+@dataclass
+class LanguageAssets:
+    """Container for all language specific configurations."""
+    language: Language
+    model_configs: ModelConfigs
+    splitter_configs: SplitterPattern
+    pattern_configs: AttributePatterns
+    duration_pattern_configs: DurationPattern
+    date_pattern_config: DatePattern
+
+class PipelineFactory:
+    """
+    Gets the language specific assets.
+    Supports english and german.
+    """
+    @staticmethod
+    def get_assets(language: Language) -> LanguageAssets:
+
+        # english
+        if language == Language.EN:
+            from privacy_policy_analyzer.patterns.en import (
+                EN_DATE_PATTERN_CONFIG, EN_DURATION_PATTERN_CONFIG,
+                EN_PATTERN_CONFIG, EN_SPLITTER_CONFIG,
+            )
+            from privacy_policy_analyzer.analysis import DEFAULT_MODEL_CONFIGS_EN 
+            
+            return LanguageAssets(
+                language=language,
+                model_configs=DEFAULT_MODEL_CONFIGS_EN,
+                splitter_configs=EN_SPLITTER_CONFIG,
+                pattern_configs=EN_PATTERN_CONFIG,
+                duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
+                date_pattern_config=EN_DATE_PATTERN_CONFIG,
+            )
+
+        # german
+        elif language == Language.DE:
+            from privacy_policy_analyzer.patterns.de import (
+                DE_DATE_PATTERN_CONFIG, DE_DURATION_PATTERN_CONFIG,
+                DE_PATTERN_CONFIG, DE_SPLITTER_CONFIG,
+            )
+            from privacy_policy_analyzer.analysis import DEFAULT_MODEL_CONFIGS_DE
+
+            return LanguageAssets(
+                language=language,
+                model_configs=DEFAULT_MODEL_CONFIGS_DE,
+                splitter_configs=DE_SPLITTER_CONFIG,
+                pattern_configs=DE_PATTERN_CONFIG,
+                duration_pattern_configs=DE_DURATION_PATTERN_CONFIG,
+                date_pattern_config=DE_DATE_PATTERN_CONFIG,
+            )
+        
+        # other languages
+        else:
+            raise ValueError(f"Unsupported language: {language}")
 
 
 @dataclass
 class MismatchedLanguages:
     pipeline: Language
     policy: Language
-
 
 @dataclass
 class PolicyResult:
@@ -60,7 +93,7 @@ class PolicyResult:
 
     name: str
     source: str
-    language: str
+    language: Language
     date: Date
 
     html: str
@@ -139,9 +172,10 @@ class PolicyResult:
 
 
 class Pipeline:
+
     """
     A pipeline for analyzing privacy policies.
-    Combines crawling and information extraction.
+    Extracts informations from policies or html.
     """
 
     language: Language
@@ -161,61 +195,26 @@ class Pipeline:
         self,
         language: Language,
         model_configs: ModelConfigs,
-        splitter_configs: SplitterPattern | None,
-        pattern_configs: AttributePatterns | None,
-        duration_pattern_configs: DurationPattern | None,
-        date_pattern_config: DatePattern | None,
-        email_pattern_config: EmailPattern | None,
+        splitter_configs: SplitterPattern,
+        pattern_configs: AttributePatterns,
+        duration_pattern_configs: DurationPattern,
+        date_pattern_config: DatePattern,
+        email_pattern_config: Optional[EmailPattern],
         onnx: bool,
-        cache_load_models: bool = True,
+        cache_load_models: bool,
     ):
+        self.language = language
         self.onnx = onnx
         self.model_configs = model_configs
-
-        if language == Language.EN:
-            from privacy_policy_analyzer.patterns.en import (
-                EN_DATE_PATTERN_CONFIG,
-                EN_DURATION_PATTERN_CONFIG,
-                EN_PATTERN_CONFIG,
-                EN_SPLITTER_CONFIG,
-            )
-
-            self.language = language
-
-            #
-            if splitter_configs is None:
-                self.splitter_configs = EN_SPLITTER_CONFIG
-            else:
-                self.splitter_configs = splitter_configs
-
-            #
-            if pattern_configs is None:
-                self.pattern_configs = EN_PATTERN_CONFIG
-            else:
-                self.pattern_configs = pattern_configs
-
-            #
-            if duration_pattern_configs is None:
-                self.duration_pattern_configs = EN_DURATION_PATTERN_CONFIG
-            else:
-                self.duration_pattern_configs = duration_pattern_configs
-
-            #
-            if date_pattern_config is None:
-                self.date_pattern_config = EN_DATE_PATTERN_CONFIG
-            else:
-                self.date_pattern_config = date_pattern_config
-        else:
-            assert False, f"Unsupported language: {language}"
-
-        if email_pattern_config is None:
-            self.email_pattern_config = DEFAULT_EMAIL_PATTERN_CONFIG
-        else:
-            self.email_pattern_config = email_pattern_config
+        self.splitter_configs = splitter_configs
+        self.pattern_configs = pattern_configs
+        self.duration_pattern_configs = duration_pattern_configs
+        self.date_pattern_config = date_pattern_config
+        self.email_pattern_config = email_pattern_config or DEFAULT_EMAIL_PATTERN_CONFIG
+        self.cache_load_models = cache_load_models
 
         if onnx:
-            logger.info("Using device: %s", "CPU (ONNX)")
-
+            logger.info("Using device: CPU (ONNX)")
         else:
             logger.info("Using device: %s", get_device())
 
@@ -225,18 +224,13 @@ class Pipeline:
         self.cache_load_models = cache_load_models
 
     def run_with_policy(
-        self, policy: CollectedPolicy
+            self, policy: CollectedPolicy
     ) -> PolicyResult | MismatchedLanguages:
         """Run the pipeline with a collected policy."""
 
-        if self.language != policy.language:
-            return MismatchedLanguages(pipeline=self.language, policy=policy.language)
-
         mapping = StructuredTextMappings(policy.harmonized)
 
-        logger.debug(
-            "Collecting information for policy=%s source=%s", policy.name, policy.source
-        )
+        logger.debug("Collecting information for policy=%s source=%s", policy.name, policy.source)
 
         collect_information(
             entries=mapping.raw_entries,
@@ -248,6 +242,7 @@ class Pipeline:
             onnx=self.onnx,
             cached=self.cache_load_models,
         )
+
         logger.debug("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
@@ -268,37 +263,66 @@ class Pipeline:
             stats={"smoothing": smoothing_stats, "propagate": propagate_stats},
         )
 
-    def run_with_url(
-        self, name: str, url: str, language: Language
-    ) -> PolicyResult | CrawlError:
+    def run_with_html(
+            self, name: str, source: str, date: Date, html: str
+        ) -> PolicyResult:
+            """Run the pipeline with raw HTML content of a policy."""
+    
+            policy = CollectedPolicy.from_parts(
+                splitter_config=self.splitter_configs,
+                name=name,
+                source=source,
+                language=self.language,
+                date=date,
+                html=html,
+                structured_raw=None,
+                harmonized_raw=None,
+                text=None,
+            )
+    
+            output = self.run_with_policy(policy)
+            assert isinstance(output, PolicyResult)
+            return output
+
+
+class PipelineManager:
+    """
+    Gets the language specific pipeline and runs it.
+    """
+    def __init__(self, onnx: bool = False, cache_load_models: bool = True):
+        self.onnx = onnx
+        self.cache_load_models = cache_load_models
+        self._pipeline_cache: Dict[Language, Pipeline] = {}
+
+    def _get_or_create_pipeline(self, language: Language) -> Pipeline:
+        self.language = language
+        if language not in self._pipeline_cache:
+            logger.info("Initializing new pipeline for language: %s", language)
+            assets = PipelineFactory.get_assets(language)
+            
+            self._pipeline_cache[language] = Pipeline(
+                language=assets.language,
+                model_configs=assets.model_configs,
+                splitter_configs=assets.splitter_configs,
+                pattern_configs=assets.pattern_configs,
+                duration_pattern_configs=assets.duration_pattern_configs,
+                date_pattern_config=assets.date_pattern_config,
+                email_pattern_config=None,
+                onnx=self.onnx,
+                cache_load_models=self.cache_load_models
+            )
+        return self._pipeline_cache[language]
+
+    def analyze_url(self, name: str, url: str) -> PolicyResult | CrawlError:
         """Run the pipeline with a URL to crawl the policy from."""
 
-        result = crawl(name, url, language, self.splitter_configs)
-
+        result = crawl(name, url)
+        
         if isinstance(result, CrawlError):
             return result
 
-        output = self.run_with_policy(result)
-        assert isinstance(output, PolicyResult)
-        return output
+        pipeline = self._get_or_create_pipeline(result.language)
 
-    def run_with_html(
-        self, name: str, source: str, language: Language, date: Date, html: str
-    ) -> PolicyResult:
-        """Run the pipeline with raw HTML content of a policy."""
-
-        policy = CollectedPolicy.from_parts(
-            splitter_config=self.splitter_configs,
-            name=name,
-            source=source,
-            language=language,
-            date=date,
-            html=html,
-            structured_raw=None,
-            harmonized_raw=None,
-            text=None,
-        )
-
-        output = self.run_with_policy(policy)
+        output = pipeline.run_with_policy(result)
         assert isinstance(output, PolicyResult)
         return output

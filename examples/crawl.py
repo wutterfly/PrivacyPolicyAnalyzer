@@ -1,9 +1,7 @@
 import logging
 from logging import info
 
-from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
-from privacy_policy_analyzer.patterns.en import EN_SPLITTER_CONFIG
 from privacy_policy_analyzer.shared.logging import set_logging
 
 if __name__ == "__main__":
@@ -13,7 +11,7 @@ if __name__ == "__main__":
     name = "OpenAI"
 
     result: CollectedPolicy | CrawlError = crawl(
-        name, url, Language.EN, EN_SPLITTER_CONFIG
+        name, url
     )
 
     if isinstance(result, CollectedPolicy):

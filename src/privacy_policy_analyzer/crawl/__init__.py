@@ -170,12 +170,11 @@ class CollectedPolicy:
 
 
 def crawl(
-    name: str, url: str, language: Language, config: SplitterPattern
+    name: str, url: str
 ) -> CollectedPolicy | CrawlError:
     """Crawl a privacy policy from a given URL."""
 
     scraper = WebScraper()
-    splitter = SentenceSplitter(config)
 
     main_content = None
     try:
@@ -191,9 +190,22 @@ def crawl(
         item.decompose()
     detected_lang = detect_language(copy_content.get_text(strip=True))
 
-    # check for correct language
-    if detected_lang != language:
-        return WrongLanguage()
+    # get splitter config 
+    ## english
+    if detected_lang == Language.EN:
+        from privacy_policy_analyzer.patterns.en import EN_SPLITTER_CONFIG
+        splitter_config = EN_SPLITTER_CONFIG
+
+    ## german
+    elif detected_lang == Language.DE:
+        from privacy_policy_analyzer.patterns.de import DE_SPLITTER_CONFIG
+        splitter_config = DE_SPLITTER_CONFIG
+
+    ## other language
+    else:
+        assert False, f"Unsupported language: {detected_lang}"
+
+    splitter = SentenceSplitter(splitter_config)
 
     structured = extract_structured_content(main_content)
 
@@ -204,7 +216,7 @@ def crawl(
     return CollectedPolicy(
         name=name,
         source=url,
-        language=language,
+        language=detected_lang,
         date=Date.today(),
         html=str(main_content),
         structured=structured,
