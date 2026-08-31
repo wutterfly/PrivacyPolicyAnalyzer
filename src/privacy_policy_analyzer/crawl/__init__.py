@@ -5,12 +5,12 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 from privacy_policy_analyzer import Language
-from privacy_policy_analyzer.crawl.err import CrawlError, WrongLanguage
+from privacy_policy_analyzer.crawl.err import CrawlError
 from privacy_policy_analyzer.crawl.extract_data import (
     extract_structured_content,
     parse_structured_content,
 )
-from privacy_policy_analyzer.crawl.language import detect_language
+from privacy_policy_analyzer.crawl.language import detect_language_from_scrape
 from privacy_policy_analyzer.crawl.process import (
     harmonize_structured_content,
     harmonized_to_text,
@@ -184,24 +184,17 @@ def crawl(
     except Exception as e:
         raise e
 
-    # get somewhat clean text to detect language
-    copy_content = BeautifulSoup(str(main_content), "html5lib")
-    for item in copy_content.find_all(["select", "option"]):
-        item.decompose()
-    detected_lang = detect_language(copy_content.get_text(strip=True))
+    detected_lang = detect_language_from_scrape(main_content)
 
     # get splitter config 
-    ## english
     if detected_lang == Language.EN:
         from privacy_policy_analyzer.patterns.en import EN_SPLITTER_CONFIG
         splitter_config = EN_SPLITTER_CONFIG
 
-    ## german
     elif detected_lang == Language.DE:
         from privacy_policy_analyzer.patterns.de import DE_SPLITTER_CONFIG
         splitter_config = DE_SPLITTER_CONFIG
 
-    ## other language
     else:
         assert False, f"Unsupported language: {detected_lang}"
 

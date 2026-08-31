@@ -10,10 +10,10 @@ if __name__ == "__main__":
     set_logging(level=logging.DEBUG)
 
     # Analyze directly from URL
-    name = "OpenAI"
-    url = "https://openai.com/policies/row-privacy-policy/"
+    name: str = "OpenAI"
+    url: str = "https://openai.com/policies/row-privacy-policy/"
 
-    manager = PipelineManager(onnx=False)
+    manager: PipelineManager = PipelineManager(onnx=False)
 
     result: PolicyResult | CrawlError = manager.analyze_url(name, url)
 

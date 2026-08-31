@@ -12,6 +12,7 @@ from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
 from privacy_policy_analyzer.crawl.splitter import SplitterPattern
+from privacy_policy_analyzer.crawl.language import detect_language_from_html
 from privacy_policy_analyzer.patterns import DEFAULT_EMAIL_PATTERN_CONFIG
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
@@ -287,7 +288,8 @@ class Pipeline:
 
 class PipelineManager:
     """
-    Gets the language specific pipeline and runs it.
+    A pipeline manager to get the language specific pipeline.
+    Initialising via url, policy and html.
     """
     def __init__(self, onnx: bool = False, cache_load_models: bool = True):
         self.onnx = onnx
@@ -314,8 +316,9 @@ class PipelineManager:
         return self._pipeline_cache[language]
 
     def analyze_url(self, name: str, url: str) -> PolicyResult | CrawlError:
-        """Run the pipeline with a URL to crawl the policy from."""
+        """Detect language and run the pipeline with a URL to crawl the policy from."""
 
+        # detect language while crawling
         result = crawl(name, url)
         
         if isinstance(result, CrawlError):
@@ -324,5 +327,25 @@ class PipelineManager:
         pipeline = self._get_or_create_pipeline(result.language)
 
         output = pipeline.run_with_policy(result)
+        assert isinstance(output, PolicyResult)
+        return output
+
+    def analyze_policy(self, policy):
+        """Run the pipeline with a policy."""
+
+        pipeline = self._get_or_create_pipeline(policy.language)
+
+        output = pipeline.run_with_policy(policy)
+        assert isinstance(output, PolicyResult)
+        return output
+    
+    def analyze_html(self, name: str, source: str, date: Date, html: str):
+        """Detect language and run the pipeline with html."""
+
+        detected_lang = detect_language_from_html(html)
+
+        pipeline = self._get_or_create_pipeline(detected_lang)
+
+        output = pipeline.run_with_html(name, source, date, html)
         assert isinstance(output, PolicyResult)
         return output
