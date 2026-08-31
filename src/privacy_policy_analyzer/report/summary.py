@@ -1297,10 +1297,15 @@ def create_summary_report(
     audience = extract_audience_information(filtered)
     purpose = extract_purpose_information(filtered)
     third_party = extract_third_party_information(filtered)
-    policy = extract_change_information(filtered)
-    contact = extract_contact_information(filtered)
-    user_rights = extract_user_rights_information(filtered)
-    boilerplate = extract_boilerplate_information(filtered)
+
+    # these are context-agnostic: contact details, user rights, boilerplate
+    # ratio and policy/change info apply to the whole policy regardless of
+    # which contexts were included/excluded, so they're extracted from the
+    # unfiltered data (like `context` above) rather than `filtered`.
+    policy = extract_change_information(data)
+    contact = extract_contact_information(data)
+    user_rights = extract_user_rights_information(data)
+    boilerplate = extract_boilerplate_information(data)
 
     #
     return SummaryReport(
