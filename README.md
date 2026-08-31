@@ -250,10 +250,10 @@ These configurations define which models to use and what classification threshol
 The default model configurations can be imported from `privacy_policy_analyzer.analysis.DEFAULT_MODEL_CONFIGS`.
 They use pre-trained models hosted on HuggingFace.
 
-- [Context Classifier](https://huggingface.co/Wutterfly/roberta-privacy-policy-context)
-- [Topic Classifier](https://huggingface.co/Wutterfly/privbert-privacy-policy-topic)
+- [Context Classifier](https://huggingface.co/Wravn/privacy-policy-context)
+- [Topic Classifier](https://huggingface.co/Wravn/privacy-policy-topic)
 - Content Classifiers for each topic, e.g.:
-  - [User Rights Content Classifier](https://huggingface.co/Wutterfly/privbert-privacy-policy-content-userrights)
+  - [User Rights Content Classifier](https://huggingface.co/Wravn/privacy-policy-content-userrights)
   - ...
 
 #### **Pattern Configs**
