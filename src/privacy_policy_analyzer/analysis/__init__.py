@@ -77,6 +77,18 @@ def collect_information(
     )
     extract_attributes(
         entries,
+        topic=["Processing"],
+        content="Profiling",
+        patterns=pattern_config.profiling,
+    )
+    extract_attributes(
+        entries,
+        topic=["Processing"],
+        content="AutomatedDecisionMaking",
+        patterns=pattern_config.automated_decision,
+    )
+    extract_attributes(
+        entries,
         topic=["ThirdParty"],
         content="Descriptive",
         patterns=pattern_config.descriptive,
@@ -189,7 +201,7 @@ DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
         thresholds={},
     ),
     topic=ModelConfig(
-        model_name="Wravn/privacy-policy-policy-topic",
+        model_name="Wravn/privacy-policy-topic",
         thresholds={
             "Purpose": 0.4,
             "Sharing": 0.6,

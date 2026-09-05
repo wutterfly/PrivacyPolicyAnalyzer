@@ -1214,6 +1214,279 @@ def extract_boilerplate_information(
     )
 
 
+# --------------- Privacy Properties -----------------
+
+
+@dataclass
+class PrivacyProperties:
+    """Structure to hold selected privacy properties."""
+
+    pii_data_types: list[str]
+    """List of data types considered as personally identifiable information (PII)."""
+
+    sensitive_data_types: list[str]
+    """List of data types considered as sensitive information."""
+
+    npii_data_types: list[str]
+    """List of data types considered as non-personally identifiable information (NPII)."""
+
+    profiling: bool | None
+    """Indicates whether profiling is performed (True), not performed (False), or unknown (None)."""
+
+    profiling_data_types: list[str]
+    """List of data types used for profiling purposes."""
+
+    backend_sentence_number: int
+    """Number of sentences related to backend services in the privacy policy."""
+
+    account_sentence_number: int
+    """Number of sentences related to user accounts in the privacy policy."""
+
+    data_retention_durations: dict[str, list[str]]
+    """Dictionary mapping data types to their retention information: fixed
+    timeframes (e.g. "Months: 2") as well as non-fixed-timeframe retention
+    rationales (e.g. "StatutoryRetention", "LegalBasisDuration", "Necessity")."""
+
+    sharing_outside_eu: bool
+    """Indicates whether data sharing occurs outside the European Union (True) or not (False)."""
+
+    sharing_outside_eu_countries: list[str]
+    """List of the non-EU countries/regions matched to trigger `sharing_outside_eu`."""
+
+    data_types_local: list[str]
+    """List of data types that are processed or stored locally."""
+
+    def to_json(self) -> dict:
+        """Convert the PrivacyProperties instance to a JSON-serializable dictionary."""
+        return asdict(self)
+
+    @staticmethod
+    def from_json(data: dict) -> "PrivacyProperties":
+        """Create a PrivacyProperties instance from a JSON dictionary."""
+        return PrivacyProperties(
+            pii_data_types=list(data["pii_data_types"]),
+            sensitive_data_types=list(data["sensitive_data_types"]),
+            npii_data_types=list(data["npii_data_types"]),
+            profiling=data["profiling"],
+            profiling_data_types=list(data["profiling_data_types"]),
+            backend_sentence_number=int(data["backend_sentence_number"]),
+            account_sentence_number=int(data["account_sentence_number"]),
+            data_retention_durations={
+                k: list(v) for k, v in data["data_retention_durations"].items()
+            },
+            sharing_outside_eu=bool(data["sharing_outside_eu"]),
+            sharing_outside_eu_countries=list(data["sharing_outside_eu_countries"]),
+            data_types_local=list(data["data_types_local"]),
+        )
+
+
+# EU member state names, as they appear as "Country" attribute values in
+# privacy_policy_analyzer.patterns.en (the "European Union"/"EEA"/"Europe"
+# region tokens are treated separately, see below).
+EU_MEMBER_STATES: frozenset[str] = frozenset(
+    {
+        "Austria",
+        "Belgium",
+        "Bulgaria",
+        "Croatia",
+        "Cyprus",
+        "Czech Republic",
+        "Denmark",
+        "Estonia",
+        "Finland",
+        "France",
+        "Germany",
+        "Greece",
+        "Hungary",
+        "Ireland",
+        "Italy",
+        "Latvia",
+        "Lithuania",
+        "Luxembourg",
+        "Malta",
+        "Netherlands",
+        "Poland",
+        "Portugal",
+        "Romania",
+        "Slovakia",
+        "Slovenia",
+        "Spain",
+        "Sweden",
+    }
+)
+
+# "Country" attribute values that stay within (or don't leave) the EU.
+EU_OR_UNSPECIFIED_COUNTRY_VALUES: frozenset[str] = EU_MEMBER_STATES | {
+    "European Union",
+}
+
+
+def _classify_data_type(data_type: str, hierarchy: DataHierarchy) -> str | None:
+    """Classify a data type as "SensitiveData", "PersonalData" (PII) or
+    "NPII" based on its top-level branch in the data hierarchy."""
+    hierarchy_entry = hierarchy.find_data_type(data_type)
+    if hierarchy_entry is None or len(hierarchy_entry.path) < 2:
+        logger.warning("Data type not found in hierarchy: data_type=%s", data_type)
+        return None
+
+    # path[0] is the "Data" root, path[1] is the top-level category
+    return hierarchy_entry.path[1]
+
+
+def extract_properties(
+    filtered: list[StructuredEntry],
+    hierarchy: DataHierarchy = DEFAULT_HIERARCHY,
+) -> PrivacyProperties:
+    """Extract selected privacy properties from the structured data entries."""
+    pii_data_types: set[str] = set()
+    sensitive_data_types: set[str] = set()
+    npii_data_types: set[str] = set()
+
+    profiling: bool | None = None
+    profiling_data_types: set[str] = set()
+
+    backend_sentence_number = 0
+    account_sentence_number = 0
+
+    data_retention_durations: dict[str, list[str]] = {}
+    data_types_local: set[str] = set()
+
+    sharing_outside_eu_countries: set[str] = set()
+
+    look_in = ["Processing", "Sharing", "Retention", "Deletion", "Selling"]
+
+    for entry in filtered:
+        if "BackendService" in entry.contexts:
+            backend_sentence_number += 1
+        if "Account" in entry.contexts:
+            account_sentence_number += 1
+
+        if is_definition_entry(entry):
+            continue
+
+        for tpc in entry.topics:
+            if tpc.topic in look_in:
+                for cnt in tpc.contents:
+                    if cnt.content != "DataType":
+                        continue
+
+                    for data_type in cnt.attributes:
+                        category = _classify_data_type(data_type, hierarchy)
+                        if category == "SensitiveData":
+                            sensitive_data_types.add(data_type)
+                        elif category == "PersonalData":
+                            pii_data_types.add(data_type)
+                        elif category == "NPII":
+                            npii_data_types.add(data_type)
+
+        for tpc in entry.topics:
+            if tpc.topic == "Processing":
+                topic_data_types = [
+                    data_type
+                    for cnt in tpc.contents
+                    if cnt.content == "DataType"
+                    for data_type in cnt.attributes
+                ]
+
+                for cnt in tpc.contents:
+                    if cnt.content != "Profiling":
+                        continue
+
+                    _not = "NotProfiling" in cnt.attributes
+
+                    # if profiling is not already true, set it to false
+                    if profiling is None:
+                        profiling = not _not
+                    elif profiling is False:
+                        if not _not:
+                            profiling = True
+
+                    if not _not:
+                        profiling_data_types.update(topic_data_types)
+
+            elif tpc.topic == "Retention":
+                skip = any(cnt.content == "NotRetention" for cnt in tpc.contents)
+                if skip:
+                    continue
+
+                topic_data_types = [
+                    data_type
+                    for cnt in tpc.contents
+                    if cnt.content == "DataType"
+                    for data_type in cnt.attributes
+                ]
+                is_local = any(cnt.content == "LocalStorage" for cnt in tpc.contents)
+
+                if is_local:
+                    data_types_local.update(topic_data_types)
+
+                # retention info: fixed timeframes (StorageDuration attributes,
+                # e.g. "Months: 2") as well as non-fixed-timeframe rationales
+                # (StatutoryRetention/LegalBasisDuration/Necessity are flags
+                # with no attributes of their own, so the content name itself
+                # is used as the value).
+                retention_values: list[str] = []
+                for cnt in tpc.contents:
+                    if cnt.content == "StorageDuration":
+                        retention_values.extend(cnt.attributes)
+                    elif cnt.content in (
+                        "StatutoryRetention",
+                        "LegalBasisDuration",
+                        "Necessity",
+                    ):
+                        retention_values.append(cnt.content)
+
+                if retention_values:
+                    for data_type in topic_data_types:
+                        existing = data_retention_durations.setdefault(data_type, [])
+                        for value in retention_values:
+                            if value not in existing:
+                                existing.append(value)
+
+            elif tpc.topic == "Sharing":
+                skip = any(cnt.content == "NotSharing" for cnt in tpc.contents)
+                if skip:
+                    continue
+
+                for cnt in tpc.contents:
+                    if cnt.content != "Country":
+                        continue
+
+                    # "CountriesOutsideOf" is a relative marker, not a country
+                    # of its own - it's paired with the specific countries it
+                    # refers to (e.g. attributes=["CountriesOutsideOf", "European
+                    # Union"] means "outside of the European Union"). Combine
+                    # them into a single "CountriesOutsideOf(X)" value per
+                    # paired country instead of treating both as independent
+                    # country attributes.
+                    countries = list(cnt.attributes)
+                    if "CountriesOutsideOf" in countries:
+                        others = [c for c in countries if c != "CountriesOutsideOf"]
+                        countries = (
+                            [f"CountriesOutsideOf({other})" for other in others]
+                            if others
+                            else ["CountriesOutsideOf"]
+                        )
+
+                    for country in countries:
+                        if country not in EU_OR_UNSPECIFIED_COUNTRY_VALUES:
+                            sharing_outside_eu_countries.add(country)
+
+    return PrivacyProperties(
+        pii_data_types=list(pii_data_types),
+        sensitive_data_types=list(sensitive_data_types),
+        npii_data_types=list(npii_data_types),
+        profiling=profiling,
+        profiling_data_types=list(profiling_data_types),
+        backend_sentence_number=backend_sentence_number,
+        account_sentence_number=account_sentence_number,
+        data_retention_durations=data_retention_durations,
+        sharing_outside_eu=bool(sharing_outside_eu_countries),
+        sharing_outside_eu_countries=list(sharing_outside_eu_countries),
+        data_types_local=list(data_types_local),
+    )
+
+
 # --------------- Summary Report -----------------
 
 
@@ -1237,6 +1510,8 @@ class SummaryReport:
     user_rights: UserRightsInformation
     boilerplate: BoilerplateInformation
 
+    additional_properties: PrivacyProperties
+
     @staticmethod
     def from_json(data: dict) -> "SummaryReport":
         return SummaryReport(
@@ -1257,6 +1532,9 @@ class SummaryReport:
             contact=ContactInformation.from_json(data["contact"]),
             user_rights=UserRightsInformation.from_json(data["user_rights"]),
             boilerplate=BoilerplateInformation.from_json(data["boilerplate"]),
+            additional_properties=PrivacyProperties.from_json(
+                data["additional_properties"]
+            ),
         )
 
     def to_json(self) -> dict:
@@ -1307,6 +1585,9 @@ def create_summary_report(
     user_rights = extract_user_rights_information(data)
     boilerplate = extract_boilerplate_information(data)
 
+    # privacy properties report
+    privacy_properties = extract_properties(filtered, data_hierarchy)
+
     #
     return SummaryReport(
         policy=policy,
@@ -1324,4 +1605,5 @@ def create_summary_report(
         contact=contact,
         user_rights=user_rights,
         boilerplate=boilerplate,
+        additional_properties=privacy_properties,
     )

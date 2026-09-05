@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from privacy_policy_analyzer.report.readability import (
     ReadabilityScores,
     fre_score_mapping,
@@ -10,6 +12,46 @@ from privacy_policy_analyzer.report.summary import (
     SummaryReport,
     UserRightsInformation,
 )
+
+
+@dataclass
+class LabelConfig:
+    """Configuration for generating the SVG label, controlling what section to include."""
+
+    grade_data_specificity: bool = True
+    grade_third_party_specificity: bool = True
+    grade_retention_specificity: bool = True
+    grade_readability: bool = True
+
+    collection_purposes: bool = True
+    coverage_security_measures: bool = True
+    coverage_user_rights: bool = True
+    coverage_merger_acquisition: bool = True
+    coverage_children: bool = True
+    coverage_overall: bool = True
+
+    contact_info: bool = True
+    meta_info: bool = True
+    meta_overall: bool = True
+
+    profiling: bool = True
+    automated_decision: bool = True
+    total_collected_data_types: bool = True
+    specific_data_types_collected: bool = True
+
+    total_shared_data_types: bool = True
+    specific_shared_data_types: bool = True
+
+    total_third_parties: bool = True
+    specific_third_parties: bool = True
+
+    total_third_party_types: bool = True
+    specific_third_party_types: bool = True
+
+    legal_basis: bool = True
+
+
+DEFAULT_LABEL_CONFIG = LabelConfig()
 
 
 def _count_user_rights(data: UserRightsInformation) -> tuple[int, int]:
@@ -116,7 +158,10 @@ def _generate_svg_header(total_height: int) -> str:
 
 
 def _generate_transparency_section(
-    transparency: TransparencyScore, readability_score: float, y_pos: int
+    transparency: TransparencyScore,
+    readability_score: float,
+    y_pos: int,
+    config: LabelConfig,
 ) -> tuple[str, int]:
     """Generate the transparency section."""
     data_specificity_grade = transparency.data_specificity_grade
@@ -136,30 +181,41 @@ def _generate_transparency_section(
 
 """
 
-    y_pos += 20
-    section += (
-        f'  <text x="30" y="{y_pos + 5}" class="label">Data Specificity:</text>\n'
-    )
-    section += f'  <circle cx="360" cy="{y_pos + 1}" r="10" class="grade-{data_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="{y_pos + 4}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{data_specificity_grade}</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_pos + 5 + 20}" class="label">Third Party Specificity:</text>\n'
-    section += f'  <circle cx="360" cy="{y_pos + 1 + 20}" r="10" class="grade-{third_party_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="{y_pos + 4 + 20}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{third_party_specificity_grade}</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_pos + 5 + 40}" class="label">Retention Specificity:</text>\n'
-    section += f'  <circle cx="360" cy="{y_pos + 1 + 40}" r="10" class="grade-{retention_specificity_grade.lower()}"/>\n'
-    section += f'  <text x="360" y="{y_pos + 4 + 40}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{retention_specificity_grade}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_pos + 5 + 60}" class="label">Readability Score:</text>\n'
-    )
-    section += (
-        f'  <circle cx="360" cy="{y_pos + 1 + 60}" r="10" class="grade-neutral"/>\n'
-    )
-    section += f'  <text x="360" y="{y_pos + 4 + 60}" text-anchor="middle" fill="White" style="font-size: 10px; font-weight: bold;">{score}</text>\n'
+    row_height = 20
+    cur_y = y_pos + 20
 
-    return section, y_pos + 80 + 20
+    if config.grade_data_specificity:
+        section += (
+            f'  <text x="30" y="{cur_y + 5}" class="label">Data Specificity:</text>\n'
+        )
+        section += f'  <circle cx="360" cy="{cur_y + 1}" r="10" class="grade-{data_specificity_grade.lower()}"/>\n'
+        section += f'  <text x="360" y="{cur_y + 4}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{data_specificity_grade}</text>\n'
+        section += "  \n"
+        cur_y += row_height
+
+    if config.grade_third_party_specificity:
+        section += f'  <text x="30" y="{cur_y + 5}" class="label">Third Party Specificity:</text>\n'
+        section += f'  <circle cx="360" cy="{cur_y + 1}" r="10" class="grade-{third_party_specificity_grade.lower()}"/>\n'
+        section += f'  <text x="360" y="{cur_y + 4}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{third_party_specificity_grade}</text>\n'
+        section += "  \n"
+        cur_y += row_height
+
+    if config.grade_retention_specificity:
+        section += f'  <text x="30" y="{cur_y + 5}" class="label">Retention Specificity:</text>\n'
+        section += f'  <circle cx="360" cy="{cur_y + 1}" r="10" class="grade-{retention_specificity_grade.lower()}"/>\n'
+        section += f'  <text x="360" y="{cur_y + 4}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{retention_specificity_grade}</text>\n'
+        section += "  \n"
+        cur_y += row_height
+
+    if config.grade_readability:
+        section += f'  <text x="30" y="{cur_y + 5}" class="label">Readability Score:</text>\n'
+        section += (
+            f'  <circle cx="360" cy="{cur_y + 1}" r="10" class="grade-neutral"/>\n'
+        )
+        section += f'  <text x="360" y="{cur_y + 4}" text-anchor="middle" fill="White" style="font-size: 10px; font-weight: bold;">{score}</text>\n'
+        cur_y += row_height
+
+    return section, cur_y + 20
 
 
 def _generate_purposes_section(
@@ -193,7 +249,7 @@ def _generate_purposes_section(
             section += f'  <text x="210" y="{y_pos}" class="small">  • {formatted_third_party_purposes[i]}</text>\n'
         y_pos += 15
 
-    return section, y_pos
+    return section, y_pos + 23
 
 
 def _generate_coverage_section(
@@ -204,6 +260,7 @@ def _generate_coverage_section(
     merger_acquisition: bool,
     children_mentioned: bool,
     coverage_score: float,
+    config: LabelConfig,
 ) -> tuple[str, int]:
     """Generate the coverage section. Returns (svg_string, final_y_position)."""
     coverage_bar_width = coverage_score * 3.4
@@ -228,31 +285,53 @@ def _generate_coverage_section(
     )
     section += f'  <line x1="20" y1="{y_offset + 5}" x2="380" y2="{y_offset + 5}" stroke="#000000" stroke-width="1"/>\n'
     section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 25}" class="label">Security Measures:</text>\n'
-    )
-    section += f'  <text x="350" y="{y_offset + 25}" text-anchor="end" class="value">{sec_count}/5</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_offset + 42}" class="label">User Rights:</text>\n'
-    section += f'  <text x="350" y="{y_offset + 42}" text-anchor="end" class="value">{rights_count}/{rights_total}</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_offset + 62}" class="label">Merger/Acquisition Info:</text>\n'
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 58}" r="8" class="{merger_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 61}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{merger_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <text x="203" y="{y_offset + 62}" class="label">Children\'s Data Mentioned:</text>\n'
-    section += (
-        f'  <circle cx="360" cy="{y_offset + 58}" r="8" class="{children_class}"/>\n'
-    )
-    section += f'  <text x="360" y="{y_offset + 61}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{children_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <rect x="30" y="{y_offset + 72}" width="340" height="20" fill="#e0e0e0" rx="3"/>\n'
-    section += f'  <rect x="30" y="{y_offset + 72}" width="{coverage_bar_width}" height="20" fill="{coverage_color}" rx="3"/>\n'
-    section += f'  <text x="200" y="{y_offset + 86}" text-anchor="middle" class="value" fill="#333">Overall Coverage: {coverage_score:.2f}%</text>\n'
 
-    return section, y_offset + 117
+    row_height = 20
+    cur_y = y_offset + 5
+
+    if config.coverage_security_measures:
+        cur_y += row_height
+        section += (
+            f'  <text x="30" y="{cur_y}" class="label">Security Measures:</text>\n'
+        )
+        section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{sec_count}/5</text>\n'
+        section += "  \n"
+
+    if config.coverage_user_rights:
+        cur_y += row_height
+        section += f'  <text x="30" y="{cur_y}" class="label">User Rights:</text>\n'
+        section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{rights_count}/{rights_total}</text>\n'
+        section += "  \n"
+
+    if config.coverage_merger_acquisition or config.coverage_children:
+        cur_y += row_height
+        if config.coverage_merger_acquisition:
+            section += f'  <text x="30" y="{cur_y}" class="label">Merger/Acquisition Info:</text>\n'
+            section += (
+                f'  <circle cx="175" cy="{cur_y - 4}" r="8" class="{merger_class}"/>\n'
+            )
+            section += f'  <text x="175" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{merger_symbol}</text>\n'
+            section += "  \n"
+        if config.coverage_children:
+            # take the left slot if merger/acquisition isn't shown to occupy it
+            label_x, circle_cx = (
+                (203, 360) if config.coverage_merger_acquisition else (30, 175)
+            )
+            section += f'  <text x="{label_x}" y="{cur_y}" class="label">Children\'s Data Mentioned:</text>\n'
+            section += f'  <circle cx="{circle_cx}" cy="{cur_y - 4}" r="8" class="{children_class}"/>\n'
+            section += f'  <text x="{circle_cx}" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{children_symbol}</text>\n'
+            section += "  \n"
+
+    if config.coverage_overall:
+        cur_y += 20
+        section += f'  <rect x="30" y="{cur_y}" width="340" height="20" fill="#e0e0e0" rx="3"/>\n'
+        section += f'  <rect x="30" y="{cur_y}" width="{coverage_bar_width}" height="20" fill="{coverage_color}" rx="3"/>\n'
+        section += f'  <text x="200" y="{cur_y + 14}" text-anchor="middle" class="value" fill="#333">Overall Coverage: {coverage_score:.2f}%</text>\n'
+        cur_y += 45  # bar height (20) + gap before next section heading (25)
+    else:
+        cur_y += 20
+
+    return section, cur_y
 
 
 def _generate_contact_meta_section(
@@ -264,6 +343,7 @@ def _generate_contact_meta_section(
     policy_date_available: bool,
     dpo: bool,
     meta_score: float,
+    config: LabelConfig,
 ) -> tuple[str, int]:
     """Generate the contact & meta information section. Returns (svg_string, final_y_position)."""
     meta_bar_width = meta_score * 3.4
@@ -282,53 +362,62 @@ def _generate_contact_meta_section(
     section += f'  <text x="20" y="{y_offset}" class="section-title">Contact &amp; Meta Information</text>\n'
     section += f'  <line x1="20" y1="{y_offset + 5}" x2="380" y2="{y_offset + 5}" stroke="#000000" stroke-width="1"/>\n'
     section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 25}" class="label">Contact Phone:</text>\n'
-    )
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 21}" r="8" class="{phone_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 24}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{phone_symbol}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="210" y="{y_offset + 25}" class="label">Policy Date:</text>\n'
-    )
-    section += f'  <circle cx="360" cy="{y_offset + 21}" r="8" class="{date_class}"/>\n'
-    section += f'  <text x="360" y="{y_offset + 24}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{date_symbol}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 42}" class="label">Contact Email:</text>\n'
-    )
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 38}" r="8" class="{email_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 41}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{email_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <text x="210" y="{y_offset + 42}" class="label">Data Protection Officer:</text>\n'
-    section += f'  <circle cx="360" cy="{y_offset + 38}" r="8" class="{dpo_class}"/>\n'
-    section += f'  <text x="360" y="{y_offset + 41}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{dpo_symbol}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 59}" class="label">Contact Address:</text>\n'
-    )
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 55}" r="8" class="{address_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 58}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{address_symbol}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 76}" class="label">Contact Website:</text>\n'
-    )
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 72}" r="8" class="{website_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 75}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{website_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <rect x="30" y="{y_offset + 86}" width="340" height="20" fill="#e0e0e0" rx="3"/>\n'
-    section += f'  <rect x="30" y="{y_offset + 86}" width="{meta_bar_width}" height="20" fill="{meta_color}" rx="3"/>\n'
-    section += f'  <text x="200" y="{y_offset + 100}" text-anchor="middle" class="value" fill="#333">Overall: {meta_score:.2f}%</text>\n'
 
-    return section, y_offset + 131
+    row_height = 17
+    cur_y = y_offset + 8
+
+    def _left(label: str, cls: str, symbol: str) -> str:
+        row = f'  <text x="30" y="{cur_y}" class="label">{label}</text>\n'
+        row += f'  <circle cx="175" cy="{cur_y - 4}" r="8" class="{cls}"/>\n'
+        row += f'  <text x="175" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{symbol}</text>\n'
+        return row + "  \n"
+
+    def _right(label: str, cls: str, symbol: str) -> str:
+        row = f'  <text x="210" y="{cur_y}" class="label">{label}</text>\n'
+        row += f'  <circle cx="360" cy="{cur_y - 4}" r="8" class="{cls}"/>\n'
+        row += f'  <text x="360" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{symbol}</text>\n'
+        return row + "  \n"
+
+    if config.contact_info and config.meta_info:
+        # phone/date and email/dpo paired, one pair per row
+        cur_y += row_height
+        section += _left("Contact Phone:", phone_class, phone_symbol)
+        section += _right("Policy Date:", date_class, date_symbol)
+
+        cur_y += row_height
+        section += _left("Contact Email:", email_class, email_symbol)
+        section += _right("Data Protection Officer:", dpo_class, dpo_symbol)
+
+    elif config.contact_info:
+        cur_y += row_height
+        section += _left("Contact Phone:", phone_class, phone_symbol)
+
+        cur_y += row_height
+        section += _left("Contact Email:", email_class, email_symbol)
+
+    elif config.meta_info:
+        # no contact fields taking the left slots, so pair date/dpo together
+        cur_y += row_height
+        section += _left("Policy Date:", date_class, date_symbol)
+        section += _right("Data Protection Officer:", dpo_class, dpo_symbol)
+
+    if config.contact_info:
+        cur_y += row_height
+        section += _left("Contact Address:", address_class, address_symbol)
+
+        cur_y += row_height
+        section += _left("Contact Website:", website_class, website_symbol)
+
+    if config.meta_overall:
+        cur_y += 10
+        section += f'  <rect x="30" y="{cur_y}" width="340" height="20" fill="#e0e0e0" rx="3"/>\n'
+        section += f'  <rect x="30" y="{cur_y}" width="{meta_bar_width}" height="20" fill="{meta_color}" rx="3"/>\n'
+        section += f'  <text x="200" y="{cur_y + 14}" text-anchor="middle" class="value" fill="#333">Overall: {meta_score:.2f}%</text>\n'
+        cur_y += 45  # bar height (20) + gap before next section heading (25)
+    else:
+        cur_y += 20
+
+    return section, cur_y
 
 
 def _generate_data_processing_section(
@@ -337,6 +426,7 @@ def _generate_data_processing_section(
     automated_decision: bool | None,
     data_types_count: int,
     categories_display: list[str],
+    config: LabelConfig,
 ) -> tuple[str, int]:
     """Generate the data processing summary section. Returns (svg_string, final_y_position)."""
 
@@ -351,27 +441,42 @@ def _generate_data_processing_section(
     section += f'  <text x="20" y="{y_offset}" class="section-title">Data Processing Summary</text>\n'
     section += f'  <line x1="20" y1="{y_offset + 5}" x2="380" y2="{y_offset + 5}" stroke="#000000" stroke-width="1"/>\n'
     section += "  \n"
-    section += f'  <text x="30" y="{y_offset + 25}" class="label">Profiling:</text>\n'
-    section += (
-        f'  <circle cx="175" cy="{y_offset + 21}" r="8" class="{profiling_class}"/>\n'
-    )
-    section += f'  <text x="175" y="{y_offset + 24}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{profiling_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <text x="210" y="{y_offset + 25}" class="label">Automated Decision:</text>\n'
-    section += (
-        f'  <circle cx="360" cy="{y_offset + 21}" r="8" class="{automated_class}"/>\n'
-    )
-    section += f'  <text x="360" y="{y_offset + 24}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{automated_symbol}</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_offset + 45}" class="label">Total Data Types Collected:</text>\n'
-    section += f'  <text x="350" y="{y_offset + 45}" text-anchor="end" class="value">{data_types_count}</text>\n'
-    section += "  \n"
-    section += f'  <text x="30" y="{y_offset + 65}" class="small">Including: {categories_display[0]}</text>\n'
 
-    for i in range(1, len(categories_display)):
-        section += f'  <text x="30" y="{y_offset + 65 + (i * 15)}" class="small">{categories_display[i]}</text>\n'
+    row_height = 20
+    cur_y = y_offset + 5
 
-    return section, y_offset + 88 + (len(categories_display) - 1) * 15
+    if config.profiling or config.automated_decision:
+        cur_y += row_height
+        if config.profiling:
+            section += f'  <text x="30" y="{cur_y}" class="label">Profiling:</text>\n'
+            section += f'  <circle cx="175" cy="{cur_y - 4}" r="8" class="{profiling_class}"/>\n'
+            section += f'  <text x="175" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{profiling_symbol}</text>\n'
+            section += "  \n"
+        if config.automated_decision:
+            # take the left slot if profiling isn't shown to occupy it
+            label_x, circle_cx = (210, 360) if config.profiling else (30, 175)
+            section += f'  <text x="{label_x}" y="{cur_y}" class="label">Automated Decision:</text>\n'
+            section += f'  <circle cx="{circle_cx}" cy="{cur_y - 4}" r="8" class="{automated_class}"/>\n'
+            section += f'  <text x="{circle_cx}" y="{cur_y - 1}" text-anchor="middle" fill="white" style="font-size: 10px; font-weight: bold;">{automated_symbol}</text>\n'
+            section += "  \n"
+
+    if config.total_collected_data_types:
+        cur_y += row_height
+        section += f'  <text x="30" y="{cur_y}" class="label">Total Data Types Collected:</text>\n'
+        section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{data_types_count}</text>\n'
+        section += "  \n"
+
+    if config.specific_data_types_collected and categories_display:
+        cur_y += 20
+        section += f'  <text x="30" y="{cur_y}" class="small">Including: {categories_display[0]}</text>\n'
+        for i in range(1, len(categories_display)):
+            cur_y += 15
+            section += f'  <text x="30" y="{cur_y}" class="small">{categories_display[i]}</text>\n'
+        cur_y += 23
+    else:
+        cur_y += 15
+
+    return section, cur_y
 
 
 def _generate_data_sharing_section(
@@ -382,6 +487,7 @@ def _generate_data_sharing_section(
     total_companies: int,
     descriptives: list[str],
     total_descriptives: int,
+    config: LabelConfig,
 ) -> tuple[str, int]:
     """Generate the data sharing section. Returns (svg_string, final_y_position)."""
 
@@ -394,48 +500,64 @@ def _generate_data_sharing_section(
     section += f'  <line x1="20" y1="{y_offset + 5}" x2="380" y2="{y_offset + 5}" stroke="#000000" stroke-width="1"/>\n'
     section += "  \n"
 
+    cur_y = y_offset + 5
+
     # Shared Data Types
-    section += (
-        f'  <text x="30" y="{y_offset + 25}" class="label">Shared Data Types:</text>\n'
-    )
-    section += f'  <text x="350" y="{y_offset + 25}" text-anchor="end" class="value">{total_sharing_types}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 42}" class="small">{sharing_types[0]}</text>\n'
-    )
-    for i in range(1, len(sharing_types)):
-        section += f'  <text x="30" y="{y_offset + 42 + (i * 15)}" class="small">{sharing_types[i]}</text>\n'
-    y_offset += (len(sharing_types) - 1) * 15
-    section += "  \n"
+    if config.total_shared_data_types or config.specific_shared_data_types:
+        cur_y += 20
+        section += (
+            f'  <text x="30" y="{cur_y}" class="label">Shared Data Types:</text>\n'
+        )
+        if config.total_shared_data_types:
+            section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{total_sharing_types}</text>\n'
+        section += "  \n"
+
+        if config.specific_shared_data_types and sharing_types:
+            cur_y += 17
+            section += (
+                f'  <text x="30" y="{cur_y}" class="small">{sharing_types[0]}</text>\n'
+            )
+            for i in range(1, len(sharing_types)):
+                cur_y += 15
+                section += f'  <text x="30" y="{cur_y}" class="small">{sharing_types[i]}</text>\n'
 
     # Third Party Companies
-    section += (
-        f'  <text x="30" y="{y_offset + 62}" class="label">Third Parties:</text>\n'
-    )
-    section += f'  <text x="350" y="{y_offset + 62}" text-anchor="end" class="value">{total_companies} named</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 79}" class="small">{companies[0]}</text>\n'
-    )
-    for i in range(1, len(companies)):
-        section += f'  <text x="30" y="{y_offset + 79 + (i * 15)}" class="small">, {companies[i]}</text>\n'
-    y_offset += (len(companies) - 1) * 15
-    section += "  \n"
+    if config.total_third_parties or config.specific_third_parties:
+        cur_y += 20
+        section += f'  <text x="30" y="{cur_y}" class="label">Third Parties:</text>\n'
+        if config.total_third_parties:
+            section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{total_companies} named</text>\n'
+        section += "  \n"
+
+        if config.specific_third_parties and companies:
+            cur_y += 17
+            section += (
+                f'  <text x="30" y="{cur_y}" class="small">{companies[0]}</text>\n'
+            )
+            for i in range(1, len(companies)):
+                cur_y += 15
+                section += f'  <text x="30" y="{cur_y}" class="small">, {companies[i]}</text>\n'
 
     # Third Party Descriptives
-    section += (
-        f'  <text x="30" y="{y_offset + 99}" class="label">Third Party Types:</text>\n'
-    )
-    section += f'  <text x="350" y="{y_offset + 99}" text-anchor="end" class="value">{total_descriptives}</text>\n'
-    section += "  \n"
-    section += (
-        f'  <text x="30" y="{y_offset + 116}" class="small">{descriptives[0]}</text>\n'
-    )
-    for i in range(1, len(descriptives)):
-        section += f'  <text x="30" y="{y_offset + 116 + (i * 15)}" class="small">{descriptives[i]}</text>\n'
-    y_offset += (len(descriptives) - 1) * 15
+    if config.total_third_party_types or config.specific_third_party_types:
+        cur_y += 20
+        section += (
+            f'  <text x="30" y="{cur_y}" class="label">Third Party Types:</text>\n'
+        )
+        if config.total_third_party_types:
+            section += f'  <text x="350" y="{cur_y}" text-anchor="end" class="value">{total_descriptives}</text>\n'
+        section += "  \n"
 
-    return section, (y_offset + 147)
+        if config.specific_third_party_types and descriptives:
+            cur_y += 17
+            section += (
+                f'  <text x="30" y="{cur_y}" class="small">{descriptives[0]}</text>\n'
+            )
+            for i in range(1, len(descriptives)):
+                cur_y += 15
+                section += f'  <text x="30" y="{cur_y}" class="small">{descriptives[i]}</text>\n'
+
+    return section, cur_y + 30
 
 
 def _generate_legal_basis_section(
@@ -599,6 +721,7 @@ def generate_svg_label(
     summary: SummaryReport,
     readability: ReadabilityScores,
     source: str,
+    config: LabelConfig = DEFAULT_LABEL_CONFIG,
 ) -> str:
     """Generate the complete SVG label from score and summary data."""
 
@@ -617,52 +740,76 @@ def generate_svg_label(
 
     # Generate all sections first to calculate total height
     svg_parts = []
-    y_pos = 0
 
     # Transparency
-    transparency_svg, y_pos = _generate_transparency_section(
-        scores.transparency, readability.flesh_reading_ease, 70
-    )
-    svg_parts.append(transparency_svg)
+    y_pos = 70
+    if (
+        config.grade_data_specificity
+        or config.grade_third_party_specificity
+        or config.grade_retention_specificity
+        or config.grade_readability
+    ):
+        transparency_svg, y_pos = _generate_transparency_section(
+            scores.transparency, readability.flesh_reading_ease, y_pos, config
+        )
+        svg_parts.append(transparency_svg)
 
     # Purposes
-    purposes_svg, y_pos = _generate_purposes_section(summary.purpose, y_pos)
-    svg_parts.append(purposes_svg)
+    if config.collection_purposes:
+        purposes_svg, y_pos = _generate_purposes_section(summary.purpose, y_pos)
+        svg_parts.append(purposes_svg)
 
     # Coverage
-    coverage_svg, y_pos = _generate_coverage_section(
-        y_pos + 23,
-        summary.security_privacy,
-        rights_count,
-        rights_total,
-        summary.selling.merger_acquisition,
-        summary.audience.children,
-        scores.coverage.final_score,
-    )
-    svg_parts.append(coverage_svg)
+    if (
+        config.coverage_security_measures
+        or config.coverage_user_rights
+        or config.coverage_merger_acquisition
+        or config.coverage_children
+        or config.coverage_overall
+    ):
+        coverage_svg, y_pos = _generate_coverage_section(
+            y_pos,
+            summary.security_privacy,
+            rights_count,
+            rights_total,
+            summary.selling.merger_acquisition,
+            summary.audience.children,
+            scores.coverage.final_score,
+            config,
+        )
+        svg_parts.append(coverage_svg)
 
     # Contact & Meta
-    contact_svg, y_pos = _generate_contact_meta_section(
-        y_pos,
-        summary.contact.phone,
-        summary.contact.email,
-        summary.contact.address,
-        summary.contact.website,
-        summary.policy.date is not None,
-        summary.policy.data_protection_officer,
-        scores.meta.final_score,
-    )
-    svg_parts.append(contact_svg)
+    if config.contact_info or config.meta_info or config.meta_overall:
+        contact_svg, y_pos = _generate_contact_meta_section(
+            y_pos,
+            summary.contact.phone,
+            summary.contact.email,
+            summary.contact.address,
+            summary.contact.website,
+            summary.policy.date is not None,
+            summary.policy.data_protection_officer,
+            scores.meta.final_score,
+            config,
+        )
+        svg_parts.append(contact_svg)
 
     # Data Processing
-    processing_svg, y_pos = _generate_data_processing_section(
-        y_pos,
-        summary.processing.profiling,
-        summary.processing.automated_decision,
-        len(summary.data_type.data_types),
-        categories_display,
-    )
-    svg_parts.append(processing_svg)
+    if (
+        config.profiling
+        or config.automated_decision
+        or config.total_collected_data_types
+        or config.specific_data_types_collected
+    ):
+        processing_svg, y_pos = _generate_data_processing_section(
+            y_pos,
+            summary.processing.profiling,
+            summary.processing.automated_decision,
+            len(summary.data_type.data_types),
+            categories_display,
+            config,
+        )
+        svg_parts.append(processing_svg)
 
     # Third Party Descriptive
     descriptives_ = display_types(summary.third_party.descriptives, 65)
@@ -691,20 +838,30 @@ def generate_svg_label(
         last_item = companies[-1].split(", ")[-1]
         companies[-1] = companies[-1].replace(last_item, "and more")
 
-    sharing_svg, y_pos = _generate_data_sharing_section(
-        y_pos,
-        sharing_types,
-        len(summary.sharing.sharing_types),
-        companies,
-        len(summary.third_party.companies),
-        descriptives,
-        len(summary.third_party.descriptives),
-    )
-    svg_parts.append(sharing_svg)
+    if (
+        config.total_shared_data_types
+        or config.specific_shared_data_types
+        or config.total_third_parties
+        or config.specific_third_parties
+        or config.total_third_party_types
+        or config.specific_third_party_types
+    ):
+        sharing_svg, y_pos = _generate_data_sharing_section(
+            y_pos,
+            sharing_types,
+            len(summary.sharing.sharing_types),
+            companies,
+            len(summary.third_party.companies),
+            descriptives,
+            len(summary.third_party.descriptives),
+            config,
+        )
+        svg_parts.append(sharing_svg)
 
     # Legal Basis
-    legal_svg, y_pos = _generate_legal_basis_section(y_pos, summary.legal_basis)
-    svg_parts.append(legal_svg)
+    if config.legal_basis:
+        legal_svg, y_pos = _generate_legal_basis_section(y_pos, summary.legal_basis)
+        svg_parts.append(legal_svg)
 
     # Footer
     footer_svg, y_pos = _generate_footer(

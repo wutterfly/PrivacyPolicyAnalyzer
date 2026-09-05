@@ -28,8 +28,8 @@ if __name__ == "__main__":
         cache_load_models=True,
     )
 
-    name = "OpenAI"
-    url = "https://openai.com/policies/row-privacy-policy/"
+    name = "Eufy"
+    url = "https://security-app.eufylife.com/v1/overall/termsof?type=privacypolicy_us"
 
     # Or analyze directly from URL
     result: PolicyResult | CrawlError = pipeline.run_with_url(name, url, Language.EN)

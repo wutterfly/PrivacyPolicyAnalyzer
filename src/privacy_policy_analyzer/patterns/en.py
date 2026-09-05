@@ -313,7 +313,7 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "DateTime": [
                 "(?<!up to )\\bdate\\b",
-                "(?<!to )(?<!real-)(?<!from )(?<!every )(?<!any )(?<!each )\\btime\\b",
+                "(?<!to )(?<!real-)(?<!from )(?<!every )(?<!any )(?<!each )(?<!additional )\\btime\\b",
             ],
             "MACAddress": ["MAC address", "mac-address"],
             "IPAddress": ["IP address", "ip-address", "\\(IP\\) address"],
@@ -1378,6 +1378,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bu\\.s\\.a\\.\\b",
                 "\\bu\\.s\\.\\b",
                 "\\bamerica\\b",
+                # "US" only as an all-caps abbreviation, since matched
+                # case-insensitively it collides with the common word "us"
+                "\\b(?-i:US)\\b",
             ],
             "United Kingdom": [
                 "\\bunited kingdom\\b",
@@ -2212,9 +2215,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     profiling=AttributePattern.from_dict(
         {
             "NotProfiling": [
-                "not performed",
-                "not engage",
-                "(not|other then)(.){0,64}(infer characteristics|profiling)",
+                "('t|not) (perform|engage|conduct)",
+                "(not|other then)(.){0,90}(infer characteristics|profiling)",
                 "no profile(.){0,32}(generated|created)",
                 "not subject(ed)?to",
             ]
@@ -2223,9 +2225,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     automated_decision=AttributePattern.from_dict(
         {
             "NotAutomatedDecisionMaking": [
-                "not performed",
-                "not engage",
-                "(not|other then)(.){0,64}automated decision(-| )making",
+                "('t|not) (perform|engage|conduct)",
+                "(not|other then)(.){0,90}automated decision(-| )making",
                 "no automated decision(-| )making",
                 "not subject(ed)?to",
             ]

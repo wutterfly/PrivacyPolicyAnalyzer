@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "privacy-policy-analyzer"
-version = "0.2.7"
+version = "0.2.9"
 description = "Tools to crawl, analyze and report on website privacy policies using NLP models and rule-based patterns."
 readme = "README.md"
 license = { file = "LICENSE" }
