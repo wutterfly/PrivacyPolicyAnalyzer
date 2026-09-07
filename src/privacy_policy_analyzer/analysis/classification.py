@@ -21,6 +21,7 @@ from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 
 logger = get_logger(__name__)
 hf_logging.set_verbosity_error()
+hf_logging.disable_progress_bar()
 
 DEFAULT_THRESHOLD = 0.5
 
@@ -86,7 +87,7 @@ class ModelConfigs:
         for name, config in self._get_model_configs():
             loaded = _load_pipeline(config.model_name, onnx, cached=False)
             del loaded
-            logger.info(
+            logger.debug(
                 "Model loaded successfully: name=%s model=%s", name, config.model_name
             )
 
@@ -127,9 +128,7 @@ def classify_context(
     model = _load_pipeline(
         model_name=config.model_name, use_onnx=use_onnx, cached=cached
     )
-    logger.debug(
-        "Classifying context with model=%s entries=%d", config.model_name, len(entries)
-    )
+    logger.debug("Classifying context ....")
 
     texts = [entry.text for entry in entries]
 
@@ -163,9 +162,7 @@ def classify_topics(
     model = _load_pipeline(
         model_name=config.model_name, use_onnx=use_onnx, cached=cached
     )
-    logger.debug(
-        "Classifying topics with model=%s entries=%d", config.model_name, len(entries)
-    )
+    logger.debug("Classifying topics ....")
 
     texts = [entry.text for entry in entries]
 
@@ -204,7 +201,7 @@ def classify_content(
         model_name=config.model_name, use_onnx=use_onnx, cached=cached
     )
 
-    logger.debug("Classifying content for topic=%s model=%s", topic, config.model_name)
+    logger.debug("Classifying content for topic=%s", topic)
 
     # filter entries by topic
     filtered_indices = []

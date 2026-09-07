@@ -87,15 +87,12 @@ def set_logging(
     # Prevent propagation to root logger
     logger.propagate = False
 
-    #
+    # Silence everything that isn't ours. Most third-party loggers
+    # (requests, urllib3, bs4, langdetect, ...) never call setLevel()
+    # themselves, so they inherit their effective level from the root
+    # logger - raising it above CRITICAL silences them. Root also gets no
+    # handlers of its own, so nothing that does propagate up to it (instead
+    # of being caught by its own package logger) gets printed either.
     root_logger = logging.getLogger()
     root_logger.handlers.clear()
-    root_logger.setLevel(level)
-    root_handler = logging.StreamHandler()
-    root_handler.setFormatter(formatter)
-    root_logger.addHandler(root_handler)
-
-    if file is not None:
-        root_file_handler = logging.FileHandler(file, encoding="utf-8", errors="ignore")
-        root_file_handler.setFormatter(formatter)
-        root_logger.addHandler(root_file_handler)
+    root_logger.setLevel(logging.CRITICAL + 1)

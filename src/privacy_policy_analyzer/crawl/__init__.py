@@ -25,6 +25,7 @@ from privacy_policy_analyzer.crawl.process import (
 )
 from privacy_policy_analyzer.crawl.scraper import WebScraper
 from privacy_policy_analyzer.crawl.splitter import SentenceSplitter, SplitterPattern
+from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
     AddressOutput,
     HeaderOutput,
@@ -36,6 +37,8 @@ from privacy_policy_analyzer.shared.structure import (
     TableOutput,
     TableRowOutput,
 )
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -197,6 +200,8 @@ def crawl(
     is returned.
     """
 
+    logger.info("Starting crawl for url=%s", url)
+
     scraper = WebScraper()
 
     main_content = None
@@ -214,6 +219,11 @@ def crawl(
     detected_lang = detect_language(copy_content.get_text(strip=True))
 
     if prefered_language is not None and detected_lang != prefered_language:
+        logger.warning(
+            "Language mismatch: expected=%s detected=%s",
+            prefered_language,
+            detected_lang,
+        )
         return WrongLanguage()
 
     resolved_language = (
@@ -224,10 +234,12 @@ def crawl(
     if splitter_config is None and allow_fallback:
         fallback = choose_fallback_language(splitter_configs.keys())
         if fallback is not None:
+            logger.info("Falling back to language=%s", fallback)
             resolved_language = fallback
             splitter_config = splitter_configs[fallback]
 
     if splitter_config is None:
+        logger.warning("Unsupported language=%s", resolved_language)
         return UnsupportedLanguage(resolved_language)
 
     splitter = SentenceSplitter(splitter_config)

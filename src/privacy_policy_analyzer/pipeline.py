@@ -161,43 +161,44 @@ class Pipeline:
         self.cache_load_models = cache_load_models
         self.allow_fallback = allow_fallback
 
+        logger.debug("Configured languages=%s", list(configs.keys()))
+
         if onnx:
             logger.info("Using device: %s", "CPU (ONNX)")
         else:
             logger.info("Using device: %s", get_device())
 
         if self.cache_load_models:
+            logger.info("Pre-loading model loading for faster subsequent runs")
             for config in configs.values():
+                logger.debug(
+                    "Pre-loading model loading for language=%s", config.language
+                )
                 config.model_configs.test_load_models(onnx)
                 config.ner_model_config.test_load_models(onnx)
+            logger.info("Completed pre-loading model loading for all languages")
 
     def run_with_policy(
         self, policy: CollectedPolicy
     ) -> PolicyResult | UnsupportedLanguage:
         """Run the pipeline with a collected policy."""
 
-        logger.info(
-            "Running pipeline for policy=%s source=%s language=%s",
-            policy.name,
-            policy.source,
-            policy.language,
-        )
         resolved_language = policy.language
         config = self.configs.get(resolved_language)
         if config is None and self.allow_fallback:
             fallback = choose_fallback_language(self.configs.keys())
             if fallback is not None:
+                logger.info("Falling back to language=%s", fallback)
                 resolved_language = fallback
                 config = self.configs[fallback]
 
         if config is None:
+            logger.warning("Unsupported language=%s", policy.language)
             return UnsupportedLanguage(language=policy.language)
 
         mapping = StructuredTextMappings(policy.harmonized)
 
-        logger.debug(
-            "Collecting information for policy=%s source=%s", policy.name, policy.source
-        )
+        logger.info("Extracting information from policy=%s", policy.name)
 
         collect_information(
             entries=mapping.raw_entries,
@@ -211,7 +212,7 @@ class Pipeline:
             onnx=self.onnx,
             cached=self.cache_load_models,
         )
-        logger.debug("Completed information collection for policy=%s", policy.name)
+        logger.info("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
         propagate_stats = propagate_headers(entries)
@@ -240,6 +241,12 @@ class Pipeline:
         scraped content and the matching registered configuration is used.
         """
 
+        logger.info(
+            "Running pipeline for policy=%s preferred_language=%s",
+            name,
+            preferred_language,
+        )
+
         splitter_configs = {
             lang: config.splitter_configs for lang, config in self.configs.items()
         }
@@ -250,6 +257,7 @@ class Pipeline:
         if isinstance(result, CrawlError):
             return result
 
+        logger.info("Completed crawl for policy=%s", result.name)
         return self.run_with_policy(result)
 
     def run_with_html(
@@ -260,17 +268,26 @@ class Pipeline:
         If `language` is None, it is auto-detected from the given HTML.
         """
 
+        logger.info(
+            "Running pipeline for policy=%s language=%s",
+            name,
+            language,
+        )
+
         if language is None:
             language = detect_language_from_html(html)
+            logger.debug("Detected language=%s", language)
 
         config = self.configs.get(language)
         if config is None and self.allow_fallback:
             fallback = choose_fallback_language(self.configs.keys())
             if fallback is not None:
+                logger.info("Falling back to language=%s", fallback)
                 language = fallback
                 config = self.configs[fallback]
 
         if config is None:
+            logger.warning("Unsupported language=%s", language)
             return UnsupportedLanguage(language=language)
 
         policy = CollectedPolicy.from_parts(

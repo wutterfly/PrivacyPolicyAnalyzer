@@ -16,6 +16,7 @@ from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 
 logger = get_logger(__name__)
 hf_logging.set_verbosity_error()
+hf_logging.disable_progress_bar()
 
 
 @dataclass

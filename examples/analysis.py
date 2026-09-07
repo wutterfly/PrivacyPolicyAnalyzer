@@ -16,12 +16,11 @@ if __name__ == "__main__":
     )
 
     name = "Eufy"
-    # url = "https://security-app.eufylife.com/v1/overall/termsof?type=privacypolicy_us"
-    url = "https://www.bahn.de/datenschutz"
+    url = "https://security-app.eufylife.com/v1/overall/termsof?type=privacypolicy_us"
 
     # Or analyze directly from URL
     result: PolicyResult | CrawlError | UnsupportedLanguage = pipeline.run_with_url(
-        name, url, Language.EN
+        name, url, None
     )
 
     if isinstance(result, CrawlError):
