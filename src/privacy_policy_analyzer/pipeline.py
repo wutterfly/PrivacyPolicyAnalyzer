@@ -142,7 +142,7 @@ class Pipeline:
 
     configs: dict[Language, PipelineConfiguration]
 
-    onnx: bool
+    prefer_onnx: bool
     cache_load_models: bool
 
     allow_fallback: bool
@@ -150,7 +150,7 @@ class Pipeline:
     def __init__(
         self,
         configs: dict[Language, PipelineConfiguration],
-        onnx: bool,
+        prefer_onnx: bool,
         cache_load_models: bool = True,
         allow_fallback: bool = True,
     ):
@@ -162,21 +162,26 @@ class Pipeline:
         one can be selected per document - either from an explicitly given
         language, or one auto-detected from the document's content.
 
+        If `prefer_onnx` is True, an ONNX version of each model is tried
+        first (requires the `optimum` extra); if none is found for a given
+        model, that model silently falls back to its regular PyTorch weights.
+
         Raises ModelLoadError on construction if `cache_load_models` is True and
         any configured model cannot be loaded (e.g. an invalid or unreachable
         HuggingFace repo).
         """
         self.configs = configs
-        self.onnx = onnx
+        self.prefer_onnx = prefer_onnx
         self.cache_load_models = cache_load_models
         self.allow_fallback = allow_fallback
 
-        logger.debug("Configured languages=%s", list(configs.keys()))
+        logger.info("Configured languages=%s", list(configs.keys()))
 
-        if onnx:
-            logger.info("Using device: %s", "CPU (ONNX)")
-        else:
-            logger.info("Using device: %s", get_device())
+        device = get_device()
+        if prefer_onnx:
+            device = f"CPU (ONNX Runtime) / Fallback {device}"
+
+        logger.info("Using device: %s", device)
 
         if self.cache_load_models:
             logger.info("Pre-loading model loading for faster subsequent runs")
@@ -184,8 +189,8 @@ class Pipeline:
                 logger.info(
                     "Pre-loading model loading for language=%s", config.language
                 )
-                config.model_configs.test_load_models(onnx)
-                config.ner_model_config.test_load_models(onnx)
+                config.model_configs.test_load_models(prefer_onnx)
+                config.ner_model_config.test_load_models(prefer_onnx)
             logger.info("Completed pre-loading model loading for all languages")
 
     def run_with_policy(
@@ -219,7 +224,7 @@ class Pipeline:
             email_pattern_config=config.email_pattern_config,
             ner_model_config=config.ner_model_config,
             use_ner_for_company=config.use_ner_for_company,
-            onnx=self.onnx,
+            prefer_onnx=self.prefer_onnx,
             cached=self.cache_load_models,
         )
         if error is not None:

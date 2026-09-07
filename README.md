@@ -21,10 +21,13 @@ The taxonomy can be viewed here: [Taxonomy](./taxonomy.png)
 
 # Installation
 
-The default installation does not include all the dependencies nessary for analysis and training on GPUs. To install the package with all optional dependencies, please run:
+The default installation only includes what's needed to crawl and analyze privacy policies. Two optional extras are available:
+
+- `training` - dependencies needed to fine-tune models (`datasets`, `scikit-learn`, `accelerate`, `bitsandbytes` for GPU quantization).
+- `onnx` - `optimum[onnxruntime]` for ONNX Runtime inference.
 
 ```bash
-privacy_policy_analyzer[gpu]
+privacy_policy_analyzer[training,onnx]
 ```
 
 Additonally, the correct version of PyTorch must be installed for the specific GPU and CUDA version. Please refer to the [PyTorch installation guide](https://pytorch.org/get-started/locally/) to install the appropriate version.
@@ -76,7 +79,7 @@ from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult, Unsupported
 # Pipeline holds one configuration per registered language
 pipeline: Pipeline = Pipeline(
     configs=DEFAULT_CONFIGURATIONS,
-    onnx=False,
+    prefer_onnx=False,
 )
 
 name = "OpenAI"

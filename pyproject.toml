@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "privacy-policy-analyzer"
-version = "0.2.9"
+version = "0.3.0"
 description = "Tools to crawl, analyze and report on website privacy policies using NLP models and rule-based patterns."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -14,12 +14,10 @@ requires-python = ">=3.12"
 dependencies = [
     # ML/Analysis
     "torch>=2.10.0",
-    "transformers>=5.0.0",
-    "datasets>=4.5.0",
-    "huggingface-hub",
+    "transformers<5.0.0",
+    #"transformers>=5.0.0", # update when optimum[onnxruntime], more specifically optimum-onnx supports transformers>=5.0.0
+    "huggingface-hub[hf_xet]",
     "numpy",
-    "accelerate",
-    "scikit-learn",
     "protobuf",
     "sentencepiece",
 
@@ -32,12 +30,15 @@ dependencies = [
 
     # Visualization
     "matplotlib",
-    "pandas>=2.3.0",
+    "pandas>=3.0.0",
 ]
 
 
 [project.optional-dependencies]
-gpu = ["bitsandbytes"]   # only pulled when someone wants GPU quantization
+# only pulled in for fine-tuning models (src/privacy_policy_analyzer/training) -
+# not required for crawling/analyzing policies with the default pipeline
+training = ["datasets>=4.5.0", "scikit-learn", "accelerate", "bitsandbytes"]
+onnx = ["optimum[onnxruntime]>=2.0.0"]   # only pulled when someone wants ONNX Runtime inference
 
 
 [tool.setuptools]

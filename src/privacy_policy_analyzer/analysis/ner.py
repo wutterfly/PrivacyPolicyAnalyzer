@@ -19,6 +19,17 @@ logger = get_logger(__name__)
 hf_logging.set_verbosity_error()
 hf_logging.disable_progress_bar()
 
+try:
+    from optimum.onnxruntime import ORTModelForTokenClassification
+
+    ONNX_AVAILABLE = True
+    ONNX_IMPORT_ERROR = None
+except ImportError as e:
+    # commonly caused by an installed `optimum` that doesn't support the
+    # currently installed `transformers` version, not by a missing package
+    ONNX_AVAILABLE = False
+    ONNX_IMPORT_ERROR = str(e)
+
 
 @dataclass
 class LoadedNERModel:
@@ -62,9 +73,9 @@ class NERModelConfigs:
             ("Company", self.company),
         ]
 
-    def test_load_models(self, onnx: bool):
+    def test_load_models(self, prefer_onnx: bool):
         for name, config in self._get_model_configs():
-            loaded = _load_pipeline(config.model_name, onnx, cached=False)
+            loaded = _load_pipeline(config.model_name, prefer_onnx, cached=False)
             if isinstance(loaded, ModelLoadError):
                 raise loaded
             del loaded
@@ -76,20 +87,56 @@ class NERModelConfigs:
 
 
 def _load_pipeline(
-    model_name: str, use_onnx: bool, cached: bool, logging: bool = True
+    model_name: str, prefer_onnx: bool, cached: bool, logging: bool = True
 ) -> LoadedNERModel | ModelLoadError:
-    if use_onnx:
-        assert False, "ONNX models are currently not supported yet"
-
     if logging:
         logger.info("Loading model=%s", model_name)
 
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
-        model = AutoModelForTokenClassification.from_pretrained(
-            model_name, local_files_only=cached
+    model = None
+    tokenizer = None
+    loaded_onnx = False
+
+    if prefer_onnx and not ONNX_AVAILABLE:
+        logger.warning(
+            "prefer_onnx=True but optimum.onnxruntime could not be imported "
+            "(%s), falling back to PyTorch model=%s",
+            ONNX_IMPORT_ERROR,
+            model_name,
         )
-        device = get_device()
+
+    if prefer_onnx and ONNX_AVAILABLE:
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            model = ORTModelForTokenClassification.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            loaded_onnx = True
+            if logging:
+                logger.debug("Loaded ONNX model=%s", model_name)
+        except Exception as e:
+            if logging:
+                logger.warning(
+                    "No ONNX model available for model=%s, falling back to "
+                    "PyTorch: %s",
+                    model_name,
+                    e,
+                )
+            model = None
+            tokenizer = None
+
+    try:
+        if model is None:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            model = AutoModelForTokenClassification.from_pretrained(
+                model_name, local_files_only=cached
+            )
+        # ONNX Runtime models always run on CPU here - GPU execution providers
+        # aren't wired up, so device selection would silently be wrong.
+        device = "cpu" if loaded_onnx else get_device()
 
         return LoadedNERModel(
             pipeline(
@@ -107,7 +154,7 @@ def _load_pipeline(
 
 
 def extract_entities(
-    entries: list[RawEntry], config: NERModelConfig, use_onnx: bool, cached: bool
+    entries: list[RawEntry], config: NERModelConfig, prefer_onnx: bool, cached: bool
 ):
     """Run named entity recognition and merge matches into each entry's
     ThirdParty -> Company content attributes.
@@ -135,7 +182,7 @@ def extract_entities(
 
     model = _load_pipeline(
         model_name=config.model_name,
-        use_onnx=use_onnx,
+        prefer_onnx=prefer_onnx,
         cached=cached,
         logging=not cached,
     )

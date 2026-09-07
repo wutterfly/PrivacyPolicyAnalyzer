@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-# from optimum.onnxruntime import ORTModelForSequenceClassification
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -23,6 +22,18 @@ from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 logger = get_logger(__name__)
 hf_logging.set_verbosity_error()
 hf_logging.disable_progress_bar()
+
+try:
+    from optimum.onnxruntime import ORTModelForSequenceClassification
+
+    ONNX_AVAILABLE = True
+    ONNX_IMPORT_ERROR = None
+except ImportError as e:
+    # commonly caused by an installed `optimum` that doesn't support the
+    # currently installed `transformers` version, not by a missing package
+    ONNX_AVAILABLE = False
+    ONNX_IMPORT_ERROR = str(e)
+    print(e)
 
 DEFAULT_THRESHOLD = 0.5
 
@@ -84,9 +95,9 @@ class ModelConfigs:
             ("User Rights", self.user_rights),
         ]
 
-    def test_load_models(self, onnx: bool):
+    def test_load_models(self, prefer_onnx: bool):
         for name, config in self._get_model_configs():
-            loaded = _load_pipeline(config.model_name, onnx, cached=False)
+            loaded = _load_pipeline(config.model_name, prefer_onnx, cached=False)
             if isinstance(loaded, ModelLoadError):
                 raise loaded
             del loaded
@@ -96,21 +107,56 @@ class ModelConfigs:
 
 
 def _load_pipeline(
-    model_name: str, use_onnx: bool, cached: bool, logging: bool = True
+    model_name: str, prefer_onnx: bool, cached: bool, logging: bool = True
 ) -> LoadedClassifier | ModelLoadError:
-    if use_onnx:
-        # model = ORTModelForSequenceClassification.from_pretrained(model_name)
-        assert False, "ONNX models are currently not supported yet"
-
     if logging:
         logger.info("Loading model=%s", model_name)
 
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, local_files_only=cached
+    model = None
+    tokenizer = None
+    loaded_onnx = False
+
+    if prefer_onnx and not ONNX_AVAILABLE:
+        logger.warning(
+            "prefer_onnx=True but optimum.onnxruntime could not be imported "
+            "(%s), falling back to PyTorch model=%s",
+            ONNX_IMPORT_ERROR,
+            model_name,
         )
-        device = get_device()
+
+    if prefer_onnx and ONNX_AVAILABLE:
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            model = ORTModelForSequenceClassification.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            loaded_onnx = True
+            if logging:
+                logger.debug("Loaded ONNX model=%s", model_name)
+        except Exception as e:
+            if logging:
+                logger.warning(
+                    "No ONNX model available for model=%s, falling back to "
+                    "PyTorch: %s",
+                    model_name,
+                    e,
+                )
+            model = None
+            tokenizer = None
+
+    try:
+        if model is None:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name, local_files_only=cached
+            )
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_name, local_files_only=cached
+            )
+        # ONNX Runtime models always run on CPU here - GPU execution providers
+        # aren't wired up, so device selection would silently be wrong.
+        device = "cpu" if loaded_onnx else get_device()
 
         return LoadedClassifier(
             pipeline(
@@ -129,11 +175,11 @@ def _load_pipeline(
 
 
 def classify_context(
-    entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
+    entries: list[RawEntry], config: ModelConfig, prefer_onnx: bool, cached: bool
 ):
     model = _load_pipeline(
         model_name=config.model_name,
-        use_onnx=use_onnx,
+        prefer_onnx=prefer_onnx,
         cached=cached,
         logging=not cached,
     )
@@ -168,11 +214,11 @@ def classify_context(
 
 
 def classify_topics(
-    entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
+    entries: list[RawEntry], config: ModelConfig, prefer_onnx: bool, cached: bool
 ):
     model = _load_pipeline(
         model_name=config.model_name,
-        use_onnx=use_onnx,
+        prefer_onnx=prefer_onnx,
         cached=cached,
         logging=not cached,
     )
@@ -210,12 +256,12 @@ def classify_content(
     entries: list[RawEntry],
     topic: str,
     config: ModelConfig,
-    use_onnx: bool,
+    prefer_onnx: bool,
     cached: bool,
 ):
     model = _load_pipeline(
         model_name=config.model_name,
-        use_onnx=use_onnx,
+        prefer_onnx=prefer_onnx,
         cached=cached,
         logging=not cached,
     )

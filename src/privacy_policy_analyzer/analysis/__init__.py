@@ -31,7 +31,7 @@ def collect_information(
     email_pattern_config: EmailPattern,
     ner_model_config: NERModelConfigs,
     use_ner_for_company: bool,
-    onnx: bool,
+    prefer_onnx: bool,
     cached: bool,
 ) -> ModelLoadError | None:
     try:
@@ -39,24 +39,42 @@ def collect_information(
         logger.debug(
             "Classifying contexts, topics, and contents for entries=%d", len(entries)
         )
-        classify_context(entries, model_config.context, onnx, cached)
-        classify_topics(entries, model_config.topic, onnx, cached)
-        classify_content(entries, "Audience", model_config.audience, onnx, cached)
-        classify_content(entries, "Contact", model_config.contact, onnx, cached)
-        classify_content(entries, "Control", model_config.control, onnx, cached)
-        classify_content(entries, "Deletion", model_config.deletion, onnx, cached)
-        classify_content(entries, "LegalBasis", model_config.legal_basis, onnx, cached)
-        classify_content(entries, "Policy", model_config.policy, onnx, cached)
-        classify_content(entries, "Processing", model_config.processing, onnx, cached)
-        classify_content(entries, "Purpose", model_config.purpose, onnx, cached)
-        classify_content(entries, "Retention", model_config.retention, onnx, cached)
+        classify_context(entries, model_config.context, prefer_onnx, cached)
+        classify_topics(entries, model_config.topic, prefer_onnx, cached)
         classify_content(
-            entries, "Security/Privacy", model_config.security_privacy, onnx, cached
+            entries, "Audience", model_config.audience, prefer_onnx, cached
         )
-        classify_content(entries, "Selling", model_config.selling, onnx, cached)
-        classify_content(entries, "Sharing", model_config.sharing, onnx, cached)
-        classify_content(entries, "ThirdParty", model_config.third_party, onnx, cached)
-        classify_content(entries, "UserRights", model_config.user_rights, onnx, cached)
+        classify_content(entries, "Contact", model_config.contact, prefer_onnx, cached)
+        classify_content(entries, "Control", model_config.control, prefer_onnx, cached)
+        classify_content(
+            entries, "Deletion", model_config.deletion, prefer_onnx, cached
+        )
+        classify_content(
+            entries, "LegalBasis", model_config.legal_basis, prefer_onnx, cached
+        )
+        classify_content(entries, "Policy", model_config.policy, prefer_onnx, cached)
+        classify_content(
+            entries, "Processing", model_config.processing, prefer_onnx, cached
+        )
+        classify_content(entries, "Purpose", model_config.purpose, prefer_onnx, cached)
+        classify_content(
+            entries, "Retention", model_config.retention, prefer_onnx, cached
+        )
+        classify_content(
+            entries,
+            "Security/Privacy",
+            model_config.security_privacy,
+            prefer_onnx,
+            cached,
+        )
+        classify_content(entries, "Selling", model_config.selling, prefer_onnx, cached)
+        classify_content(entries, "Sharing", model_config.sharing, prefer_onnx, cached)
+        classify_content(
+            entries, "ThirdParty", model_config.third_party, prefer_onnx, cached
+        )
+        classify_content(
+            entries, "UserRights", model_config.user_rights, prefer_onnx, cached
+        )
         logger.debug("Classifications completed")
 
         logger.debug("Extracting attributes")
@@ -98,7 +116,7 @@ def collect_information(
             patterns=pattern_config.descriptive,
         )
         if use_ner_for_company:
-            extract_entities(entries, ner_model_config.company, onnx, cached)
+            extract_entities(entries, ner_model_config.company, prefer_onnx, cached)
         else:
             extract_attributes(
                 entries,
