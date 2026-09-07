@@ -1,8 +1,11 @@
+import logging
 import re
 from dataclasses import dataclass
 from datetime import datetime
 
 from privacy_policy_analyzer.shared.annotation import RawEntry
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -170,7 +173,9 @@ def get_date(text: str, patterns: DatePattern) -> None | datetime:
                 dt = datetime.strptime(cleaned_txt, format)
                 return dt
             except Exception as e:
-                print(f"Failed to parse date '{match}' with format '{format}': {e}")
+                logger.debug(
+                    f"Failed to parse date '{match}' with format '{format}': {e}"
+                )
                 continue
 
     return None

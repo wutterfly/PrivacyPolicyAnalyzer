@@ -13,7 +13,7 @@ if __name__ == "__main__":
     name = "OpenAI"
 
     result: CollectedPolicy | CrawlError = crawl(
-        name, url, Language.EN, EN_SPLITTER_CONFIG
+        name, url, Language.EN, {Language.EN: EN_SPLITTER_CONFIG}, False
     )
 
     if isinstance(result, CollectedPolicy):

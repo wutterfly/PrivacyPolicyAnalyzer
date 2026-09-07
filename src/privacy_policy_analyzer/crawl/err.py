@@ -1,3 +1,6 @@
+from privacy_policy_analyzer import Language
+
+
 class CrawlError(Exception):
     """
     Base class for errors that occur during the crawling process.
@@ -33,3 +36,9 @@ class WrongLanguage(CrawlError):
     def __init__(self):
         self.description = "The content is in the wrong language"
         self.code = "WRONG_LANGUAGE"
+
+
+class UnsupportedLanguage(CrawlError):
+    def __init__(self, language: Language):
+        self.description = f"No configuration for detected language: {language}"
+        self.code = "UNSUPPORTED_LANGUAGE"

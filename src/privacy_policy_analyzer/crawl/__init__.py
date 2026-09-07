@@ -5,12 +5,19 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 from privacy_policy_analyzer import Language
-from privacy_policy_analyzer.crawl.err import CrawlError, WrongLanguage
+from privacy_policy_analyzer.crawl.err import (
+    CrawlError,
+    UnsupportedLanguage,
+    WrongLanguage,
+)
 from privacy_policy_analyzer.crawl.extract_data import (
     extract_structured_content,
     parse_structured_content,
 )
-from privacy_policy_analyzer.crawl.language import detect_language
+from privacy_policy_analyzer.crawl.language import (
+    choose_fallback_language,
+    detect_language,
+)
 from privacy_policy_analyzer.crawl.process import (
     harmonize_structured_content,
     harmonized_to_text,
@@ -170,12 +177,27 @@ class CollectedPolicy:
 
 
 def crawl(
-    name: str, url: str, language: Language, config: SplitterPattern
+    name: str,
+    url: str,
+    prefered_language: Language | None,
+    splitter_configs: dict[Language, SplitterPattern],
+    allow_fallback: bool,
 ) -> CollectedPolicy | CrawlError:
-    """Crawl a privacy policy from a given URL."""
+    """Crawl a privacy policy from a given URL.
+
+    If `prefered_language` is given, the crawled content is validated
+    against it (WrongLanguage on mismatch). If None, the language is
+    auto-detected from the scraped content instead. Either way, the
+    resolved language's splitter config is looked up from
+    `splitter_configs`.
+
+    If that language isn't registered there: when `allow_fallback` is True,
+    a best-effort substitute is used instead (Language.EN if registered,
+    otherwise any other registered language); when False, UnsupportedLanguage
+    is returned.
+    """
 
     scraper = WebScraper()
-    splitter = SentenceSplitter(config)
 
     main_content = None
     try:
@@ -191,9 +213,24 @@ def crawl(
         item.decompose()
     detected_lang = detect_language(copy_content.get_text(strip=True))
 
-    # check for correct language
-    if detected_lang != language:
+    if prefered_language is not None and detected_lang != prefered_language:
         return WrongLanguage()
+
+    resolved_language = (
+        prefered_language if prefered_language is not None else detected_lang
+    )
+
+    splitter_config = splitter_configs.get(resolved_language)
+    if splitter_config is None and allow_fallback:
+        fallback = choose_fallback_language(splitter_configs.keys())
+        if fallback is not None:
+            resolved_language = fallback
+            splitter_config = splitter_configs[fallback]
+
+    if splitter_config is None:
+        return UnsupportedLanguage(resolved_language)
+
+    splitter = SentenceSplitter(splitter_config)
 
     structured = extract_structured_content(main_content)
 
@@ -204,7 +241,7 @@ def crawl(
     return CollectedPolicy(
         name=name,
         source=url,
-        language=language,
+        language=resolved_language,
         date=Date.today(),
         html=str(main_content),
         structured=structured,

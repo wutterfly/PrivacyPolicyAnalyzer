@@ -50,7 +50,7 @@ url = "https://openai.com/policies/row-privacy-policy/"
 name = "OpenAI"
 
 result: CollectedPolicy | CrawlError = crawl(
-    name, url, Language.EN, EN_SPLITTER_CONFIG
+    name, url, Language.EN, {Language.EN: EN_SPLITTER_CONFIG}, False
 )
 
 if isinstance(result, CollectedPolicy):
@@ -69,20 +69,24 @@ The pipeline can accept either HTML text, a URL, or an already crawled policy.
 
 ```python
 from privacy_policy_analyzer import Language
-from privacy_policy_analyzer.config import DEFAULT_EN_CONFIGURATION
+from privacy_policy_analyzer.config import DEFAULT_CONFIGURATIONS
 from privacy_policy_analyzer.crawl import CrawlError
-from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult
+from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult, UnsupportedLanguage
 
+# Pipeline holds one configuration per registered language
 pipeline: Pipeline = Pipeline(
-    config=DEFAULT_EN_CONFIGURATION,
+    configs=DEFAULT_CONFIGURATIONS,
     onnx=False,
 )
 
 name = "OpenAI"
 url = "https://openai.com/policies/row-privacy-policy/"
 
-# Or analyze directly from URL
-result: PolicyResult | CrawlError = pipeline.run_with_url(name, url, Language.EN)
+# Or analyze directly from URL - pass language=None instead of Language.EN
+# to auto-detect the language from the scraped content
+result: PolicyResult | CrawlError | UnsupportedLanguage = pipeline.run_with_url(
+    name, url, Language.EN
+)
 
 if isinstance(result, PolicyResult):
     print("Analysis Results:")

@@ -86,7 +86,7 @@ class ModelConfigs:
         for name, config in self._get_model_configs():
             loaded = _load_pipeline(config.model_name, onnx, cached=False)
             del loaded
-            logger.debug(
+            logger.info(
                 "Model loaded successfully: name=%s model=%s", name, config.model_name
             )
 

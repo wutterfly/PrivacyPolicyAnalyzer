@@ -16,6 +16,10 @@ from privacy_policy_analyzer.analysis.structure import (
 from privacy_policy_analyzer.config import PipelineConfiguration
 from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
+from privacy_policy_analyzer.crawl.language import (
+    choose_fallback_language,
+    detect_language_from_html,
+)
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
@@ -35,9 +39,11 @@ logger = get_logger(__name__)
 
 
 @dataclass
-class MismatchedLanguages:
-    pipeline: Language
-    policy: Language
+class UnsupportedLanguage:
+    """Returned when no PipelineConfiguration is registered for a language -
+    either one explicitly requested, or one auto-detected from content."""
+
+    language: Language
 
 
 @dataclass
@@ -131,45 +137,61 @@ class Pipeline:
     """
     A pipeline for analyzing privacy policies.
     Combines crawling and information extraction.
+
+    Holds one PipelineConfiguration per supported language, so the correct
+    one can be selected per document - either from an explicitly given
+    language, or one auto-detected from the document's content.
     """
 
-    config: PipelineConfiguration
+    configs: dict[Language, PipelineConfiguration]
 
     onnx: bool
     cache_load_models: bool
+    allow_fallback: bool
 
     def __init__(
         self,
-        config: PipelineConfiguration,
+        configs: dict[Language, PipelineConfiguration],
         onnx: bool,
         cache_load_models: bool = True,
+        allow_fallback: bool = True,
     ):
-        self.config = config
+        self.configs = configs
         self.onnx = onnx
         self.cache_load_models = cache_load_models
+        self.allow_fallback = allow_fallback
 
         if onnx:
             logger.info("Using device: %s", "CPU (ONNX)")
         else:
             logger.info("Using device: %s", get_device())
 
-        if cache_load_models:
-            config.model_configs.test_load_models(onnx)
-            config.ner_model_config.test_load_models(onnx)
-
-    @property
-    def language(self) -> Language:
-        return self.config.language
+        if self.cache_load_models:
+            for config in configs.values():
+                config.model_configs.test_load_models(onnx)
+                config.ner_model_config.test_load_models(onnx)
 
     def run_with_policy(
         self, policy: CollectedPolicy
-    ) -> PolicyResult | MismatchedLanguages:
+    ) -> PolicyResult | UnsupportedLanguage:
         """Run the pipeline with a collected policy."""
 
-        if self.config.language != policy.language:
-            return MismatchedLanguages(
-                pipeline=self.config.language, policy=policy.language
-            )
+        logger.info(
+            "Running pipeline for policy=%s source=%s language=%s",
+            policy.name,
+            policy.source,
+            policy.language,
+        )
+        resolved_language = policy.language
+        config = self.configs.get(resolved_language)
+        if config is None and self.allow_fallback:
+            fallback = choose_fallback_language(self.configs.keys())
+            if fallback is not None:
+                resolved_language = fallback
+                config = self.configs[fallback]
+
+        if config is None:
+            return UnsupportedLanguage(language=policy.language)
 
         mapping = StructuredTextMappings(policy.harmonized)
 
@@ -179,13 +201,13 @@ class Pipeline:
 
         collect_information(
             entries=mapping.raw_entries,
-            model_config=self.config.model_configs,
-            pattern_config=self.config.pattern_configs,
-            duration_pattern_config=self.config.duration_pattern_configs,
-            date_pattern_config=self.config.date_pattern_config,
-            email_pattern_config=self.config.email_pattern_config,
-            ner_model_config=self.config.ner_model_config,
-            use_ner_for_company=self.config.use_ner_for_company,
+            model_config=config.model_configs,
+            pattern_config=config.pattern_configs,
+            duration_pattern_config=config.duration_pattern_configs,
+            date_pattern_config=config.date_pattern_config,
+            email_pattern_config=config.email_pattern_config,
+            ner_model_config=config.ner_model_config,
+            use_ner_for_company=config.use_ner_for_company,
             onnx=self.onnx,
             cached=self.cache_load_models,
         )
@@ -199,7 +221,7 @@ class Pipeline:
         return PolicyResult(
             name=policy.name,
             source=policy.source,
-            language=policy.language,
+            language=resolved_language,
             date=policy.date,
             html=policy.html,
             structured=policy.structured,
@@ -210,26 +232,49 @@ class Pipeline:
         )
 
     def run_with_url(
-        self, name: str, url: str, language: Language
-    ) -> PolicyResult | CrawlError:
-        """Run the pipeline with a URL to crawl the policy from."""
+        self, name: str, url: str, preferred_language: Language | None
+    ) -> PolicyResult | CrawlError | UnsupportedLanguage:
+        """Run the pipeline with a URL to crawl the policy from.
 
-        result = crawl(name, url, language, self.config.splitter_configs)
+        If `preferred_language` is None, it is auto-detected from the
+        scraped content and the matching registered configuration is used.
+        """
+
+        splitter_configs = {
+            lang: config.splitter_configs for lang, config in self.configs.items()
+        }
+        result = crawl(
+            name, url, preferred_language, splitter_configs, self.allow_fallback
+        )
 
         if isinstance(result, CrawlError):
             return result
 
-        output = self.run_with_policy(result)
-        assert isinstance(output, PolicyResult)
-        return output
+        return self.run_with_policy(result)
 
     def run_with_html(
-        self, name: str, source: str, language: Language, date: Date, html: str
-    ) -> PolicyResult:
-        """Run the pipeline with raw HTML content of a policy."""
+        self, name: str, source: str, language: Language | None, date: Date, html: str
+    ) -> PolicyResult | UnsupportedLanguage:
+        """Run the pipeline with raw HTML content of a policy.
+
+        If `language` is None, it is auto-detected from the given HTML.
+        """
+
+        if language is None:
+            language = detect_language_from_html(html)
+
+        config = self.configs.get(language)
+        if config is None and self.allow_fallback:
+            fallback = choose_fallback_language(self.configs.keys())
+            if fallback is not None:
+                language = fallback
+                config = self.configs[fallback]
+
+        if config is None:
+            return UnsupportedLanguage(language=language)
 
         policy = CollectedPolicy.from_parts(
-            splitter_config=self.config.splitter_configs,
+            splitter_config=config.splitter_configs,
             name=name,
             source=source,
             language=language,
@@ -240,6 +285,4 @@ class Pipeline:
             text=None,
         )
 
-        output = self.run_with_policy(policy)
-        assert isinstance(output, PolicyResult)
-        return output
+        return self.run_with_policy(policy)
