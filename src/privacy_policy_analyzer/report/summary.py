@@ -1452,23 +1452,7 @@ def extract_properties(
                     if cnt.content != "Country":
                         continue
 
-                    # "CountriesOutsideOf" is a relative marker, not a country
-                    # of its own - it's paired with the specific countries it
-                    # refers to (e.g. attributes=["CountriesOutsideOf", "European
-                    # Union"] means "outside of the European Union"). Combine
-                    # them into a single "CountriesOutsideOf(X)" value per
-                    # paired country instead of treating both as independent
-                    # country attributes.
-                    countries = list(cnt.attributes)
-                    if "CountriesOutsideOf" in countries:
-                        others = [c for c in countries if c != "CountriesOutsideOf"]
-                        countries = (
-                            [f"CountriesOutsideOf({other})" for other in others]
-                            if others
-                            else ["CountriesOutsideOf"]
-                        )
-
-                    for country in countries:
+                    for country in cnt.attributes:
                         if country not in EU_OR_UNSPECIFIED_COUNTRY_VALUES:
                             sharing_outside_eu_countries.add(country)
 

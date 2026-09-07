@@ -186,6 +186,7 @@
       "AndroidID",
       "AppInteraction",
       "AppInformation",
+      "InstalledApps",
       "AppName",
       "AppVersion",
       "AppID",

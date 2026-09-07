@@ -520,6 +520,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["AppStatus"], children=None),
                             HierarchyEntry(types=["AppID"], children=None),
                             HierarchyEntry(types=["AppConfiguration"], children=None),
+                            HierarchyEntry(types=["InstalledApps"], children=None),
                         ],
                     ),
                     HierarchyEntry(

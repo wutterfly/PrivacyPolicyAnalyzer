@@ -926,6 +926,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "application configuration",
                 "app setup",
             ],
+            "InstalledApps": [
+                "installed (app|application)(s)?",
+                "(app|application)(s)? installed on your device",
+            ],
             "Qualifications": ["qualification(s)?"],
             "CallStatus": ["call status"],
             "AmbientSound": ["ambient sound", "background sound"],
