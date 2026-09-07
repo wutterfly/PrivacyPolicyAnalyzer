@@ -4,12 +4,8 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-from privacy_policy_analyzer import Language
-from privacy_policy_analyzer.crawl.err import (
-    CrawlError,
-    UnsupportedLanguage,
-    WrongLanguage,
-)
+from privacy_policy_analyzer import Language, UnsupportedLanguage
+from privacy_policy_analyzer.crawl.err import CrawlError, WrongLanguage
 from privacy_policy_analyzer.crawl.extract_data import (
     extract_structured_content,
     parse_structured_content,
@@ -185,7 +181,7 @@ def crawl(
     prefered_language: Language | None,
     splitter_configs: dict[Language, SplitterPattern],
     allow_fallback: bool,
-) -> CollectedPolicy | CrawlError:
+) -> CollectedPolicy | CrawlError | UnsupportedLanguage:
     """Crawl a privacy policy from a given URL.
 
     If `prefered_language` is given, the crawled content is validated
@@ -200,7 +196,7 @@ def crawl(
     is returned.
     """
 
-    logger.info("Starting crawl for url=%s", url)
+    logger.debug("Crawling url=%s", url)
 
     scraper = WebScraper()
 
@@ -224,7 +220,7 @@ def crawl(
             prefered_language,
             detected_lang,
         )
-        return WrongLanguage()
+        return WrongLanguage(expected=prefered_language, detected=detected_lang)
 
     resolved_language = (
         prefered_language if prefered_language is not None else detected_lang

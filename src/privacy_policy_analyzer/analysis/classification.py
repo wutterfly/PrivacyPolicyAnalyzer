@@ -11,6 +11,7 @@ from transformers import (
     logging as hf_logging,
 )
 
+from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.shared.annotation import (
     ContentAnnotation,
     RawEntry,
@@ -86,48 +87,58 @@ class ModelConfigs:
     def test_load_models(self, onnx: bool):
         for name, config in self._get_model_configs():
             loaded = _load_pipeline(config.model_name, onnx, cached=False)
+            if isinstance(loaded, ModelLoadError):
+                raise loaded
             del loaded
             logger.debug(
                 "Model loaded successfully: name=%s model=%s", name, config.model_name
             )
 
 
-def _load_pipeline(model_name: str, use_onnx: bool, cached: bool) -> LoadedClassifier:
-    tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
-
-    model = None
-    device = None
-
+def _load_pipeline(
+    model_name: str, use_onnx: bool, cached: bool, logging: bool = True
+) -> LoadedClassifier | ModelLoadError:
     if use_onnx:
         # model = ORTModelForSequenceClassification.from_pretrained(model_name)
-        device = "cpu"
         assert False, "ONNX models are currently not supported yet"
 
-    else:
+    if logging:
+        logger.info("Loading model=%s", model_name)
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name, local_files_only=cached
         )
         device = get_device()
 
-    return LoadedClassifier(
-        pipeline(
-            "text-classification",
-            model=model,
-            tokenizer=tokenizer,
-            device=device,
-            top_k=None,
-            batch_size=16,
-            truncation=True,
+        return LoadedClassifier(
+            pipeline(
+                "text-classification",
+                model=model,
+                tokenizer=tokenizer,
+                device=device,
+                top_k=None,
+                batch_size=16,
+                truncation=True,
+            )
         )
-    )
+    except Exception as e:
+        logger.error("Failed to load model=%s: %s", model_name, e)
+        return ModelLoadError(model_name, str(e))
 
 
 def classify_context(
     entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
 ):
     model = _load_pipeline(
-        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+        model_name=config.model_name,
+        use_onnx=use_onnx,
+        cached=cached,
+        logging=not cached,
     )
+    if isinstance(model, ModelLoadError):
+        raise model
     logger.debug("Classifying context ....")
 
     texts = [entry.text for entry in entries]
@@ -160,8 +171,13 @@ def classify_topics(
     entries: list[RawEntry], config: ModelConfig, use_onnx: bool, cached: bool
 ):
     model = _load_pipeline(
-        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+        model_name=config.model_name,
+        use_onnx=use_onnx,
+        cached=cached,
+        logging=not cached,
     )
+    if isinstance(model, ModelLoadError):
+        raise model
     logger.debug("Classifying topics ....")
 
     texts = [entry.text for entry in entries]
@@ -198,8 +214,13 @@ def classify_content(
     cached: bool,
 ):
     model = _load_pipeline(
-        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+        model_name=config.model_name,
+        use_onnx=use_onnx,
+        cached=cached,
+        logging=not cached,
     )
+    if isinstance(model, ModelLoadError):
+        raise model
 
     logger.debug("Classifying content for topic=%s", topic)
 

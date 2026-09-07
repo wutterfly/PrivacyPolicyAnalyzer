@@ -2,8 +2,9 @@ from dataclasses import asdict, dataclass
 from datetime import date as Date
 from typing import Any
 
-from privacy_policy_analyzer import Language
+from privacy_policy_analyzer import Language, UnsupportedLanguage
 from privacy_policy_analyzer.analysis import collect_information
+from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.analysis.post_processing import (
     combine_table_rows,
     propagate_headers,
@@ -36,14 +37,6 @@ from privacy_policy_analyzer.shared.structure import (
 from privacy_policy_analyzer.shared.util import get_device
 
 logger = get_logger(__name__)
-
-
-@dataclass
-class UnsupportedLanguage:
-    """Returned when no PipelineConfiguration is registered for a language -
-    either one explicitly requested, or one auto-detected from content."""
-
-    language: Language
 
 
 @dataclass
@@ -141,12 +134,17 @@ class Pipeline:
     Holds one PipelineConfiguration per supported language, so the correct
     one can be selected per document - either from an explicitly given
     language, or one auto-detected from the document's content.
+
+    Raises ModelLoadError on construction if `cache_load_models` is True and
+    any configured model cannot be loaded (e.g. an invalid or unreachable
+    HuggingFace repo).
     """
 
     configs: dict[Language, PipelineConfiguration]
 
     onnx: bool
     cache_load_models: bool
+
     allow_fallback: bool
 
     def __init__(
@@ -156,6 +154,18 @@ class Pipeline:
         cache_load_models: bool = True,
         allow_fallback: bool = True,
     ):
+        """
+        A pipeline for analyzing privacy policies.
+        Combines crawling and information extraction.
+
+        Holds one PipelineConfiguration per supported language, so the correct
+        one can be selected per document - either from an explicitly given
+        language, or one auto-detected from the document's content.
+
+        Raises ModelLoadError on construction if `cache_load_models` is True and
+        any configured model cannot be loaded (e.g. an invalid or unreachable
+        HuggingFace repo).
+        """
         self.configs = configs
         self.onnx = onnx
         self.cache_load_models = cache_load_models
@@ -171,7 +181,7 @@ class Pipeline:
         if self.cache_load_models:
             logger.info("Pre-loading model loading for faster subsequent runs")
             for config in configs.values():
-                logger.debug(
+                logger.info(
                     "Pre-loading model loading for language=%s", config.language
                 )
                 config.model_configs.test_load_models(onnx)
@@ -180,7 +190,7 @@ class Pipeline:
 
     def run_with_policy(
         self, policy: CollectedPolicy
-    ) -> PolicyResult | UnsupportedLanguage:
+    ) -> PolicyResult | UnsupportedLanguage | ModelLoadError:
         """Run the pipeline with a collected policy."""
 
         resolved_language = policy.language
@@ -200,7 +210,7 @@ class Pipeline:
 
         logger.info("Extracting information from policy=%s", policy.name)
 
-        collect_information(
+        error = collect_information(
             entries=mapping.raw_entries,
             model_config=config.model_configs,
             pattern_config=config.pattern_configs,
@@ -212,6 +222,8 @@ class Pipeline:
             onnx=self.onnx,
             cached=self.cache_load_models,
         )
+        if error is not None:
+            return error
         logger.info("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
@@ -234,7 +246,7 @@ class Pipeline:
 
     def run_with_url(
         self, name: str, url: str, preferred_language: Language | None
-    ) -> PolicyResult | CrawlError | UnsupportedLanguage:
+    ) -> PolicyResult | CrawlError | UnsupportedLanguage | ModelLoadError:
         """Run the pipeline with a URL to crawl the policy from.
 
         If `preferred_language` is None, it is auto-detected from the
@@ -254,7 +266,7 @@ class Pipeline:
             name, url, preferred_language, splitter_configs, self.allow_fallback
         )
 
-        if isinstance(result, CrawlError):
+        if isinstance(result, CrawlError | UnsupportedLanguage):
             return result
 
         logger.info("Completed crawl for policy=%s", result.name)
@@ -262,7 +274,7 @@ class Pipeline:
 
     def run_with_html(
         self, name: str, source: str, language: Language | None, date: Date, html: str
-    ) -> PolicyResult | UnsupportedLanguage:
+    ) -> PolicyResult | UnsupportedLanguage | ModelLoadError:
         """Run the pipeline with raw HTML content of a policy.
 
         If `language` is None, it is auto-detected from the given HTML.

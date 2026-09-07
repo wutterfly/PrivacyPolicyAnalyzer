@@ -21,24 +21,26 @@ class CrawlError(Exception):
 
 
 class NoHTML(CrawlError):
-    def __init__(self):
-        self.description = "No HTML content could be retrieved"
+    def __init__(self, url: str | None = None):
+        suffix = f": url={url}" if url is not None else ""
+        self.description = f"No HTML content could be retrieved{suffix}"
         self.code = "NO_HTML_CONTENT"
 
 
 class NoMainContent(CrawlError):
-    def __init__(self):
-        self.description = "No main content could be found"
+    def __init__(self, url: str | None = None):
+        suffix = f": url={url}" if url is not None else ""
+        self.description = f"No main content could be found{suffix}"
         self.code = "NO_MAIN_CONTENT"
 
 
 class WrongLanguage(CrawlError):
-    def __init__(self):
-        self.description = "The content is in the wrong language"
+    def __init__(
+        self, expected: Language | None = None, detected: Language | None = None
+    ):
+        if expected is not None and detected is not None:
+            detail = f": expected={expected} detected={detected}"
+        else:
+            detail = ""
+        self.description = f"The content is in the wrong language{detail}"
         self.code = "WRONG_LANGUAGE"
-
-
-class UnsupportedLanguage(CrawlError):
-    def __init__(self, language: Language):
-        self.description = f"No configuration for detected language: {language}"
-        self.code = "UNSUPPORTED_LANGUAGE"

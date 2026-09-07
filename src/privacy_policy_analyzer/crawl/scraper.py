@@ -388,9 +388,9 @@ class WebScraper:
 
         logger.error("Failed to scrape content from url=%s", url)
         if html is None:
-            raise NoHTML()
+            raise NoHTML(url)
 
-        raise NoMainContent()
+        raise NoMainContent(url)
 
     def _scrape_playwright_parallel(self, url: str) -> str | None:
         """

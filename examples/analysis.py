@@ -1,9 +1,11 @@
+import json
 import logging
 
-from privacy_policy_analyzer import Language
+from privacy_policy_analyzer import UnsupportedLanguage
+from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.config import DEFAULT_CONFIGURATIONS
 from privacy_policy_analyzer.crawl import CrawlError
-from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult, UnsupportedLanguage
+from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult
 from privacy_policy_analyzer.shared.logging import set_logging
 
 if __name__ == "__main__":
@@ -19,17 +21,13 @@ if __name__ == "__main__":
     url = "https://security-app.eufylife.com/v1/overall/termsof?type=privacypolicy_us"
 
     # Or analyze directly from URL
-    result: PolicyResult | CrawlError | UnsupportedLanguage = pipeline.run_with_url(
-        name, url, None
+    result: PolicyResult | CrawlError | UnsupportedLanguage | ModelLoadError = (
+        pipeline.run_with_url(name, url, None)
     )
 
-    if isinstance(result, CrawlError):
-        print(f"Error occurred while crawling: {result}")
-    elif isinstance(result, UnsupportedLanguage):
-        print(f"Unsupported language: {result.language}")
+    if not isinstance(result, PolicyResult):
+        print(f"Analysis failed for {name}: {result}")
 
-    if isinstance(result, PolicyResult):
+    elif isinstance(result, PolicyResult):
         with open("debug_analysis.json", "w", encoding="utf-8") as f:
-            import json
-
             json.dump(result.to_json(), f, ensure_ascii=False, indent=2, default=str)

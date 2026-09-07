@@ -10,6 +10,7 @@ from transformers import (
     logging as hf_logging,
 )
 
+from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.shared.annotation import RawEntry
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
@@ -64,6 +65,8 @@ class NERModelConfigs:
     def test_load_models(self, onnx: bool):
         for name, config in self._get_model_configs():
             loaded = _load_pipeline(config.model_name, onnx, cached=False)
+            if isinstance(loaded, ModelLoadError):
+                raise loaded
             del loaded
             logger.debug(
                 "NER model loaded successfully: name=%s model=%s",
@@ -72,32 +75,35 @@ class NERModelConfigs:
             )
 
 
-def _load_pipeline(model_name: str, use_onnx: bool, cached: bool) -> LoadedNERModel:
-    tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
-
-    model = None
-    device = None
-
+def _load_pipeline(
+    model_name: str, use_onnx: bool, cached: bool, logging: bool = True
+) -> LoadedNERModel | ModelLoadError:
     if use_onnx:
-        device = "cpu"
         assert False, "ONNX models are currently not supported yet"
 
-    else:
+    if logging:
+        logger.info("Loading model=%s", model_name)
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=cached)
         model = AutoModelForTokenClassification.from_pretrained(
             model_name, local_files_only=cached
         )
         device = get_device()
 
-    return LoadedNERModel(
-        pipeline(
-            "ner",
-            model=model,
-            tokenizer=tokenizer,
-            aggregation_strategy="simple",
-            device=device,
-            batch_size=16,
+        return LoadedNERModel(
+            pipeline(
+                "ner",
+                model=model,
+                tokenizer=tokenizer,
+                aggregation_strategy="simple",
+                device=device,
+                batch_size=16,
+            )
         )
-    )
+    except Exception as e:
+        logger.error("Failed to load model=%s: %s", model_name, e)
+        return ModelLoadError(model_name, str(e))
 
 
 def extract_entities(
@@ -128,8 +134,13 @@ def extract_entities(
         return
 
     model = _load_pipeline(
-        model_name=config.model_name, use_onnx=use_onnx, cached=cached
+        model_name=config.model_name,
+        use_onnx=use_onnx,
+        cached=cached,
+        logging=not cached,
     )
+    if isinstance(model, ModelLoadError):
+        raise model
     logger.debug(
         "Extracting entities with model=%s entries=%d", config.model_name, len(texts)
     )
