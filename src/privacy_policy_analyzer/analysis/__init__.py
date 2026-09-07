@@ -116,7 +116,14 @@ def collect_information(
             patterns=pattern_config.descriptive,
         )
         if use_ner_for_company:
-            extract_entities(entries, ner_model_config.company, prefer_onnx, cached)
+            extract_entities(
+                entries,
+                topic=["ThirdParty"],
+                content="Company",
+                config=ner_model_config.company,
+                prefer_onnx=prefer_onnx,
+                cached=cached,
+            )
         else:
             extract_attributes(
                 entries,

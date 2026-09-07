@@ -154,26 +154,30 @@ def _load_pipeline(
 
 
 def extract_entities(
-    entries: list[RawEntry], config: NERModelConfig, prefer_onnx: bool, cached: bool
+    entries: list[RawEntry],
+    topic: list[str],
+    content: str,
+    config: NERModelConfig,
+    prefer_onnx: bool,
+    cached: bool,
 ):
     """Run named entity recognition and merge matches into each entry's
-    ThirdParty -> Company content attributes.
+    `topic` -> `content` content attributes.
 
-    Only entries that already have a "ThirdParty" topic with a "Company"
-    content block are processed (mirroring classify_content's filtering) -
-    this augments existing Company attributes, it does not create new
-    ThirdParty/Company annotations. Mutates `entries` in place, matching
-    extract_attributes' contract in attributes.py.
+    Only entries that already have one of the given topics with a matching
+    `content` block are processed (mirroring classify_content's and
+    extract_attributes' filtering) - this augments existing attributes, it
+    does not create new topic/content annotations. Mutates `entries` in
+    place, matching extract_attributes' contract in attributes.py.
     """
     filtered_indices = []
     texts = []
     for i, entry in enumerate(entries):
-        has_company_content = any(
-            tpc.topic == "ThirdParty"
-            and any(cnt.content == "Company" for cnt in tpc.contents)
+        has_matching_content = any(
+            tpc.topic in topic and any(cnt.content == content for cnt in tpc.contents)
             for tpc in entry.topics
         )
-        if has_company_content:
+        if has_matching_content:
             filtered_indices.append(i)
             texts.append(entry.text)
 
@@ -223,10 +227,10 @@ def extract_entities(
             continue
 
         for tpc in entries[idx].topics:
-            if tpc.topic != "ThirdParty":
+            if tpc.topic not in topic:
                 continue
             for cnt in tpc.contents:
-                if cnt.content == "Company":
+                if cnt.content == content:
                     cnt.attributes.extend(matched_words)
 
     del model

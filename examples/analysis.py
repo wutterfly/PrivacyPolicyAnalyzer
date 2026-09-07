@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     pipeline: Pipeline = Pipeline(
         configs=DEFAULT_CONFIGURATIONS,
-        onnx=False,
+        prefer_onnx=False,
         cache_load_models=True,
     )
 
