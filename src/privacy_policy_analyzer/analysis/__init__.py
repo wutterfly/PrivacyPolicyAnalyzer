@@ -9,12 +9,12 @@ from privacy_policy_analyzer.analysis.attributes import (
     extract_email,
 )
 from privacy_policy_analyzer.analysis.classification import (
-    ModelConfig,
     ModelConfigs,
     classify_content,
     classify_context,
     classify_topics,
 )
+from privacy_policy_analyzer.analysis.ner import NERModelConfigs, extract_entities
 from privacy_policy_analyzer.shared.annotation import RawEntry
 from privacy_policy_analyzer.shared.logging import get_logger
 
@@ -28,6 +28,8 @@ def collect_information(
     duration_pattern_config: DurationPattern,
     date_pattern_config: DatePattern,
     email_pattern_config: EmailPattern,
+    ner_model_config: NERModelConfigs,
+    use_ner_for_company: bool,
     onnx: bool,
     cached: bool,
 ):
@@ -93,12 +95,15 @@ def collect_information(
         content="Descriptive",
         patterns=pattern_config.descriptive,
     )
-    extract_attributes(
-        entries,
-        topic=["ThirdParty"],
-        content="Company",
-        patterns=pattern_config.company,
-    )
+    if use_ner_for_company:
+        extract_entities(entries, ner_model_config.company, onnx, cached)
+    else:
+        extract_attributes(
+            entries,
+            topic=["ThirdParty"],
+            content="Company",
+            patterns=pattern_config.company,
+        )
     extract_attributes(
         entries,
         topic=["ThirdParty"],
@@ -193,79 +198,3 @@ def collect_information(
     )
 
     logger.debug("Attribute extraction completed")
-
-
-DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
-    context=ModelConfig(
-        model_name="Wravn/privacy-policy-context",
-        thresholds={},
-    ),
-    topic=ModelConfig(
-        model_name="Wravn/privacy-policy-topic",
-        thresholds={
-            "Purpose": 0.4,
-            "Sharing": 0.6,
-            "ThirdParty": 0.6,
-            "Selling": 0.65,
-            "Audience": 0.7,
-        },
-    ),
-    audience=ModelConfig(
-        model_name="Wravn/privacy-policy-content-audience",
-        thresholds={"Country": 0.4},
-    ),
-    contact=ModelConfig(
-        model_name="Wravn/privacy-policy-content-contact",
-        thresholds={"Website": 0.4},
-    ),
-    control=ModelConfig(
-        model_name="Wravn/privacy-policy-content-control",
-        thresholds={},
-    ),
-    deletion=ModelConfig(
-        model_name="Wravn/privacy-policy-content-deletion",
-        thresholds={},
-    ),
-    legal_basis=ModelConfig(
-        model_name="Wravn/privacy-policy-content-legalbasis",
-        thresholds={},
-    ),
-    policy=ModelConfig(
-        model_name="Wravn/privacy-policy-content-policy",
-        thresholds={"Change": 0.4, "External": 0.65},
-    ),
-    processing=ModelConfig(
-        model_name="Wravn/privacy-policy-content-processing",
-        thresholds={"Method/Source": 0.4},
-    ),
-    purpose=ModelConfig(
-        model_name="Wravn/privacy-policy-content-purpose",
-        thresholds={},
-    ),
-    retention=ModelConfig(
-        model_name="Wravn/privacy-policy-content-retention",
-        thresholds={"StorageDuration": 0.4},
-    ),
-    security_privacy=ModelConfig(
-        model_name="Wravn/privacy-policy-content-securityprivacy",
-        thresholds={"SecurityHints": 0.4},
-    ),
-    selling=ModelConfig(
-        model_name="Wravn/privacy-policy-content-selling",
-        thresholds={"NotSelling": 0.90},
-    ),
-    sharing=ModelConfig(
-        model_name="Wravn/privacy-policy-content-sharing",
-        thresholds={},
-    ),
-    third_party=ModelConfig(
-        model_name="Wravn/privacy-policy-content-thirdparty",
-        thresholds={"Company": 0.3, "Descriptive": 0.4},
-    ),
-    user_rights=ModelConfig(
-        model_name="Wravn/privacy-policy-content-userrights",
-        thresholds={},
-    ),
-)
-"""
-Default model configurations for privacy policy analysis."""

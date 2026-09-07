@@ -69,23 +69,12 @@ The pipeline can accept either HTML text, a URL, or an already crawled policy.
 
 ```python
 from privacy_policy_analyzer import Language
-from privacy_policy_analyzer.analysis import DEFAULT_MODEL_CONFIGS
+from privacy_policy_analyzer.config import DEFAULT_EN_CONFIGURATION
 from privacy_policy_analyzer.crawl import CrawlError
-from privacy_policy_analyzer.patterns.en import (
-    EN_DATE_PATTERN_CONFIG,
-    EN_DURATION_PATTERN_CONFIG,
-    EN_PATTERN_CONFIG,
-    EN_SPLITTER_CONFIG,
-)
 from privacy_policy_analyzer.pipeline import Pipeline, PolicyResult
 
 pipeline: Pipeline = Pipeline(
-    language=Language.EN,
-    model_configs=DEFAULT_MODEL_CONFIGS,
-    splitter_configs=EN_SPLITTER_CONFIG,
-    pattern_configs=EN_PATTERN_CONFIG,
-    duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
-    date_pattern_config=EN_DATE_PATTERN_CONFIG,
+    config=DEFAULT_EN_CONFIGURATION,
     onnx=False,
 )
 
@@ -247,7 +236,7 @@ Several default configurations are provided for convenience.
 #### **Model Configs**
 
 These configurations define which models to use and what classification thresholds to apply.
-The default model configurations can be imported from `privacy_policy_analyzer.analysis.DEFAULT_MODEL_CONFIGS`.
+The default model configurations can be imported from `privacy_policy_analyzer.config.DEFAULT_MODEL_CONFIGS`.
 They use pre-trained models hosted on HuggingFace.
 
 - [Context Classifier](https://huggingface.co/Wravn/privacy-policy-context)

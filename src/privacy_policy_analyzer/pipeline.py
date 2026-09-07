@@ -4,17 +4,7 @@ from typing import Any
 
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.analysis import collect_information
-from privacy_policy_analyzer.analysis.attributes import (
-    AttributePatterns,
-    DatePattern,
-    DurationPattern,
-    EmailPattern,
-)
-from privacy_policy_analyzer.analysis.classification import (
-    ModelConfigs,
-)
 from privacy_policy_analyzer.analysis.post_processing import (
-    DEFAULT_SKIPS,
     combine_table_rows,
     propagate_headers,
     smooth_context,
@@ -23,11 +13,10 @@ from privacy_policy_analyzer.analysis.structure import (
     StructuredEntry,
     StructuredTextMappings,
 )
+from privacy_policy_analyzer.config import PipelineConfiguration
 from privacy_policy_analyzer.crawl import CollectedPolicy, CrawlError, crawl
 from privacy_policy_analyzer.crawl.extract_data import parse_structured_content
 from privacy_policy_analyzer.crawl.process import parse_harmonized_content
-from privacy_policy_analyzer.crawl.splitter import SplitterPattern
-from privacy_policy_analyzer.patterns import DEFAULT_EMAIL_PATTERN_CONFIG
 from privacy_policy_analyzer.shared.logging import get_logger
 from privacy_policy_analyzer.shared.structure import (
     AddressOutput,
@@ -144,93 +133,43 @@ class Pipeline:
     Combines crawling and information extraction.
     """
 
-    language: Language
-
-    model_configs: ModelConfigs
-
-    splitter_configs: SplitterPattern
-    pattern_configs: AttributePatterns
-    duration_pattern_configs: DurationPattern
-    date_pattern_config: DatePattern
-    email_pattern_config: EmailPattern
+    config: PipelineConfiguration
 
     onnx: bool
     cache_load_models: bool
 
     def __init__(
         self,
-        language: Language,
-        model_configs: ModelConfigs,
-        splitter_configs: SplitterPattern | None,
-        pattern_configs: AttributePatterns | None,
-        duration_pattern_configs: DurationPattern | None,
-        date_pattern_config: DatePattern | None,
-        email_pattern_config: EmailPattern | None,
+        config: PipelineConfiguration,
         onnx: bool,
         cache_load_models: bool = True,
     ):
+        self.config = config
         self.onnx = onnx
-        self.model_configs = model_configs
-
-        if language == Language.EN:
-            from privacy_policy_analyzer.patterns.en import (
-                EN_DATE_PATTERN_CONFIG,
-                EN_DURATION_PATTERN_CONFIG,
-                EN_PATTERN_CONFIG,
-                EN_SPLITTER_CONFIG,
-            )
-
-            self.language = language
-
-            #
-            if splitter_configs is None:
-                self.splitter_configs = EN_SPLITTER_CONFIG
-            else:
-                self.splitter_configs = splitter_configs
-
-            #
-            if pattern_configs is None:
-                self.pattern_configs = EN_PATTERN_CONFIG
-            else:
-                self.pattern_configs = pattern_configs
-
-            #
-            if duration_pattern_configs is None:
-                self.duration_pattern_configs = EN_DURATION_PATTERN_CONFIG
-            else:
-                self.duration_pattern_configs = duration_pattern_configs
-
-            #
-            if date_pattern_config is None:
-                self.date_pattern_config = EN_DATE_PATTERN_CONFIG
-            else:
-                self.date_pattern_config = date_pattern_config
-        else:
-            assert False, f"Unsupported language: {language}"
-
-        if email_pattern_config is None:
-            self.email_pattern_config = DEFAULT_EMAIL_PATTERN_CONFIG
-        else:
-            self.email_pattern_config = email_pattern_config
+        self.cache_load_models = cache_load_models
 
         if onnx:
             logger.info("Using device: %s", "CPU (ONNX)")
-
         else:
             logger.info("Using device: %s", get_device())
 
         if cache_load_models:
-            model_configs.test_load_models(onnx)
+            config.model_configs.test_load_models(onnx)
+            config.ner_model_config.test_load_models(onnx)
 
-        self.cache_load_models = cache_load_models
+    @property
+    def language(self) -> Language:
+        return self.config.language
 
     def run_with_policy(
         self, policy: CollectedPolicy
     ) -> PolicyResult | MismatchedLanguages:
         """Run the pipeline with a collected policy."""
 
-        if self.language != policy.language:
-            return MismatchedLanguages(pipeline=self.language, policy=policy.language)
+        if self.config.language != policy.language:
+            return MismatchedLanguages(
+                pipeline=self.config.language, policy=policy.language
+            )
 
         mapping = StructuredTextMappings(policy.harmonized)
 
@@ -240,18 +179,20 @@ class Pipeline:
 
         collect_information(
             entries=mapping.raw_entries,
-            model_config=self.model_configs,
-            pattern_config=self.pattern_configs,
-            duration_pattern_config=self.duration_pattern_configs,
-            date_pattern_config=self.date_pattern_config,
-            email_pattern_config=self.email_pattern_config,
+            model_config=self.config.model_configs,
+            pattern_config=self.config.pattern_configs,
+            duration_pattern_config=self.config.duration_pattern_configs,
+            date_pattern_config=self.config.date_pattern_config,
+            email_pattern_config=self.config.email_pattern_config,
+            ner_model_config=self.config.ner_model_config,
+            use_ner_for_company=self.config.use_ner_for_company,
             onnx=self.onnx,
             cached=self.cache_load_models,
         )
         logger.debug("Completed information collection for policy=%s", policy.name)
 
         entries = mapping.build_structured_entries()
-        propagate_stats = propagate_headers(entries, skips=DEFAULT_SKIPS)
+        propagate_stats = propagate_headers(entries)
         entries = combine_table_rows(entries)
         smoothing_stats = smooth_context(entries)
 
@@ -273,7 +214,7 @@ class Pipeline:
     ) -> PolicyResult | CrawlError:
         """Run the pipeline with a URL to crawl the policy from."""
 
-        result = crawl(name, url, language, self.splitter_configs)
+        result = crawl(name, url, language, self.config.splitter_configs)
 
         if isinstance(result, CrawlError):
             return result
@@ -288,7 +229,7 @@ class Pipeline:
         """Run the pipeline with raw HTML content of a policy."""
 
         policy = CollectedPolicy.from_parts(
-            splitter_config=self.splitter_configs,
+            splitter_config=self.config.splitter_configs,
             name=name,
             source=source,
             language=language,

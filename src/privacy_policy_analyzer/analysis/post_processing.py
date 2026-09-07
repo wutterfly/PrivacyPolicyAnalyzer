@@ -139,7 +139,7 @@ def merge_entries(
 
 
 def propagate_headers(
-    entries: list[StructuredEntry], skips: list[SkipRule]
+    entries: list[StructuredEntry], skips: list[SkipRule] = DEFAULT_SKIPS
 ) -> dict[str, dict[str, int]]:
     added_contexts = Counter()
     added_topics = Counter()

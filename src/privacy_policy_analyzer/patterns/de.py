@@ -106,7 +106,7 @@ DE_SPLITTER_CONFIG: SplitterPattern = SplitterPattern.from_parts(
 
 # ------------------------------------------
 
-EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
+DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     data_type=AttributePattern.from_dict(
         {
             "PersonalData": [
@@ -2315,7 +2315,7 @@ DE_DURATION_PATTERN_CONFIG: DurationPattern = DurationPattern(
 )
 """ German language duration patterns. """
 
-EN_DATE_PATTERN_CONFIG: DatePattern = DatePattern(
+DE_DATE_PATTERN_CONFIG: DatePattern = DatePattern(
     {
         "%Y-%m-%d": "\\b(\\d{4})-(\\d{1,2})-(\\d{1,2})\\b",
         "%Y/%m/%d": "\\b(\\d{4})/(\\d{1,2})/(\\d{1,2})\\b",
