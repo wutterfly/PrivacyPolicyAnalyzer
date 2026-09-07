@@ -264,5 +264,5 @@ DE_DEFAULT_CONFIGURATION: PipelineConfiguration = PipelineConfiguration(
 
 DEFAULT_CONFIGURATIONS: dict[Language, PipelineConfiguration] = {
     Language.EN: EN_DEFAULT_CONFIGURATION,
-    # Language.DE: DE_DEFAULT_CONFIGURATION,
+    Language.DE: DE_DEFAULT_CONFIGURATION,
 }
