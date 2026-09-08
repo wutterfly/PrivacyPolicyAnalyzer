@@ -979,14 +979,25 @@ def extract_change_information(
                 if cnt.content != "Change":
                     continue
 
+                logger.debug(
+                    "Extracting change information from entry: %s", asdict(entry)
+                )
+
                 for attr in cnt.attributes:
                     try:
                         found = date.strptime(attr, "%Y-%m-%d")
+                        logger.debug("Found change date: %s", found)
 
                         if highest_date is None or found > highest_date:
                             highest_date = found
+                            logger.debug(
+                                "Updated highest change date to: %s", highest_date
+                            )
 
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(
+                            "Failed to parse change date: %s | %s", attr, str(e)
+                        )
                         continue
 
             # extract external reference
@@ -995,6 +1006,12 @@ def extract_change_information(
                     external_ref += 1
                 elif cnt.content == "DataProtectionOfficer":
                     data_protection_officer = True
+
+    logger.debug(
+        "Final extracted change information: highest_date=%s,data_protection_officer=%s",
+        highest_date,
+        data_protection_officer,
+    )
 
     return PolicyInformation(
         date=highest_date.isoformat() if highest_date is not None else None,
