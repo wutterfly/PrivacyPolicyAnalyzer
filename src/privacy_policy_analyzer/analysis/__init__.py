@@ -22,25 +22,36 @@ from privacy_policy_analyzer.shared.logging import get_logger
 logger = get_logger(__name__)
 
 
-def collect_information(
+def classify_contexts_and_topics(
     entries: list[RawEntry],
     model_config: ModelConfigs,
-    pattern_config: AttributePatterns,
-    duration_pattern_config: DurationPattern,
-    date_pattern_config: DatePattern,
-    email_pattern_config: EmailPattern,
-    ner_model_config: NERModelConfigs,
-    use_ner_for_company: bool,
     prefer_onnx: bool,
     cached: bool,
 ) -> ModelLoadError | None:
+    """Classify contexts and topics only (no contents, no attributes) - the
+    first stage, run before header propagation so content classification can
+    later see topics inherited from parent headers."""
     try:
-        # classify contexts, topics, and contents
-        logger.debug(
-            "Classifying contexts, topics, and contents for entries=%d", len(entries)
-        )
+        logger.debug("Classifying contexts and topics for entries=%d", len(entries))
         classify_context(entries, model_config.context, prefer_onnx, cached)
         classify_topics(entries, model_config.topic, prefer_onnx, cached)
+    except ModelLoadError as e:
+        return e
+
+    return None
+
+
+def classify_contents(
+    entries: list[RawEntry],
+    model_config: ModelConfigs,
+    prefer_onnx: bool,
+    cached: bool,
+) -> ModelLoadError | None:
+    """Classify contents for every topic - run after header propagation has
+    filled in topics on entries that only had them via a parent header, and
+    before header propagation runs again so those contents also propagate."""
+    try:
+        logger.debug("Classifying contents for entries=%d", len(entries))
         classify_content(
             entries, "Audience", model_config.audience, prefer_onnx, cached
         )
@@ -75,10 +86,29 @@ def collect_information(
         classify_content(
             entries, "UserRights", model_config.user_rights, prefer_onnx, cached
         )
-        logger.debug("Classifications completed")
+        logger.debug("Content classification completed")
+    except ModelLoadError as e:
+        return e
 
+    return None
+
+
+def extract_all_attributes(
+    entries: list[RawEntry],
+    pattern_config: AttributePatterns,
+    duration_pattern_config: DurationPattern,
+    date_pattern_config: DatePattern,
+    email_pattern_config: EmailPattern,
+    ner_model_config: NERModelConfigs,
+    use_ner_for_company: bool,
+    prefer_onnx: bool,
+    cached: bool,
+) -> ModelLoadError | None:
+    """Extract attributes for every content - the final stage, run after
+    both header propagation passes so it sees the fully propagated topics
+    and contents."""
+    try:
         logger.debug("Extracting attributes")
-        # extract attributes
         extract_attributes(
             entries,
             topic=["Processing", "Retention", "Sharing", "Deletion", "Selling"],

@@ -61,6 +61,20 @@ COMMON_DOMAIN_ENDINGS: list[str] = [
     "eu",
 ]
 
+COMMON_ORG_EXCLUDED_TERMS: list[str] = [
+    "Inc",
+    "Ltd",
+    "LLC",
+    "GmbH",
+    "AG",
+    "Company",
+    "Corporation",
+    "Limited",
+    "Incorporated",
+    "LLP",
+    "PLC",
+]
+
 
 # --------- EN defaults ---------
 
@@ -141,8 +155,8 @@ EN_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
 EN_DEFAULT_NER_MODEL_CONFIGS: NERModelConfigs = NERModelConfigs(
     company=NERModelConfig(
         model_name="FacebookAI/xlm-roberta-large-finetuned-conll03-english",
-        thresholds={"ORG": 0.92},
-        excluded_terms=COMMON_DOMAIN_ENDINGS,
+        thresholds={"ORG": 0.85},
+        excluded_terms=COMMON_DOMAIN_ENDINGS + COMMON_ORG_EXCLUDED_TERMS,
         min_length=2,
     ),
 )
@@ -240,8 +254,8 @@ DE_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
 DE_DEFAULT_NER_MODEL_CONFIGS: NERModelConfigs = NERModelConfigs(
     company=NERModelConfig(
         model_name="FacebookAI/xlm-roberta-large-finetuned-conll03-german",
-        thresholds={"ORG": 0.92},
-        excluded_terms=COMMON_DOMAIN_ENDINGS,
+        thresholds={"ORG": 0.85},
+        excluded_terms=COMMON_DOMAIN_ENDINGS + COMMON_ORG_EXCLUDED_TERMS,
         min_length=2,
     ),
 )

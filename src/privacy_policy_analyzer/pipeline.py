@@ -3,7 +3,11 @@ from datetime import date as Date
 from typing import Any
 
 from privacy_policy_analyzer import Language, UnsupportedLanguage
-from privacy_policy_analyzer.analysis import collect_information
+from privacy_policy_analyzer.analysis import (
+    classify_contents,
+    classify_contexts_and_topics,
+    extract_all_attributes,
+)
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.analysis.post_processing import (
     combine_table_rows,
@@ -215,9 +219,38 @@ class Pipeline:
 
         logger.info("Extracting information from policy=%s", policy.name)
 
-        error = collect_information(
+        # classify contexts/topics first, then propagate headers, so content
+        # classification below can see topics inherited from parent headers
+        error = classify_contexts_and_topics(
             entries=mapping.raw_entries,
             model_config=config.model_configs,
+            prefer_onnx=self.prefer_onnx,
+            cached=self.cache_load_models,
+        )
+        if error is not None:
+            return error
+
+        # entries stays a live view over mapping.raw_entries - propagate_headers
+        # mutates contexts/topics in place, so later stages operating on
+        # mapping.raw_entries see the propagated results
+        entries = mapping.build_structured_entries()
+        propagate_context_topic_stats = propagate_headers(entries)
+
+        error = classify_contents(
+            entries=mapping.raw_entries,
+            model_config=config.model_configs,
+            prefer_onnx=self.prefer_onnx,
+            cached=self.cache_load_models,
+        )
+        if error is not None:
+            return error
+
+        # propagate again so contents just classified above also inherit
+        # down from their parent headers
+        propagate_content_stats = propagate_headers(entries)
+
+        error = extract_all_attributes(
+            entries=mapping.raw_entries,
             pattern_config=config.pattern_configs,
             duration_pattern_config=config.duration_pattern_configs,
             date_pattern_config=config.date_pattern_config,
@@ -231,8 +264,6 @@ class Pipeline:
             return error
         logger.info("Completed information collection for policy=%s", policy.name)
 
-        entries = mapping.build_structured_entries()
-        propagate_stats = propagate_headers(entries)
         entries = combine_table_rows(entries)
         smoothing_stats = smooth_context(entries)
 
@@ -246,7 +277,13 @@ class Pipeline:
             harmonized=policy.harmonized,
             text=policy.text,
             analyzed=entries,
-            stats={"smoothing": smoothing_stats, "propagate": propagate_stats},
+            stats={
+                "smoothing": smoothing_stats,
+                "propagate": {
+                    "context_topic": propagate_context_topic_stats,
+                    "content": propagate_content_stats,
+                },
+            },
         )
 
     def run_with_url(

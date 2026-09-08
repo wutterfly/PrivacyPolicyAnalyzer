@@ -173,8 +173,11 @@ def propagate_headers(
                 added_contexts.update(new_contexts)
                 added_topics.update(new_topics)
 
-                entry.contexts = combined.contexts
-                entry.topics = combined.topics
+                # mutate in place (not rebind) - entry.contexts/topics may be
+                # the same list objects as an underlying RawEntry's, and
+                # later classification stages need to see these updates
+                entry.contexts[:] = combined.contexts
+                entry.topics[:] = combined.topics
 
     context_stats = dict(added_contexts)
     if "Other" in context_stats:
