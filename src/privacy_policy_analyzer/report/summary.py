@@ -979,21 +979,12 @@ def extract_change_information(
                 if cnt.content != "Change":
                     continue
 
-                logger.debug(
-                    "Extracting change information from attributes: %s", cnt.attributes
-                )
-
                 for attr in cnt.attributes:
                     try:
                         found = date.fromisoformat(attr)
 
-                        logger.debug("Parsed change date: %s", found)
-
                         if highest_date is None or found > highest_date:
                             highest_date = found
-                            logger.debug(
-                                "Updated highest change date to: %s", highest_date
-                            )
 
                     except Exception as e:
                         logger.warning(
