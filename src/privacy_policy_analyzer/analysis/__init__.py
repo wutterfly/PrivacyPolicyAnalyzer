@@ -3,10 +3,14 @@ from privacy_policy_analyzer.analysis.attributes import (
     DatePattern,
     DurationPattern,
     EmailPattern,
+    PhonePattern,
+    UrlPattern,
     extract_attributes,
     extract_date,
     extract_duration,
     extract_email,
+    extract_phone,
+    extract_url,
 )
 from privacy_policy_analyzer.analysis.classification import (
     ModelConfigs,
@@ -99,6 +103,8 @@ def extract_all_attributes(
     duration_pattern_config: DurationPattern,
     date_pattern_config: DatePattern,
     email_pattern_config: EmailPattern,
+    url_pattern_config: UrlPattern,
+    phone_pattern_config: PhonePattern,
     ner_model_config: NERModelConfigs,
     use_ner_for_company: bool,
     prefer_onnx: bool,
@@ -252,6 +258,20 @@ def extract_all_attributes(
             topic=["Contact"],
             content="Email",
             patterns=email_pattern_config,
+        )
+
+        extract_url(
+            entries,
+            topic=["Contact"],
+            content="Website",
+            patterns=url_pattern_config,
+        )
+
+        extract_phone(
+            entries,
+            topic=["Contact"],
+            content="Phone",
+            patterns=phone_pattern_config,
         )
 
         logger.debug("Attribute extraction completed")

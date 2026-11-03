@@ -6,11 +6,17 @@ from privacy_policy_analyzer.analysis.attributes import (
     DatePattern,
     DurationPattern,
     EmailPattern,
+    PhonePattern,
+    UrlPattern,
 )
 from privacy_policy_analyzer.analysis.classification import ModelConfig, ModelConfigs
 from privacy_policy_analyzer.analysis.ner import NERModelConfig, NERModelConfigs
 from privacy_policy_analyzer.crawl.splitter import SplitterPattern
-from privacy_policy_analyzer.patterns import DEFAULT_EMAIL_PATTERN_CONFIG
+from privacy_policy_analyzer.patterns import (
+    DEFAULT_EMAIL_PATTERN_CONFIG,
+    DEFAULT_PHONE_PATTERN_CONFIG,
+    DEFAULT_URL_PATTERN_CONFIG,
+)
 from privacy_policy_analyzer.patterns.de import (
     DE_DATE_PATTERN_CONFIG,
     DE_DURATION_PATTERN_CONFIG,
@@ -46,6 +52,8 @@ class PipelineConfiguration:
     duration_pattern_configs: DurationPattern
     date_pattern_config: DatePattern
     email_pattern_config: EmailPattern
+    phone_pattern_config: PhonePattern
+    url_pattern_config: UrlPattern
 
 
 # common domain endings the NER model mistakenly tags as "ORG"
@@ -91,6 +99,7 @@ EN_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
             "ThirdParty": 0.6,
             "Selling": 0.65,
             "Audience": 0.7,
+            "Contact": 0.3,
         },
     ),
     audience=ModelConfig(
@@ -172,6 +181,8 @@ EN_DEFAULT_CONFIGURATION: PipelineConfiguration = PipelineConfiguration(
     duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
     date_pattern_config=EN_DATE_PATTERN_CONFIG,
     email_pattern_config=DEFAULT_EMAIL_PATTERN_CONFIG,
+    phone_pattern_config=DEFAULT_PHONE_PATTERN_CONFIG,
+    url_pattern_config=DEFAULT_URL_PATTERN_CONFIG,
 )
 
 
@@ -417,6 +428,8 @@ DE_DEFAULT_CONFIGURATION: PipelineConfiguration = PipelineConfiguration(
     duration_pattern_configs=DE_DURATION_PATTERN_CONFIG,
     date_pattern_config=DE_DATE_PATTERN_CONFIG,
     email_pattern_config=DEFAULT_EMAIL_PATTERN_CONFIG,
+    phone_pattern_config=DEFAULT_PHONE_PATTERN_CONFIG,
+    url_pattern_config=DEFAULT_URL_PATTERN_CONFIG,
 )
 
 

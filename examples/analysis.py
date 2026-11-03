@@ -17,8 +17,8 @@ if __name__ == "__main__":
         cache_load_models=True,
     )
 
-    name = "Eufy"
-    url = "https://security-app.eufylife.com/v1/overall/termsof?type=privacypolicy_us"
+    name = "Nuki"
+    url = "https://nuki.io/en/legal/data-privacy"
 
     # Or analyze directly from URL
     result: PolicyResult | CrawlError | UnsupportedLanguage | ModelLoadError = (

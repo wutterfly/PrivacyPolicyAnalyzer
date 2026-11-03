@@ -220,3 +220,48 @@ def extract_email(
                     if cnt.content == content:
                         matches = email_regex.findall(entry.text)
                         cnt.attributes.extend(matches)
+
+
+@dataclass
+class PhonePattern:
+    """Holds compiled regex patterns for phone attributes."""
+
+    patterns: list[str]
+
+
+def extract_phone(
+    entries: list[RawEntry], topic: list[str], content: str, patterns: PhonePattern
+):
+    phone_regex = re.compile("|".join(patterns.patterns), re.IGNORECASE)
+    for entry in entries:
+        # check if topic matches
+        for tpc in entry.topics:
+            if tpc.topic in topic:
+                # check if content matches
+                for cnt in tpc.contents:
+                    if cnt.content == content:
+                        matches = phone_regex.findall(entry.text)
+                        cnt.attributes.extend(matches)
+
+
+@dataclass
+class UrlPattern:
+    """Holds compiled regex patterns for URL attributes."""
+
+    patterns: list[str]
+
+
+def extract_url(
+    entries: list[RawEntry], topic: list[str], content: str, patterns: UrlPattern
+):
+
+    url_regex = re.compile("|".join(patterns.patterns), re.IGNORECASE)
+    for entry in entries:
+        # check if topic matches
+        for tpc in entry.topics:
+            if tpc.topic in topic:
+                # check if content matches
+                for cnt in tpc.contents:
+                    if cnt.content == content:
+                        matches = url_regex.findall(entry.text)
+                        cnt.attributes.extend(matches)

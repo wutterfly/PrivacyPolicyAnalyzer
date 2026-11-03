@@ -1110,6 +1110,7 @@ class ContactInformation:
 
     email_addresses: list[str]
     phone_numbers: list[str]
+    urls: list[str]
 
     @staticmethod
     def from_json(data: dict) -> "ContactInformation":
@@ -1120,6 +1121,7 @@ class ContactInformation:
             address=bool(data["address"]),
             email_addresses=list(data.get("email_addresses", [])),
             phone_numbers=list(data.get("phone_numbers", [])),
+            urls=list(data.get("urls", [])),
         )
 
 
@@ -1130,6 +1132,7 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
     address = False
     emails = []
     phone_numbers = []
+    urls = []
 
     for entry in data:
         # skip references to external policy
@@ -1157,8 +1160,49 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
 
                 elif cnt.content == "Phone":
                     phone = True
+
+                    # not @
+                    # and all numbers, and +, -, (, ), space
+                    if "@" not in cnt.attributes and all(
+                        c.isdigit() or c in "+-() " for c in "".join(cnt.attributes)
+                    ):
+                        phone_numbers.extend(cnt.attributes)
                 elif cnt.content == "Website":
                     website = True
+                    for attr in cnt.attributes:
+                        # check if attr has a valid Domain name
+                        if (
+                            "@" not in attr
+                            and "." in attr
+                            and any(
+                                tld in attr
+                                for tld in [
+                                    ".de",
+                                    ".com",
+                                    ".org",
+                                    ".net",
+                                    ".io",
+                                    ".co",
+                                    ".us",
+                                    ".uk",
+                                    ".ca",
+                                    ".au",
+                                    ".fr",
+                                    ".jp",
+                                    ".cn",
+                                    ".in",
+                                    ".es",
+                                    ".it",
+                                    ".nl",
+                                    ".se",
+                                    ".no",
+                                    ".fi",
+                                    ".dk",
+                                ]
+                            )
+                        ):
+                            urls.append(attr)
+
                 elif cnt.content == "Address":
                     address = True
 
@@ -1169,6 +1213,7 @@ def extract_contact_information(data: list[StructuredEntry]) -> ContactInformati
         address=address,
         email_addresses=emails,
         phone_numbers=phone_numbers,
+        urls=urls,
     )
 
 

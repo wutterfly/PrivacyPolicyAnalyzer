@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "privacy-policy-analyzer"
-version = "0.3.1"
+version = "0.3.2"
 description = "Tools to crawl, analyze and report on website privacy policies using NLP models and rule-based patterns."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -38,11 +38,13 @@ dependencies = [
 # only pulled in for fine-tuning models (src/privacy_policy_analyzer/training) -
 # not required for crawling/analyzing policies with the default pipeline
 training = ["datasets>=4.5.0", "scikit-learn", "accelerate", "bitsandbytes"]
-onnx = ["optimum[onnxruntime]>=2.0.0"]   # only pulled when someone wants ONNX Runtime inference
+onnx = [
+    "optimum[onnxruntime]>=2.0.0",
+] # only pulled when someone wants ONNX Runtime inference
 
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -255,6 +255,8 @@ class Pipeline:
             duration_pattern_config=config.duration_pattern_configs,
             date_pattern_config=config.date_pattern_config,
             email_pattern_config=config.email_pattern_config,
+            url_pattern_config=config.url_pattern_config,
+            phone_pattern_config=config.phone_pattern_config,
             ner_model_config=config.ner_model_config,
             use_ner_for_company=config.use_ner_for_company,
             prefer_onnx=self.prefer_onnx,
