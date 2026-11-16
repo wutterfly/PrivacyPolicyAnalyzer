@@ -138,46 +138,107 @@ def merge_entries(
     )
 
 
+_MAX_HEADER_LEVEL = 6  # h1 - h6; headers outside this range are ignored
+
+
+def _merge_header_into(
+    entry: StructuredEntry, header: StructuredEntry
+) -> tuple[set[str], set[str]]:
+    """In-place equivalent of `merge_entries(dst=entry, src=header)`, for a
+    `header` that has already been filtered with the skip rules.
+
+    Mutates `entry.contexts` and `entry.topics` in place (they may be the same
+    list objects as an underlying RawEntry's, which later classification
+    stages read). Everything taken from `header` is copied, so no mutable
+    state is shared between the header and the entry. Returns the context
+    names and topic names that were not on the entry before this merge.
+    """
+    known_contexts = set(entry.contexts)
+    known_topics = {tpc.topic for tpc in entry.topics}
+
+    # contexts: deduplicated union, "Other" dropped when something else exists
+    contexts = list(dict.fromkeys(entry.contexts + header.contexts))
+    if len(contexts) > 1:
+        contexts = [c for c in contexts if c != "Other"]
+
+    # topics, keyed by name (insertion order = entry's topics, then new ones)
+    topics: dict[str, TopicAnnotation] = {tpc.topic: tpc for tpc in entry.topics}
+    for src_tpc in header.topics:
+        dst_tpc = topics.get(src_tpc.topic)
+        if dst_tpc is None:
+            topics[src_tpc.topic] = TopicAnnotation(
+                topic=src_tpc.topic,
+                contents=[
+                    ContentAnnotation(cnt.content, list(cnt.attributes))
+                    for cnt in src_tpc.contents
+                ],
+            )
+            continue
+
+        existing_contents = {cnt.content: cnt for cnt in dst_tpc.contents}
+        for src_cnt in src_tpc.contents:
+            dst_cnt = existing_contents.get(src_cnt.content)
+            if dst_cnt is not None:
+                dst_cnt.attributes = list(
+                    dict.fromkeys(dst_cnt.attributes + src_cnt.attributes)
+                )
+            else:
+                dst_tpc.contents.append(
+                    ContentAnnotation(src_cnt.content, list(src_cnt.attributes))
+                )
+
+    topic_list = list(topics.values())
+    if len(topic_list) > 1:
+        topic_list = [tpc for tpc in topic_list if tpc.topic != "Other"]
+    for tpc in topic_list:
+        if len(tpc.contents) > 1:
+            tpc.contents = [cnt for cnt in tpc.contents if cnt.content != "Other"]
+
+    new_contexts = set(contexts) - known_contexts
+    new_topics = {tpc.topic for tpc in topic_list} - known_topics
+
+    entry.contexts[:] = contexts
+    entry.topics[:] = topic_list
+
+    return new_contexts, new_topics
+
+
 def propagate_headers(
     entries: list[StructuredEntry], skips: list[SkipRule] = DEFAULT_SKIPS
 ) -> dict[str, dict[str, int]]:
+    """Propagate the labels of headers to the entries below them (in place).
+
+    Every non-header entry is merged with each header that is active at its
+    position: the nearest preceding header of each level h1-h6, as long as no
+    shallower header has come in between. Headers are merged shallowest first,
+    and never receive labels themselves. Labels excluded by `skips` are not
+    propagated.
+
+    Single pass over `entries` with a stack of active headers, each filtered
+    with `skips` once when it is pushed.
+    """
     added_contexts = Counter()
     added_topics = Counter()
 
-    for current_level in range(1, 7):
-        current_header_entry: StructuredEntry | None = None
-        for entry in entries:
-            # check if entry is a header
-            if isinstance(entry.structure, Header):
-                if entry.structure.level == current_level:
-                    current_header_entry = entry
-                    continue
-                elif entry.structure.level > current_level:
-                    continue
-                elif entry.structure.level < current_level:
-                    current_header_entry = None
+    # (level, skip-filtered header), strictly increasing in level
+    active: list[tuple[int, StructuredEntry]] = []
 
-            # propagate header info to lower level entries
-            if current_header_entry:
-                combined = merge_entries(
-                    dst=entry,
-                    src=current_header_entry,
-                    skips=skips,
-                )
+    for entry in entries:
+        if isinstance(entry.structure, Header):
+            level = entry.structure.level
+            if level > _MAX_HEADER_LEVEL:
+                continue
+            # a header closes every active header at its level or deeper
+            while active and active[-1][0] >= level:
+                active.pop()
+            if level >= 1:
+                active.append((level, filter_src(entry, skips) if skips else entry))
+            continue
 
-                existing_topic_names = {tpc.topic for tpc in entry.topics}
-                new_contexts = set(combined.contexts) - set(entry.contexts)
-                new_topics = {
-                    tpc.topic for tpc in combined.topics
-                } - existing_topic_names
-                added_contexts.update(new_contexts)
-                added_topics.update(new_topics)
-
-                # mutate in place (not rebind) - entry.contexts/topics may be
-                # the same list objects as an underlying RawEntry's, and
-                # later classification stages need to see these updates
-                entry.contexts[:] = combined.contexts
-                entry.topics[:] = combined.topics
+        for _, header in active:
+            new_contexts, new_topics = _merge_header_into(entry, header)
+            added_contexts.update(new_contexts)
+            added_topics.update(new_topics)
 
     context_stats = dict(added_contexts)
     if "Other" in context_stats:

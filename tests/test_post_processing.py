@@ -284,6 +284,92 @@ class TestPropagateHeaders:
         assert stats["topics"].get("Retention") == 1
         assert stats["topics"]["total"] == 2
 
+    # --- header nesting ---
+
+    def test_nested_headers_all_propagate_when_a_level_is_skipped(self):
+        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
+        h3 = make_entry(contexts=["App"], structure=Header(level=3))
+        body = make_entry(contexts=[], structure=Text(1))
+        propagate_headers([h1, h3, body], skips=[])
+        assert set(body.contexts) == {"Website", "App"}
+
+    def test_shallower_header_closes_deeper_headers(self):
+        h1a = make_entry(contexts=["Website"], structure=Header(level=1))
+        h2a = make_entry(contexts=["App"], structure=Header(level=2))
+        body1 = make_entry(contexts=[], structure=Text(1))
+        h2b = make_entry(contexts=["Device"], structure=Header(level=2))
+        body2 = make_entry(contexts=[], structure=Text(2))
+        h1b = make_entry(contexts=["Store"], structure=Header(level=1))
+        body3 = make_entry(contexts=[], structure=Text(3))
+        propagate_headers([h1a, h2a, body1, h2b, body2, h1b, body3], skips=[])
+        assert set(body1.contexts) == {"Website", "App"}
+        assert set(body2.contexts) == {"Website", "Device"}
+        assert set(body3.contexts) == {"Store"}
+
+    def test_headers_do_not_receive_labels_from_parent_headers(self):
+        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
+        h2 = make_entry(contexts=[], structure=Header(level=2))
+        propagate_headers([h1, h2], skips=[])
+        assert h2.contexts == []
+        assert h1.contexts == ["Website"]
+
+    def test_headers_deeper_than_h6_are_ignored(self):
+        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
+        h7 = make_entry(contexts=["App"], structure=Header(level=7))
+        body = make_entry(contexts=[], structure=Text(1))
+        propagate_headers([h1, h7, body], skips=[])
+        # h7 is neither a source nor does it end h1's section
+        assert body.contexts == ["Website"]
+
+    # --- merge details ---
+
+    def test_other_dropped_when_header_adds_a_real_label(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(contexts=["Other"], structure=Text(1))
+        propagate_headers([header, body], skips=[])
+        assert body.contexts == ["Website"]
+
+    def test_attributes_of_same_content_are_merged_without_duplicates(self):
+        header = make_entry(
+            topics=[make_topic("Processing", ("DataType", ["x", "y"]))],
+            structure=Header(level=1),
+        )
+        body = make_entry(
+            topics=[make_topic("Processing", ("DataType", ["x"]))],
+            structure=Text(1),
+        )
+        propagate_headers([header, body], skips=[])
+        attributes = body.topics[0].contents[0].attributes
+        assert sorted(attributes) == ["x", "y"]
+
+    def test_propagated_labels_are_copied_not_shared(self):
+        header = make_entry(
+            topics=[make_topic("Processing", ("DataType", ["x"]))],
+            structure=Header(level=1),
+        )
+        body1 = make_entry(structure=Text(1))
+        body2 = make_entry(structure=Text(2))
+        propagate_headers([header, body1, body2], skips=[])
+
+        # later stages (attribute extraction) extend these lists in place
+        body1.topics[0].contents[0].attributes.append("y")
+        assert header.topics[0].contents[0].attributes == ["x"]
+        assert body2.topics[0].contents[0].attributes == ["x"]
+
+    def test_entry_lists_are_updated_in_place(self):
+        # contexts/topics are shared with the underlying RawEntry in the
+        # pipeline, so they must be mutated, not rebound
+        header = make_entry(
+            contexts=["Website"],
+            topics=[make_topic("Processing", ("General", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(structure=Text(1))
+        contexts, topics = body.contexts, body.topics
+        propagate_headers([header, body], skips=[])
+        assert body.contexts is contexts and contexts == ["Website"]
+        assert body.topics is topics and len(topics) == 1
+
 
 # ---------------------------------------------------------------------------
 # combine_table_rows
