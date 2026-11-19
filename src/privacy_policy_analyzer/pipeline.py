@@ -11,6 +11,7 @@ from privacy_policy_analyzer.analysis import (
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.analysis.post_processing import (
     combine_table_rows,
+    empty_propagation_stats,
     propagate_headers,
     smooth_context,
 )
@@ -234,7 +235,15 @@ class Pipeline:
         # mutates contexts/topics in place, so later stages operating on
         # mapping.raw_entries see the propagated results
         entries = mapping.build_structured_entries()
-        propagate_context_topic_stats = propagate_headers(entries)
+        # with a gate, headers only pass labels on to sentences that scored
+        # them high enough themselves (entry.scores, filled in by the
+        # classifiers); without propagation, nothing is passed on at all
+        propagation = config.propagation
+        gate = propagation.build_gate(config.model_configs)
+        if propagation.enabled:
+            propagate_context_topic_stats = propagate_headers(entries, gate=gate)
+        else:
+            propagate_context_topic_stats = empty_propagation_stats()
 
         error = classify_contents(
             entries=mapping.raw_entries,
@@ -247,7 +256,10 @@ class Pipeline:
 
         # propagate again so contents just classified above also inherit
         # down from their parent headers
-        propagate_content_stats = propagate_headers(entries)
+        if propagation.enabled:
+            propagate_content_stats = propagate_headers(entries, gate=gate)
+        else:
+            propagate_content_stats = empty_propagation_stats()
 
         error = extract_all_attributes(
             entries=mapping.raw_entries,

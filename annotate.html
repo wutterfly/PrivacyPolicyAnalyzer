@@ -853,7 +853,7 @@
 
                           <!-- Context Section -->
                           <div class="annotation-section">
-                              <div class="section-title">Context (select one or "Other")</div>
+                              <div class="section-title">Context (select one or "Unspecified")</div>
                               <div class="label-buttons">
                                   ${SCHEMA.context
                                       .map(
@@ -1160,20 +1160,20 @@
                     annotations[lineIndex] = { contexts: [], topics: [] };
                 }
 
-                // If clicking "Other"
-                if (context === "Other") {
-                    // If "Other" is already selected, deselect it
-                    if (annotations[lineIndex].contexts.includes("Other")) {
+                // If clicking "Unspecified"
+                if (context === "Unspecified") {
+                    // If "Unspecified" is already selected, deselect it
+                    if (annotations[lineIndex].contexts.includes("Unspecified")) {
                         annotations[lineIndex].contexts = [];
                     } else {
-                        // Otherwise, select only "Other"
-                        annotations[lineIndex].contexts = ["Other"];
+                        // Otherwise, select only "Unspecified"
+                        annotations[lineIndex].contexts = ["Unspecified"];
                     }
                 } else {
-                    // Clicking a non-Other context
-                    // First check if "Other" is selected, if so, remove it
+                    // Clicking a non-Unspecified context
+                    // First check if "Unspecified" is selected, if so, remove it
                     const otherIndex =
-                        annotations[lineIndex].contexts.indexOf("Other");
+                        annotations[lineIndex].contexts.indexOf("Unspecified");
                     if (otherIndex > -1) {
                         annotations[lineIndex].contexts.splice(otherIndex, 1);
                     }

@@ -10,8 +10,13 @@
     "Account",
     "Services",
     "Event/Program",
-    "Other"
+    "Unspecified"
   ],
+  "contextSpecifics": {
+    "Device": [],
+    "Communication": [],
+    "Event/Program": []
+  },
   "topics": [
     "UserRights",
     "Processing",
@@ -50,7 +55,9 @@
       "Tracking/Conversion",
       "Profiling",
       "AutomatedDecisionMaking",
-      "Method/Source",
+      "LocalProcessing",
+      "Source",
+      "TriggerCondition",
       "Other"
     ],
     "Retention": [
@@ -86,9 +93,17 @@
       "Unspecified",
       "SignificantEffects",
       "Analytics",
+      "RelatedFeature",
       "Other"
     ],
-    "Sharing": ["NotSharing", "ByThirdParty", "DataType", "Country", "Other"],
+    "Sharing": [
+      "NotSharing",
+      "ByThirdParty",
+      "DataType",
+      "Country",
+      "TriggerCondition",
+      "Other"
+    ],
     "LegalBasis": [
       "Consent",
       "Contract",
@@ -108,6 +123,7 @@
       "OrganisationalSecurityMeasures",
       "SecurityHints",
       "Certifications",
+      "VulnerabilityDisclosure",
       "Other"
     ],
     "ThirdParty": [
@@ -118,6 +134,7 @@
       "ChosenIndividual",
       "Public",
       "OtherUser",
+      "PluginIntegration",
       "Other"
     ],
     "Contact": [
@@ -136,6 +153,7 @@
       "DataProtectionOfficer",
       "External",
       "UserResponsibility",
+      "HowTo",
       "Other"
     ],
     "Audience": [
@@ -153,6 +171,7 @@
       "NoControl",
       "GPCSignal",
       "CancelService",
+      "Consequences",
       "Other"
     ],
     "Selling": [
@@ -168,7 +187,6 @@
     "DataType": [
       "AccessLogs",
       "AccountData",
-      "UserInformation",
       "AccountNumber",
       "AccountAge",
       "AccountSettings",
@@ -217,7 +235,6 @@
       "BrowsingActivity",
       "BusinessInformation",
       "BusinessModel",
-      "CompanyInformation",
       "CompanyName",
       "CallRecords",
       "CallStatus",
@@ -226,7 +243,6 @@
       "CarbonDioxideData",
       "CarbonMonoxideData",
       "CardExpiryDate",
-      "CardholderData",
       "ChatHistory",
       "City",
       "CleaningHistory",
@@ -239,7 +255,6 @@
       "SharedContent",
       "CommercialInformation",
       "CommunicationRecords",
-      "Messages",
       "MessageDrafts",
       "ConfigurationData",
       "ConnectionData",
@@ -247,12 +262,10 @@
       "Contacts",
       "ContactsPermissions",
       "ContentUseHistory",
-      "ContestData",
       "Coordinates",
       "CoughingData",
       "Country",
       "CpuUsage",
-      "CredentialData",
       "SecurityQuestion",
       "CreditCardInformation",
       "CreditCardNumber",
@@ -273,9 +286,9 @@
       "DeviceID",
       "DeviceInformation",
       "DeviceAlerts",
-      "ProductInfo",
       "DeviceAutomations",
       "DeviceInteractions",
+      "InteractionData",
       "DeviceLogs",
       "DeviceHistory",
       "DeviceName",
@@ -324,7 +337,7 @@
       "GPSData",
       "GasConsumptionData",
       "Gender",
-      "GeneralInformation",
+      "Title",
       "GoogleAdID",
       "GovernmentID",
       "HabitData",
@@ -349,7 +362,6 @@
       "IPAddress",
       "Identifier",
       "RandomID",
-      "IdentityInformation",
       "ImageData",
       "InAppTransactions",
       "IncomeData",
@@ -415,7 +427,6 @@
       "OtherElectronicNetworkActivityInformation",
       "OtherFileData",
       "OutdoorData",
-      "PII",
       "PageInteractions",
       "PageResponseTime",
       "PartnerApp",
@@ -482,19 +493,16 @@
       "SocialMediaDetails",
       "SocialSecurityNumber",
       "SpaceID",
-      "SpecialCategoryData",
       "StatisticalData",
       "StepCountData",
       "StoragePermissions",
       "StorageUsage",
-      "Submissions",
       "TamperStatus",
       "TaxID",
       "TechnicalInformation",
       "TelemetryData",
       "TemperatureData",
       "TemporaryData",
-      "TemporaryFiles",
       "Files",
       "GardenDesign",
       "TextData",
@@ -518,7 +526,6 @@
       "ViewedContent",
       "VirusDefinitions",
       "VisitedPages",
-      "VoiceCharacteristics",
       "VoiceCommands",
       "VoiceData",
       "VoltageData",
@@ -580,9 +587,7 @@
       "RatingPlatform",
       "RecruitmentPlatform",
       "MarketingAffiliate",
-      "AdvertisingAgency",
-      "AdvertisingNetwork",
-      "AdvertisingPartner",
+      "AdvertisingProvider",
       "SoftwareDeveloper",
       "CustomerServiceProvider",
       "BusinessPartner",
@@ -639,19 +644,27 @@
       "EmergencyServices",
       "MunicipalAuthorities"
     ],
-    "Method/Source": [
+    "Source": [
       "UserProvided",
-      "AutomaticallyCollected",
+      "Inferred",
+      "PubliclyAvailable",
+      "Purchased",
       "ThirdPartyProvided",
-      "DataCombination",
-      "AIAnalysis",
       "SocialMedia",
-      "IndirectCollection",
-      "Public",
-      "Interaction",
-      "VoluntaryProvided",
-      "Feedback",
-      "Buying"
+      "AIAnalysis"
+    ],
+    "TriggerCondition": [
+      "OnRegister",
+      "OnPurchase",
+      "OnInteractWithAd",
+      "OnAppDownloaded",
+      "OnSearch",
+      "OnContactUs",
+      "OnBrowse",
+      "OnSubscribe",
+      "Automatically",
+      "OnInteract",
+      "VoluntaryProvided"
     ],
     "ProvideService": [
       "OrderProcessing",
@@ -785,7 +798,10 @@
       "TwoFactorAuth",
       "HashedPassword",
       "MutualAuthentication",
-      "ProhibitedDefaultPassword"
+      "ProhibitedDefaultPassword",
+      "Antivirus",
+      "Backups",
+      "AccessLogs"
     ],
     "TechnicalPrivacyMeasures": [
       "Anonymization",
@@ -1152,6 +1168,7 @@
       "ETSI EN 303 645",
       "CSA STAR"
     ],
+    "Consequences": ["DoNotUse"],
     "UserResponsibility": [
       "BystanderNotice",
       "ParentalResponsibility",

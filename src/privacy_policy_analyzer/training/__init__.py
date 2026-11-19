@@ -25,6 +25,8 @@ from transformers import (
 from transformers.trainer_callback import PrinterCallback
 
 from privacy_policy_analyzer.shared.annotation import (
+    OTHER,
+    UNSPECIFIED_CONTEXT,
     RawEntry,
 )
 from privacy_policy_analyzer.shared.logging import get_logger
@@ -342,7 +344,8 @@ class ModelTrainingConfig:
         """Execute the training based on the configuration."""
 
         # load label2id mapping
-        label2id = _build_label2id_map(self.labels)
+        fallback = UNSPECIFIED_CONTEXT if self.scope == "context" else OTHER
+        label2id = _build_label2id_map(self.labels, fallback)
 
         # extract dataset based on scope
         dataset: Dataset | None = None

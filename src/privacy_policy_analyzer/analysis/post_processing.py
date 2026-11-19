@@ -1,13 +1,19 @@
 from collections import Counter
+from collections.abc import Iterable
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from privacy_policy_analyzer.analysis.structure import (
     Header,
     StructuredEntry,
     TableCell,
 )
-from privacy_policy_analyzer.shared.annotation import ContentAnnotation, TopicAnnotation
+from privacy_policy_analyzer.shared.annotation import (
+    UNSPECIFIED_CONTEXT,
+    ContentAnnotation,
+    EntryScores,
+    TopicAnnotation,
+)
 
 
 @dataclass
@@ -21,6 +27,35 @@ DEFAULT_SKIPS: list[SkipRule] = [
     SkipRule(topic="Policy", contents=None),
     SkipRule(topic="Contact", contents=None),
 ]
+
+
+@dataclass(frozen=True)
+class LabelFloors:
+    """Minimum model score per label; `default` for labels not listed."""
+
+    default: float = 0.0
+    by_label: dict[str, float] = field(default_factory=dict)
+
+    def get(self, label: str) -> float:
+        return self.by_label.get(label, self.default)
+
+
+@dataclass(frozen=True)
+class PropagationGate:
+    """Makes header propagation conditional on the receiving entry's own scores.
+
+    A label carried by a header is only propagated to an entry if the entry
+    already has that label, or if the entry's model score for it is at least
+    the label's floor. Floors of 0 let everything through (a score missing
+    for a label counts as 0, so with a floor above 0 an entry without scores
+    inherits nothing).
+    """
+
+    contexts: LabelFloors = field(default_factory=LabelFloors)
+    topics: LabelFloors = field(default_factory=LabelFloors)
+    # content floors per topic, as each topic has its own content model
+    contents: dict[str, LabelFloors] = field(default_factory=dict)
+    default_contents: LabelFloors = field(default_factory=LabelFloors)
 
 
 def filter_src(src: StructuredEntry, skip_rules: list[SkipRule]) -> StructuredEntry:
@@ -120,10 +155,11 @@ def merge_entries(
 
     merged_topic_list = list(merged_topics.values())
 
-    # Remove "Other" entries at each level only when non-Other alternatives exist,
-    # so "Other" is kept as a fallback if it is the only value present
+    # Remove fallback entries ("Unspecified" for contexts, "Other" for topics and
+    # contents) at each level only when non-fallback alternatives exist, so the
+    # fallback is kept if it is the only value present
     if len(merged_contexts) > 1:
-        merged_contexts = [c for c in merged_contexts if c != "Other"]
+        merged_contexts = [c for c in merged_contexts if c != UNSPECIFIED_CONTEXT]
     if len(merged_topic_list) > 1:
         merged_topic_list = [tpc for tpc in merged_topic_list if tpc.topic != "Other"]
     for tpc in merged_topic_list:
@@ -142,28 +178,32 @@ _MAX_HEADER_LEVEL = 6  # h1 - h6; headers outside this range are ignored
 
 
 def _merge_header_into(
-    entry: StructuredEntry, header: StructuredEntry
+    entry: StructuredEntry,
+    src_contexts: list[str],
+    src_topics: list[TopicAnnotation],
 ) -> tuple[set[str], set[str]]:
-    """In-place equivalent of `merge_entries(dst=entry, src=header)`, for a
-    `header` that has already been filtered with the skip rules.
+    """In-place equivalent of `merge_entries` with a header as source, for
+    header labels (`src_contexts`, `src_topics`) that have already been
+    filtered with the skip rules (and gate).
 
     Mutates `entry.contexts` and `entry.topics` in place (they may be the same
     list objects as an underlying RawEntry's, which later classification
-    stages read). Everything taken from `header` is copied, so no mutable
-    state is shared between the header and the entry. Returns the context
-    names and topic names that were not on the entry before this merge.
+    stages read). Everything taken from the header labels is copied, so no
+    mutable state is shared between the header and the entry. Returns the
+    context names and topic names that were not on the entry before this
+    merge.
     """
     known_contexts = set(entry.contexts)
     known_topics = {tpc.topic for tpc in entry.topics}
 
-    # contexts: deduplicated union, "Other" dropped when something else exists
-    contexts = list(dict.fromkeys(entry.contexts + header.contexts))
+    # contexts: deduplicated union, "Unspecified" dropped when something else exists
+    contexts = list(dict.fromkeys(entry.contexts + src_contexts))
     if len(contexts) > 1:
-        contexts = [c for c in contexts if c != "Other"]
+        contexts = [c for c in contexts if c != UNSPECIFIED_CONTEXT]
 
     # topics, keyed by name (insertion order = entry's topics, then new ones)
     topics: dict[str, TopicAnnotation] = {tpc.topic: tpc for tpc in entry.topics}
-    for src_tpc in header.topics:
+    for src_tpc in src_topics:
         dst_tpc = topics.get(src_tpc.topic)
         if dst_tpc is None:
             topics[src_tpc.topic] = TopicAnnotation(
@@ -203,9 +243,85 @@ def _merge_header_into(
     return new_contexts, new_topics
 
 
+_NO_SCORES = EntryScores()
+
+
+def _passes(entry_scores: dict[str, float], label: str, floors: LabelFloors) -> bool:
+    # a score that is missing counts as 0
+    return entry_scores.get(label, 0.0) >= floors.get(label)
+
+
+def _gate_header(
+    entry: StructuredEntry,
+    header: StructuredEntry,
+    gate: PropagationGate,
+) -> tuple[list[str], list[TopicAnnotation], list[str], list[str], list[str]]:
+    """The part of a header's labels that `entry` may inherit under `gate`.
+
+    Returns (contexts, topics, blocked contexts, blocked topics, blocked
+    contents). A label the entry already has always passes, and a topic the
+    entry has passes regardless of its own score; its contents are then gated
+    one by one against the content scores of that topic (`entry.scores`).
+    """
+    scores = entry.scores or _NO_SCORES
+    blocked_contexts: list[str] = []
+    blocked_topics: list[str] = []
+    blocked_contents: list[str] = []
+
+    own_contexts = set(entry.contexts)
+    contexts: list[str] = []
+    for label in header.contexts:
+        if label in own_contexts or _passes(scores.contexts, label, gate.contexts):
+            contexts.append(label)
+        else:
+            blocked_contexts.append(label)
+
+    own_topics = {tpc.topic: tpc for tpc in entry.topics}
+    topics: list[TopicAnnotation] = []
+    for src_tpc in header.topics:
+        topic = src_tpc.topic
+        own_tpc = own_topics.get(topic)
+        if own_tpc is None and not _passes(scores.topics, topic, gate.topics):
+            blocked_topics.append(topic)
+            continue
+
+        own_contents = (
+            {cnt.content for cnt in own_tpc.contents} if own_tpc is not None else set()
+        )
+        floors = gate.contents.get(topic, gate.default_contents)
+        content_scores = scores.contents.get(topic, {})
+        contents: list[ContentAnnotation] = []
+        for cnt in src_tpc.contents:
+            if cnt.content in own_contents or _passes(
+                content_scores, cnt.content, floors
+            ):
+                contents.append(cnt)
+            else:
+                blocked_contents.append(f"{topic}/{cnt.content}")
+        topics.append(TopicAnnotation(topic=topic, contents=contents))
+
+    return contexts, topics, blocked_contexts, blocked_topics, blocked_contents
+
+
+def _count_stats(counter: Counter, fallback: str = "Other") -> dict[str, int]:
+    stats = dict(counter)
+    if fallback in stats:
+        del stats[fallback]
+    stats["total"] = sum(counter.values())
+    return stats
+
+
+def empty_propagation_stats() -> dict[str, dict]:
+    """The stats of `propagate_headers` for a run where nothing was propagated."""
+    return {"contexts": {"total": 0}, "topics": {"total": 0}}
+
+
 def propagate_headers(
-    entries: list[StructuredEntry], skips: list[SkipRule] = DEFAULT_SKIPS
-) -> dict[str, dict[str, int]]:
+    entries: list[StructuredEntry],
+    skips: list[SkipRule] = DEFAULT_SKIPS,
+    *,
+    gate: PropagationGate | None = None,
+) -> dict[str, dict]:
     """Propagate the labels of headers to the entries below them (in place).
 
     Every non-header entry is merged with each header that is active at its
@@ -214,11 +330,22 @@ def propagate_headers(
     and never receive labels themselves. Labels excluded by `skips` are not
     propagated.
 
+    With a `gate`, a label is only propagated to an entry that scored it high
+    enough itself (see `PropagationGate`), judged by the entry's `scores`
+    (an entry without scores inherits nothing under a floor above 0).
+    Without a gate, everything the header carries is propagated.
+
     Single pass over `entries` with a stack of active headers, each filtered
     with `skips` once when it is pushed.
+
+    Returns counts of the labels that were added, and with a gate also of
+    those that were blocked, under "blocked".
     """
     added_contexts = Counter()
     added_topics = Counter()
+    blocked_contexts = Counter()
+    blocked_topics = Counter()
+    blocked_contents = Counter()
 
     # (level, skip-filtered header), strictly increasing in level
     active: list[tuple[int, StructuredEntry]] = []
@@ -236,21 +363,54 @@ def propagate_headers(
             continue
 
         for _, header in active:
-            new_contexts, new_topics = _merge_header_into(entry, header)
+            if gate is None:
+                new_contexts, new_topics = _merge_header_into(
+                    entry, header.contexts, header.topics
+                )
+            else:
+                contexts, topics, b_contexts, b_topics, b_contents = _gate_header(
+                    entry, header, gate
+                )
+                blocked_contexts.update(b_contexts)
+                blocked_topics.update(b_topics)
+                blocked_contents.update(b_contents)
+                new_contexts, new_topics = _merge_header_into(entry, contexts, topics)
             added_contexts.update(new_contexts)
             added_topics.update(new_topics)
 
-    context_stats = dict(added_contexts)
-    if "Other" in context_stats:
-        del context_stats["Other"]
-    context_stats["total"] = sum(added_contexts.values())
+    result: dict[str, dict] = {
+        "contexts": _count_stats(added_contexts, UNSPECIFIED_CONTEXT),
+        "topics": _count_stats(added_topics),
+    }
+    if gate is not None:
+        result["blocked"] = {
+            "contexts": _count_stats(blocked_contexts, UNSPECIFIED_CONTEXT),
+            "topics": _count_stats(blocked_topics),
+            "contents": _count_stats(blocked_contents),
+        }
+    return result
 
-    topic_stats = dict(added_topics)
-    if "Other" in topic_stats:
-        del topic_stats["Other"]
-    topic_stats["total"] = sum(added_topics.values())
 
-    return {"contexts": context_stats, "topics": topic_stats}
+def _max_into(dst: dict[str, float], src: dict[str, float]) -> None:
+    for label, score in src.items():
+        dst[label] = max(score, dst.get(label, score))
+
+
+def merge_scores(all_scores: Iterable[EntryScores | None]) -> EntryScores | None:
+    """Combine the scores of several entries (e.g. the cells of a table row)
+    into one: per label, the highest score of any of them. None if none of
+    them has scores."""
+    present = [scores for scores in all_scores if scores is not None]
+    if not present:
+        return None
+
+    merged = EntryScores()
+    for scores in present:
+        _max_into(merged.contexts, scores.contexts)
+        _max_into(merged.topics, scores.topics)
+        for topic, contents in scores.contents.items():
+            _max_into(merged.contents.setdefault(topic, {}), contents)
+    return merged
 
 
 def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
@@ -275,6 +435,8 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
             combined_entry = merge_entries(
                 combined_entry, buffered_entry, DEFAULT_SKIPS
             )
+
+        combined_entry.scores = merge_scores(e.scores for e in row_buffer)
 
         return combined_entry
 
@@ -332,7 +494,7 @@ def smooth_context(entries: list[StructuredEntry]) -> dict[str, int]:
         current_entry = entries[i]
         next_entry = entries[i + 1]
 
-        if current_entry.contexts == ["Other"]:
+        if current_entry.contexts == [UNSPECIFIED_CONTEXT]:
             intersect = set(prev_entry.contexts).intersection(set(next_entry.contexts))
             if intersect:
                 current_entry.contexts = list(intersect)
@@ -340,9 +502,9 @@ def smooth_context(entries: list[StructuredEntry]) -> dict[str, int]:
 
     smooth_stats = dict(added_contexts)
 
-    # remove Other context if it was added
-    if "Other" in smooth_stats:
-        del smooth_stats["Other"]
+    # remove the Unspecified context if it was added
+    if UNSPECIFIED_CONTEXT in smooth_stats:
+        del smooth_stats[UNSPECIFIED_CONTEXT]
 
     smooth_stats["total"] = sum(added_contexts.values())
 

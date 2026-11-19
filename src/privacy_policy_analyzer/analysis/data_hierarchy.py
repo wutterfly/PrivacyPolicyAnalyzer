@@ -112,7 +112,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
         types=["Data"],
         children=[
             HierarchyEntry(
-                types=["SensitiveData", "SpecialCategoryData"],
+                types=["SensitiveData"],
                 children=[
                     HierarchyEntry(
                         types=["HealthData"],
@@ -199,7 +199,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                                 ],
                             ),
                             HierarchyEntry(
-                                types=["CreditCardInformation", "CardholderData"],
+                                types=["CreditCardInformation"],
                                 children=[
                                     HierarchyEntry(
                                         types=["CreditCardNumber"],
@@ -244,14 +244,14 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                             HierarchyEntry(types=["FacialData"], children=None),
                             HierarchyEntry(types=["FingerprintData"], children=None),
                             HierarchyEntry(
-                                types=["VoiceData", "VoiceCharacteristics"],
+                                types=["VoiceData"],
                                 children=None,
                             ),
                             HierarchyEntry(types=["IrisData"], children=None),
                         ],
                     ),
                     HierarchyEntry(
-                        types=["CredentialData", "SecurityInformation"],
+                        types=["SecurityInformation"],
                         children=[
                             HierarchyEntry(types=["Password"], children=None),
                             HierarchyEntry(types=["SecurityPin"], children=None),
@@ -268,10 +268,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                 ],
             ),
             HierarchyEntry(
-                types=["PersonalData", "PII"],
+                types=["PersonalData"],
                 children=[
                     HierarchyEntry(
-                        types=["Identifier", "IdentityInformation"],
+                        types=["Identifier"],
                         children=[
                             HierarchyEntry(types=["RandomID"], children=None),
                             HierarchyEntry(types=["DeviceID"], children=None),
@@ -348,6 +348,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(
                         types=["DemographicData"],
                         children=[
+                            HierarchyEntry(types=["Title"], children=None),
                             HierarchyEntry(types=["Age"], children=None),
                             HierarchyEntry(types=["Gender"], children=None),
                             HierarchyEntry(types=["DateOfBirth"], children=None),
@@ -378,7 +379,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     ),
                     HierarchyEntry(types=["ApplicationDocuments"], children=None),
                     HierarchyEntry(
-                        types=["AccountData", "UserInformation"],
+                        types=["AccountData"],
                         children=[
                             HierarchyEntry(types=["ProfileData"], children=None),
                             HierarchyEntry(types=["Username"], children=None),
@@ -438,7 +439,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(types=["UserPreferences"], children=None),
                     HierarchyEntry(types=["Contacts"], children=None),
                     HierarchyEntry(
-                        types=["CommunicationRecords", "Messages"],
+                        types=["CommunicationRecords"],
                         children=[
                             HierarchyEntry(types=["CallRecords"], children=None),
                             HierarchyEntry(types=["ChatHistory"], children=None),
@@ -459,10 +460,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                 ],
             ),
             HierarchyEntry(
-                types=["NPII", "GeneralInformation"],
+                types=["NPII"],
                 children=[
                     HierarchyEntry(
-                        types=["DeviceInformation", "ProductInfo"],
+                        types=["DeviceInformation"],
                         children=[
                             HierarchyEntry(
                                 types=["TechnicalInformation"],
@@ -541,6 +542,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                     HierarchyEntry(
                         types=["UsageData"],
                         children=[
+                            HierarchyEntry(types=["InteractionData"], children=None),
                             HierarchyEntry(types=["UsageDuration"], children=None),
                             HierarchyEntry(types=["UsageFrequency"], children=None),
                             HierarchyEntry(
@@ -780,8 +782,9 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         children=None,
                     ),
                     HierarchyEntry(types=["PairedMobileDevices"], children=[]),
+                    HierarchyEntry(types=["Files"], children=None),
                     HierarchyEntry(
-                        types=["MediaData", "Files"],
+                        types=["MediaData"],
                         children=[
                             HierarchyEntry(
                                 types=["AudioData"],
@@ -826,7 +829,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["UserGeneratedContent", "Submissions"],
+                        types=["UserGeneratedContent"],
                         children=[
                             HierarchyEntry(types=["Feedback"], children=None),
                             HierarchyEntry(types=["Comments"], children=None),
@@ -884,7 +887,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["BusinessInformation", "CompanyInformation"],
+                        types=["BusinessInformation"],
                         children=[
                             HierarchyEntry(types=["NumberOfEmployees"], children=None),
                             HierarchyEntry(types=["BusinessModel"], children=None),
@@ -902,7 +905,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["ContestData", "ParticipationData"],
+                        types=["ParticipationData"],
                         children=[
                             HierarchyEntry(types=["RewardHistory"], children=None),
                             HierarchyEntry(
@@ -919,7 +922,7 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
                         ],
                     ),
                     HierarchyEntry(
-                        types=["TemporaryData", "TemporaryFiles"], children=None
+                        types=["TemporaryData"], children=None
                     ),
                     HierarchyEntry(types=["HistoricalDataRecord"], children=None),
                     HierarchyEntry(types=["SoftwareVersion"], children=None),

@@ -1,10 +1,15 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from privacy_policy_analyzer.shared.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Fallback labels used when no real label applies: scopes (contexts) fall back
+# to "Unspecified", topics and contents fall back to "Other".
+UNSPECIFIED_CONTEXT = "Unspecified"
+OTHER = "Other"
 
 
 @dataclass
@@ -24,6 +29,22 @@ class TopicAnnotation:
 
 
 @dataclass
+class EntryScores:
+    """Raw model scores for a single entry, for every label the models
+    returned - not only the ones above their threshold.
+
+    Filled in by the classification stage and used by gated header
+    propagation. Transient: never serialized with the analysis results.
+    """
+
+    contexts: dict[str, float] = field(default_factory=dict)
+    topics: dict[str, float] = field(default_factory=dict)
+    # topic -> content -> score; only for topics the entry had when the
+    # content model of that topic ran
+    contents: dict[str, dict[str, float]] = field(default_factory=dict)
+
+
+@dataclass
 class RawEntry:
     """A single annotated entry in the training data."""
 
@@ -31,6 +52,7 @@ class RawEntry:
     text: str
     contexts: list[str]
     topics: list[TopicAnnotation]
+    scores: EntryScores = field(default_factory=EntryScores, repr=False, compare=False)
 
 
 def read_raw_entry(data: dict) -> RawEntry:

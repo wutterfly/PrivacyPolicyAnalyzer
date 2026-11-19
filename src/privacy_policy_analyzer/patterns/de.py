@@ -103,21 +103,16 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(Daten|Informationen|Details) (über Sie|zu Ihrer Person)",
                 "Sie betreffende[rn]? (Daten|Informationen|Details)",
                 "zu Ihrer Person (gespeicherten|verarbeiteten|übertragenen|gelöschten|veröffentlichten) (Daten|Informationen|Details)",
-            ],
-            "SensitiveData": [
-                "(sentitive|sensible)[rn]?(.{0,27})? (Daten|Informationen|Details)"
-            ],
-            "SpecialCategoryData": [
-                "(Spezielle|spezifische|Sonder|besondere)[rn]? ?Kategorien(?=.{0,30}(Daten|Informationen|Details))"
-            ],
-            "GeneralInformation": ["allgemeine[rn]?(-.{0,27})? (Daten|Details)\\b"],
-            "PII": [
                 "\\bPII\\b",
                 "(?<!nicht[- ])persönlich identifizierbare[rn]? Informationen",
                 "(?<!keine )(Daten|Informationen)(?=.{0,52}Sie)(?!.*nicht).{0,20}(?=.{0,30} (identifizieren|identifiziert))",
                 "^(?!.*nicht).*Identifizierung .{0,20} natürlichen Person",
                 "Informationen.{0,60}identifiziert werden (kann|können)",
                 "zur Identifikation verwendet",
+            ],
+            "SensitiveData": [
+                "(sentitive|sensible)[rn]?(.{0,27})? (Daten|Informationen|Details)",
+                "(Spezielle|spezifische|Sonder|besondere)[rn]? ?Kategorien(?=.{0,30}(Daten|Informationen|Details))",
             ],
             "NPII": [
                 "NPII",
@@ -126,6 +121,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "nicht als personenbezogen",
                 "persönlich nicht identifizierbarer",
                 "keine personenbezogenen (Daten|Informationen) (sind|darstellen)",
+                "allgemeine[rn]?(-.{0,27})? (Daten|Details)\\b",
             ],
             "SetupInformation": [
                 "Setup[- ]?information",
@@ -135,6 +131,10 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(Informationen|Daten).{0,20}\\b(über|zu|ihrer)\\b.{0,20}Gerät",
                 "verwendeten? (End)?gerät",
                 "Gerätemuster",
+                "(Produkt|Artikel)(-.{0,27})?(information|daten|detail)",
+                "\\b(Information(en)?|Details?|Angaben?) (über|zu|wie) .{0,64}(Produkt(e|en)?|Artikeln?)\\b(?!-)",
+                "Produkte, die Sie (angesehen|gesucht|gekauft)",
+                "^(?!.*Garantie).*gekauftes? Produkt",
             ],
             "DeviceName": [
                 "(Geräte|Produkt|Modell)(-.{0,27})? name",
@@ -149,12 +149,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Hardware(modell|typ|art)",
                 "\\bModell(name)?\\b",
                 "verwendete[rn]? (mobile[rn]? )?Geräte?",
-            ],
-            "ProductInfo": [
-                "(Produkt|Artikel)(-.{0,27})?(information|daten|detail)",
-                "\\b(Information(en)?|Details?|Angaben?) (über|zu|wie) .{0,64}(Produkt(e|en)?|Artikeln?)\\b(?!-)",
-                "Produkte, die Sie (angesehen|gesucht|gekauft)",
-                "^(?!.*Garantie).*gekauftes? Produkt",
             ],
             "ManufacturerInformation": [
                 "(Geräte)?Hersteller(-.{0,27})?(informationen|details)",
@@ -447,6 +441,9 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(?<!nationale )(Identifikations|Kenn(ungs)?|ID|Kunden)(-.{0,27})?nummern?",
                 "persönliche Identifizierer",
                 "(?<!Geräte-)Identifikator",
+                "Identitäts(-.{0,27})?(informationen|daten|details)",
+                "Informationen über(.){0,20}Ihre Identität",
+                "(physisch|physiologisch|genetisch|psychisch|wirtschaftlich|kulturell|sozial)en Identität",
             ],
             "AccountID": ["Konto[- ]ID"],
             "DeviceID": [
@@ -485,7 +482,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "adresse[^\\)]{0,20}von[^\\)]{0,20}(Seite|Webseite|Wesite)",
             ],
             "DomainName": ["(Domain|Webseiten|Seiten|Website)-?Name"],
-            "Clicks": ["Klicks", "(Seiten|Schaltflächen)klicks"],
+            "Clicks": ["\\bKlicks\\b", "(Seiten|Schaltflächen)klicks"],
             "ScrollData": ["Scroll-?daten", "scrollen"],
             "Clickstream": ["click( )?stream", "Klickverhalten", "Klicktracking"],
             "PageResponseTime": [
@@ -611,11 +608,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "FriendsInformation": [
                 "information.{0,30}Freunde",
             ],
-            "IdentityInformation": [
-                "Identitäts(-.{0,27})?(informationen|daten|details)",
-                "Informationen über(.){0,20}Ihre Identität",
-                "(physisch|physiologisch|genetisch|psychisch|wirtschaftlich|kulturell|sozial)en Identität",
-            ],
             "GovernmentID": [
                 "nationale Identifikationsnummer",
                 "staatliche Ausweisnummer",
@@ -626,14 +618,12 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "DriverLicense": ["Führerschein"],
             "TaxID": ["Steuernummer", "Steueridentifikationsnummer", "Steuer-ID"],
             "SocialSecurityNumber": ["Sozialversicherungsnummer", "\\bSV-Nummer\\b"],
-            "UserInformation": [
-                "((Be)?Nutzer|Besucher)(-.{0,27})?(information(en)?|daten|details)",
-                "(Informationen|Daten|Details) des (Be)?Nutzers",
-                "Informationen (über|des).{0,30}(Nutzer|Verbraucher)",
-            ],
             "AccountData": [
                 "\\b((Be)?nutzer)?Konto(-.{0,27})?(daten|informationen|details)",
                 "(Daten|Informationen|Details) (des|Ihres|über Ihr|in Ihrem).{0,15} Kontos?\\b",
+                "((Be)?Nutzer|Besucher)(-.{0,27})?(information(en)?|daten|details)",
+                "(Informationen|Daten|Details) des (Be)?Nutzers",
+                "Informationen (über|des).{0,30}(Nutzer|Verbraucher)",
             ],
             "AccountAge": [
                 "Kontoalter",
@@ -810,9 +800,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\bTouch(screen)?(-.{0,27})?(daten|informationen|interaktionen|signale)"
             ],
             "VoiceCommands": ["Sprachbefehle?"],
-            "VoiceCharacteristics": [
-                "Stimm(en)?(merkmale|eigenschaften|charakteristik(en|a))"
-            ],
             "TextData": ["\\bText(-.{0,27})?(daten|information|inhalt|eingabe)"],
             "Drawings": [
                 "(?<!Auf)Zeichnung(en)?",
@@ -824,8 +811,10 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Musik(-.{0,27})?(daten|informationen|dienst(e|en)?|dateien)",
             ],
             "OtherFileData": ["(andere|sonstige) (Dateien|Dateidaten)"],
-            "TemporaryData": ["temporäre (daten|informationen)"],
-            "TemporaryFiles": ["\\btemporäre datei(en)?\\b"],
+            "TemporaryData": [
+                "temporäre (daten|informationen)",
+                "\\btemporäre datei(en)?\\b",
+            ],
             "Files": ["(?<!log-)(?<!text-)(?<!temporäre )\\bDateien\\b"],
             "GardenDesign": [
                 "Garten(design|gestaltung)",
@@ -858,14 +847,14 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Gesichts(erkennung|scan)",
             ],
             "VoiceData": [
-                "Sprach(-.{0,27})?(aufnahmen?|aufzeichnung(en)?|eingaben?|daten|informationen|details)"
+                "Sprach(-.{0,27})?(aufnahmen?|aufzeichnung(en)?|eingaben?|daten|informationen|details)",
+                "Stimm(en)?(merkmale|eigenschaften|charakteristik(en|a))",
             ],
             "FingerprintData": ["Fingerab(druck|drücke)"],
             "PersonDetectionInformation": [
                 "Personenerkennungs(-.{0,27})?(daten|informationen)",
                 "(Daten|Informationen) zur Personenerkennung",
             ],
-            "Submissions": ["Ihre[rn]? Einreichung(en)?", "Einsendungen"],
             "Feedback": ["((Be)?nutzer)?Feedback", "Rückmeldungen", "Vorschläge"],
             "Comments": ["Kommentare?", "Kommentarfeld"],
             "Opinions": [
@@ -893,11 +882,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Telefonanrufe",
                 "\\b(Aufnahme|Aufzeichnung|aufgezeichnete).{0,30}(Anruf|Gespräch)",
             ],
-            "Messages": [
-                "(Chat-?|Gesprächs|SMS-|Ihre[rn]? |Direkt)Nachricht(en)?(?!verlauf)(?!empfänger)(?!dienst)(?!berichten)",
-                "\\b(Details|Informationen).{0,20}(Nachrichten|Messenger|Messaging)(?!(verlauf|historie))",
-                "Chat-Eingaben",
-            ],
             "ChatHistory": [
                 "Chat(-.{0,27})?(verlauf|historie|transkript|interaktion|protokoll|log)"
             ],
@@ -914,6 +898,9 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "durchgeführte .{0,20}Kommunikation",
                 "Kommunikation (speichern|gespeichert)",
                 "Webinar.{0,20}Fragen",
+                "(Chat-?|Gesprächs|SMS-|Ihre[rn]? |Direkt)Nachricht(en)?(?!verlauf)(?!empfänger)(?!dienst)(?!berichten)",
+                "\\b(Details|Informationen).{0,20}(Nachrichten|Messenger|Messaging)(?!(verlauf|historie))",
+                "Chat-Eingaben",
             ],
             "RegistrationData": [
                 "Registrierungs ?(-.{0,27})?(daten|information|detail)",
@@ -924,6 +911,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Teilnehmer(-.{0,27})?(daten|information|detail|liste)",
                 "Teilnahme(-.{0,27})?(daten|information|detail|liste)",
                 "(Daten|Informationen|Details).{0,10}Teilnehmer",
+                "Wettbewerbs(-.{0,27})?(daten|informationen|details|hinweise|einträge)",
             ],
             "NumberOfParticipations": ["Anzahl.{0,10}(Teilnahmen|Teilnehmer)"],
             "RewardHistory": [
@@ -938,6 +926,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Sicherheits(-.{0,27})?(daten|informationen|details)\\b",
                 "Sicherheitsanmeldedaten",
                 "Sicherheitsstatus",
+                "(?<!Sicherheits)(Login|Anmelde|Authentifikations)(daten|informationen)",
             ],
             "TamperStatus": [
                 "Manipulationsstatus",
@@ -945,9 +934,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "SecurityQuestion": [
                 "Sicherheitsfragen?",
-            ],
-            "CredentialData": [
-                "(?<!Sicherheits)(Login|Anmelde|Authentifikations)(daten|informationen)",
             ],
             "SecurityPin": ["Sicherheits-PIN", "PIN-Code", "\\bPIN\\b"],
             "Password": ["Passwort"],
@@ -1018,7 +1004,9 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "kommerzielle(.){0,20}(informationen|daten|details)"
             ],
             "CreditCardInformation": [
-                "Kreditkarten(-.{0,27}| )?(informationen|daten|details)"
+                "Kreditkarten(-.{0,27}| )?(informationen|daten|details)",
+                "Karteninhaber(daten|informationen|details)",
+                "Name.{0,20}Karteninhaber",
             ],
             "CreditCardNumber": ["Kredit(karten)?(-.{0,27})?nummer"],
             "DebitCardInformation": [
@@ -1035,10 +1023,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Kartendaten während der Übertragung",
             ],
             "PaymentCardNumber": ["(Bezahl|Zahlungs)kartennummer"],
-            "CardholderData": [
-                "Karteninhaber(daten|informationen|details)",
-                "Name.{0,20}Karteninhaber",
-            ],
             "CardExpiryDate": [
                 "Ablaufdatum der Karte",
                 "Karten[- ]?(-.{0,27})?ablaufdatum",
@@ -1068,6 +1052,8 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Beitrag öffentlich (posten|machen)",
                 "^(?!.*(Forum|Foren)).*(gepostete|veröffentlichte|öffentliche).{0,5} (Inhalte|Beiträge)(?!.*(Forum|Foren))",
                 ", Beiträge",
+                "Ihre[rn]? Einreichung(en)?",
+                "Einsendungen",
             ],
             "HistoricalDataRecord": [
                 "(historische|geschichtliche)[rn]? (Daten|Informationen|Details|Aufzeichnungen)",
@@ -1100,14 +1086,9 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "VirusDefinitions": ["Virendefinitionslisten", "Virusdefinition"],
             "DeviceAutomations": ["Geräte(-.{0,27})?automatisierung"],
-            "ContestData": [
-                "Wettbewerbs(-.{0,27})?(daten|informationen|details|hinweise|einträge)"
-            ],
             "BusinessInformation": [
                 "\\bGeschäfts(-.{0,27})?(informationen|daten|details)\\b",
                 "geschäftlichen? (Daten|Informationen|Details)",
-            ],
-            "CompanyInformation": [
                 "\\bUnternehmens(-.{0,27})?(informationen|daten|details)\\b",
                 "(?<!Name )(?<!Namen )Ihr.{0,2} Unternehmens?\\b",
             ],
@@ -1217,9 +1198,21 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(wenn|vom).{0,20}Nutzer.{0,50}(übergeben|weitergegeben)",
                 "direkt von Ihnen",
             ],
-            "AutomaticallyCollected": [
-                "(automatisiert|automatisch).{0,80}(verarbeitet|erhoben|erfass(t|te|en)|sammeln)",
-                "(übermittelt|erhalten|erfassen).{0,120}automatisch (?!(gelöscht|gespeichert))",
+            "Inferred": [
+                "\\bleiten.{0,70}ab\\b",
+                "abgeleitet",
+                "ab(zu)?leiten",
+                "(Daten|Informationen).{0,30}Schlussfolgerungen",
+                "Erschlossene Daten",
+            ],
+            "PubliclyAvailable": [
+                "(Daten|Informationen|Details)(?=.*veröffentlichen)",
+                "öffentlich (?=.*(posten|gepostet|bereitstellen|bereitgestellt|machen|gemacht|teilen|geteilten|veröffentlicht|bekannt (geben|gegeben)))",
+                "öffentlich(e|er|en)?.{0,20}(Quellen|Bekanntmachungen)",
+            ],
+            "Purchased": [
+                "durch.{0,30}Kauf"
+                "\\bwir\\b(?=.*\\b(kaufen|erwerben)\\b)(?=.*\\b(daten|information)\\b)"
             ],
             "ThirdPartyProvided": [
                 "(Daten|Informationen|Details).{0,48}(von|aus|über) (diese.{0,2} )?(Drittpartei(en)?|Dritte[rn]?|Drittanbietern?|Drittpartnern?|Werbetreibenden|anderer Nutzer|Anbieter|Veranstaltern|(anderen?|externen?) Quellen).{0,80}(?<!nicht )(erhalten|bekommen|erwerben|erfassen|mitteilt|zur Verfügung)",
@@ -1231,19 +1224,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(von|vom).{0,20}(Anbieter|Werbetreibenden|Dienstleister|Dritten).{0,30}(erhalten|bekommen)",
                 "die uns (andere|dritte) zur Verfügung stellen",
             ],
-            "DataCombination": [
-                "\\bkombinier(te?|en)\\b",
-                "Kreier(ung|en)",
-                "\\bleiten.{0,70}ab\\b",
-                "abgeleitet",
-                "ab(zu)?leiten",
-                "verbinden.{0,30}(Daten|Informationen)",
-                "(Daten|Informationen).{0,30}Schlussfolgerungen",
-                "Erschlossene Daten",
-            ],
-            "AIAnalysis": [
-                "(durch|mithilfe|auf Basis von)(?=.{0,30}\\b(Künstlicher Intelligenz|KI|AI|machine learning|ML)\\b(?!-Chat))"
-            ],
             "SocialMedia": [
                 "social media(?!(- )Anbieter)",
                 "(?<!Anbieter von )(?<!Anbietern von )soziale[rn]? Medien\\b",
@@ -1251,20 +1231,46 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(?<!Anbieter von )(?<!Anbietern von )soziale[rnms]? Netzwerk(e|en)?\\b",
                 "Fan(seite|page)",
             ],
-            "IndirectCollection": [
-                "\\bindirekt(?=.*(gesammelt|erhalten|bekommen|erfasst))",
-                "(Informationen|Daten|Details).{0,90}nicht.{0,20}(angefordert|gesammelt)",
+            "AIAnalysis": [
+                "(durch|mithilfe|auf Basis von)(?=.{0,30}\\b(Künstlicher Intelligenz|KI|AI|machine learning|ML)\\b(?!-Chat))"
             ],
-            "Public": [
-                "(Daten|Informationen|Details)(?=.*veröffentlichen)",
-                "öffentlich (?=.*(posten|gepostet|bereitstellen|bereitgestellt|machen|gemacht|teilen|geteilten|veröffentlicht|bekannt (geben|gegeben)))",
-                "öffentlich(e|er|en)?.{0,20}(Quellen|Bekanntmachungen)",
+            "Tracking": ["\\bVerfolgung", "Cookie", "Tracking"],
+        }
+    ),
+    trigger_condition=AttributePattern.from_dict(
+        {
+            "OnRegister": [
+                "(Registrier(ung|en|t)|registrieren|Konto (erstellen|anlegen|eröffnen)|Account (erstellen|anlegen)|anmelden)",
             ],
-            "Interaction": [
-                "\\bInteraktion(en)?\\b",
-                "(wenn|während).{0,80}(Webseite|Website|Seite).{0,80}(besuchen)",
-                "wenn Sie (?=.*interagieren)",
-                "(bei der|durch) Nutzung.{0,50}(erhoben|gesammelt|erhalten|entstanden)",
+            "OnPurchase": [
+                "\\b(Kauf|kaufen|kauft|Bestellung(en)?|bestellen|erwerben|Einkauf|einkaufen)\\b",
+            ],
+            "OnInteractWithAd": [
+                "(?=.*(Werbung|Anzeige|Werbeanzeige|Banner))(?=.*(klicken|anklicken|interagieren|ansehen|betrachten))",
+            ],
+            "OnAppDownloaded": [
+                "(App|Anwendung).{0,40}(herunterlad|download|installier)",
+                "(herunterlad|download|installier).{0,40}(App|Anwendung)",
+            ],
+            "OnSearch": [
+                "\\b(Suche|suchen|Suchanfrage|Suchanfragen|Suchbegriff(e)?)\\b",
+            ],
+            "OnContactUs": [
+                "(kontaktieren Sie uns|Kontakt(aufnahme)? (mit|zu) uns|wenn Sie uns (kontaktieren|schreiben|anschreiben)|uns kontaktieren)",
+            ],
+            "OnBrowse": [
+                "(besuchen|aufrufen|durchsuchen|surfen|stöbern).{0,40}(Website|Webseite|Seite|Internetseite)",
+            ],
+            "OnSubscribe": [
+                "(abonnier|Abonnement)",
+                "Newsletter.{0,20}(anmeld|abonnier)",
+            ],
+            "Automatically": [
+                "\\bautomatisch",
+            ],
+            "OnInteract": [
+                "\\binteragier",
+                "\\bInteraktion",
             ],
             "VoluntaryProvided": [
                 "\\bfreiwillig\\b",
@@ -1274,12 +1280,16 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\boptional\\b",
                 "(?=.*\\b(right to choose|not obliged))(?=.*(provide|share|submit|give|upload))",
             ],
-            "Buying": [
-                "durch.{0,30}Kauf"
-                "\\bwir\\b(?=.*\\b(kaufen|erwerben)\\b)(?=.*\\b(daten|information)\\b)"
+        }
+    ),
+    consequences=AttributePattern.from_dict(
+        {
+            "DoNotUse": [
+                "nicht.{0,20}(nutzen|verwenden|benutzen) Sie",
+                "Nutzung (einstellen|beenden)",
+                "(nutzen|verwenden|benutzen) Sie.{0,20}nicht",
+                "(?=.*nicht (mit|einverstanden))(?=.*(nutzen|verwenden|benutzen))",
             ],
-            "Feedback": ["\\bFeedback\\b", "Befragung", "Frage(bogen|bögen)"],
-            "Tracking": ["\\bVerfolgung", "Cookie", "Tracking"],
         }
     ),
     descriptive=AttributePattern.from_dict(
@@ -1356,13 +1366,11 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "RatingPlatform": ["Bewertungsplattform"],
             "RecruitmentPlatform": ["Rekrutierungs(plattform|portal)"],
             "MarketingAffiliate": ["Marketing-?Partner"],
-            "AdvertisingAgency": [
+            "AdvertisingProvider": [
                 "\\bWerbe(agentur|treibende)",
                 "Marketing-Drittanbieter",
                 "(Drittanbieter|Dienstleister|Partei)(?=.*Werbung)",
-            ],
-            "AdvertisingNetwork": ["Werbenetzwerk"],
-            "AdvertisingPartner": [
+                "Werbenetzwerk",
                 "\\bWerbepartnern?\\b",
                 "\\bMarketing[- ]?Partnern?\\b",
             ],
@@ -1618,13 +1626,13 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "United States": [
                 "\\bVereinigten? Staaten\\b",
                 "\\bUSA?s?\\b",
-                "\\bu\\.s\\.a\\.\\b",
-                "\\bu\\.s\\.\\b",
+                "\\bu\\.s\\.a\\.(?!\\w)",
+                "\\bu\\.s\\.(?!\\w)",
             ],
             "United Kingdom": [
                 "\\bVereinigte[ns]? Königreichs?\\b",
                 "\\buk\\b",
-                "\\bu\\.k\\.\\b",
+                "\\bu\\.k\\.(?!\\w)",
                 "\\bGroßbritannien\\b",
                 "\\bBritannien\\b",
             ],
@@ -1718,7 +1726,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "United Arab Emirates": [
                 "\\bVereinigten? Arabischen? Emirate\\b",
                 "\\bvae\\b",
-                "\\bu\\.a\\.e\\.\\b",
+                "\\bu\\.a\\.e\\.(?!\\w)",
             ],
             "Qatar": ["\\bKatars?\\b"],
             "Kuwait": ["\\bKuwaits?\\b"],
@@ -2539,6 +2547,23 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "MutualAuthentication": ["gegenseitige Authentifizierung"],
             "ProhibitedDefaultPassword": [
                 "(unzulässige|verbotene|nicht erlaubte|unerlaubte)s?.{0,32}Standardpass(wort|wörter)"
+            ],
+            "Antivirus": [
+                "Anti-?Viren",
+                "Virenschutz",
+                "Virenscanner",
+                "Anti-?Malware",
+            ],
+            "Backups": [
+                "\\bBackups?\\b",
+                "Datensicherung",
+                "Sicherungskopie",
+            ],
+            "AccessLogs": [
+                "Zugriffs(protokoll|log)s?",
+                "Zugriffsprotokollierung",
+                "Audit-?Logs?",
+                "Protokollierung.{0,20}Zugriff",
             ],
         }
     ),

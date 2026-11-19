@@ -56,40 +56,8 @@ def classify_contents(
     before header propagation runs again so those contents also propagate."""
     try:
         logger.debug("Classifying contents for entries=%d", len(entries))
-        classify_content(
-            entries, "Audience", model_config.audience, prefer_onnx, cached
-        )
-        classify_content(entries, "Contact", model_config.contact, prefer_onnx, cached)
-        classify_content(entries, "Control", model_config.control, prefer_onnx, cached)
-        classify_content(
-            entries, "Deletion", model_config.deletion, prefer_onnx, cached
-        )
-        classify_content(
-            entries, "LegalBasis", model_config.legal_basis, prefer_onnx, cached
-        )
-        classify_content(entries, "Policy", model_config.policy, prefer_onnx, cached)
-        classify_content(
-            entries, "Processing", model_config.processing, prefer_onnx, cached
-        )
-        classify_content(entries, "Purpose", model_config.purpose, prefer_onnx, cached)
-        classify_content(
-            entries, "Retention", model_config.retention, prefer_onnx, cached
-        )
-        classify_content(
-            entries,
-            "Security/Privacy",
-            model_config.security_privacy,
-            prefer_onnx,
-            cached,
-        )
-        classify_content(entries, "Selling", model_config.selling, prefer_onnx, cached)
-        classify_content(entries, "Sharing", model_config.sharing, prefer_onnx, cached)
-        classify_content(
-            entries, "ThirdParty", model_config.third_party, prefer_onnx, cached
-        )
-        classify_content(
-            entries, "UserRights", model_config.user_rights, prefer_onnx, cached
-        )
+        for topic, content_config in model_config.content_models().items():
+            classify_content(entries, topic, content_config, prefer_onnx, cached)
         logger.debug("Content classification completed")
     except ModelLoadError as e:
         return e
@@ -124,8 +92,20 @@ def extract_all_attributes(
         extract_attributes(
             entries,
             topic=["Processing"],
-            content="Method/Source",
+            content="Source",
             patterns=pattern_config.method_source,
+        )
+        extract_attributes(
+            entries,
+            topic=["Processing", "Sharing"],
+            content="TriggerCondition",
+            patterns=pattern_config.trigger_condition,
+        )
+        extract_attributes(
+            entries,
+            topic=["Control"],
+            content="Consequences",
+            patterns=pattern_config.consequences,
         )
         extract_attributes(
             entries,
@@ -176,7 +156,7 @@ def extract_all_attributes(
         extract_attributes(
             entries,
             topic=["ThirdParty"],
-            content="Chosen",
+            content="ChosenIndividual",
             patterns=pattern_config.chosen,
         )
         extract_attributes(
@@ -226,6 +206,12 @@ def extract_all_attributes(
             topic=["Security/Privacy"],
             content="Certifications",
             patterns=pattern_config.certifications,
+        )
+        extract_attributes(
+            entries,
+            topic=["Policy"],
+            content="UserResponsibility",
+            patterns=pattern_config.user_responsibility,
         )
 
         extract_duration(

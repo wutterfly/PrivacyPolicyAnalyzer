@@ -177,7 +177,7 @@ CONTEXT_COLOR_MAP = {
     "Account": "#7f7f7f",  # Gray
     "Services": "#bcbd22",  # Yellow-green
     "Event/Program": "#17becf",  # Cyan
-    "Other": "#aec7e8",  # Light blue
+    "Unspecified": "#aec7e8",  # Light blue
 }
 
 
@@ -187,11 +187,11 @@ def generate_context_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
     # Filter to only items with text
     data = [item for item in data if item.text.strip()]
 
-    # Get all unique contexts (excluding 'Other')
+    # Get all unique contexts (excluding 'Unspecified')
     context_counts = defaultdict(int)
     for item in data:
         for context in item.contexts:
-            if context != "Other":
+            if context != "Unspecified":
                 context_counts[context] += 1
 
     # Keep only contexts that appear at least 5 times (reduce clutter)

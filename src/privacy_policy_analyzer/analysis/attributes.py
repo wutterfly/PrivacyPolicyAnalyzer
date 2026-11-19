@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -44,6 +45,8 @@ class AttributePatterns:
     data_type: AttributePattern
     track_conv: AttributePattern
     method_source: AttributePattern
+    trigger_condition: AttributePattern
+    consequences: AttributePattern
     descriptive: AttributePattern
     official: AttributePattern
     country: AttributePattern
@@ -64,6 +67,8 @@ class AttributePatterns:
             "data_type": self.data_type.get_stats(),
             "track_conv": self.track_conv.get_stats(),
             "method_source": self.method_source.get_stats(),
+            "trigger_condition": self.trigger_condition.get_stats(),
+            "consequences": self.consequences.get_stats(),
             "descriptive": self.descriptive.get_stats(),
             "official": self.official.get_stats(),
             "country": self.country.get_stats(),
@@ -97,10 +102,32 @@ def extract_attributes(
 
 @dataclass
 class DurationPattern:
-    """Holds compiled regex patterns for duration attributes."""
+    """Holds compiled regex patterns for duration attributes.
+
+    `normalize`, if given, is applied to the sentence before matching, e.g. to
+    turn spelled-out numbers into digits ("forty-five" -> "45").
+    """
 
     unit: AttributePattern
     length: AttributePattern
+    normalize: Callable[[str], str] | None = None
+
+
+# digits only, at most 3 of them, so years such as "2019" are not read as a length
+_DIGIT_LENGTH = re.compile(r"^[1-9]\d{0,2}$")
+_TOKEN_EDGE_PUNCTUATION = "()[]{}<>.,;:!?\"'“”‘’"
+
+
+def _duration_tokens(text: str) -> list[str]:
+    """Whitespace tokens with surrounding punctuation removed. Hyphenated tokens
+    are split ("45-day" -> "45", "day") so that number and unit are separate."""
+    tokens: list[str] = []
+    for part in text.split():
+        for sub in re.split(r"[-–]", part.strip(_TOKEN_EDGE_PUNCTUATION)):
+            sub = sub.strip(_TOKEN_EDGE_PUNCTUATION)
+            if sub:
+                tokens.append(sub)
+    return tokens
 
 
 def extract_duration(
@@ -113,19 +140,26 @@ def extract_duration(
                 # check if content matches
                 for cnt in tpc.contents:
                     if cnt.content == content:
-                        parts = entry.text.split()
+                        text = entry.text
+                        if patterns.normalize is not None:
+                            text = patterns.normalize(text)
 
                         current_unit: str | None = None
                         current_length: str | None = None
 
-                        for part in parts:
-                            matched_units = patterns.unit.match(part)
+                        for token in _duration_tokens(text):
+                            matched_units = patterns.unit.match(token)
                             if matched_units:
                                 current_unit = matched_units[0]
 
-                            matched_lengths = patterns.length.match(part)
-                            if matched_lengths:
-                                current_length = matched_lengths[0]
+                            # any plain number counts as a length; the language
+                            # patterns still cover spelled-out numbers
+                            if _DIGIT_LENGTH.match(token):
+                                current_length = token
+                            else:
+                                matched_lengths = patterns.length.match(token)
+                                if matched_lengths:
+                                    current_length = matched_lengths[0]
 
                             if current_unit and current_length:
                                 duration_str = f"{current_unit}: {current_length}"

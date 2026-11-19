@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from privacy_policy_analyzer.shared.annotation import (
     ContentAnnotation,
+    EntryScores,
     RawEntry,
     TopicAnnotation,
 )
@@ -49,6 +50,9 @@ class StructuredEntry:
     contexts: list[str]
     topics: list[TopicAnnotation]
     structure: Text | Header | List | TableCell
+    # raw model scores for every label (see EntryScores); None where nothing was
+    # classified, e.g. for entries without text of their own
+    scores: EntryScores | None = None
 
     @staticmethod
     def from_dict(data: dict) -> "StructuredEntry":
@@ -88,11 +92,24 @@ class StructuredEntry:
                 )
             )
 
+        scores: EntryScores | None = None
+        scores_data = data.get("scores")
+        if scores_data is not None:
+            scores = EntryScores(
+                contexts=dict(scores_data.get("contexts", {})),
+                topics=dict(scores_data.get("topics", {})),
+                contents={
+                    topic: dict(contents)
+                    for topic, contents in scores_data.get("contents", {}).items()
+                },
+            )
+
         return StructuredEntry(
             text=data["text"],
             contexts=data["contexts"],
             topics=topics,
             structure=structure,
+            scores=scores,
         )
 
 
@@ -213,6 +230,7 @@ class StructuredTextMappings:
                     contexts=raw_entry.contexts,
                     topics=raw_entry.topics,
                     structure=structure,
+                    scores=raw_entry.scores,
                 )
                 structured_entries.append(structured_entry)
             else:

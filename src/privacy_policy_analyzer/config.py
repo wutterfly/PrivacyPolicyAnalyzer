@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from privacy_policy_analyzer import Language
 from privacy_policy_analyzer.analysis.attributes import (
@@ -9,8 +9,16 @@ from privacy_policy_analyzer.analysis.attributes import (
     PhonePattern,
     UrlPattern,
 )
-from privacy_policy_analyzer.analysis.classification import ModelConfig, ModelConfigs
+from privacy_policy_analyzer.analysis.classification import (
+    DEFAULT_THRESHOLD,
+    ModelConfig,
+    ModelConfigs,
+)
 from privacy_policy_analyzer.analysis.ner import NERModelConfig, NERModelConfigs
+from privacy_policy_analyzer.analysis.post_processing import (
+    LabelFloors,
+    PropagationGate,
+)
 from privacy_policy_analyzer.crawl.splitter import SplitterPattern
 from privacy_policy_analyzer.patterns import (
     DEFAULT_EMAIL_PATTERN_CONFIG,
@@ -29,6 +37,84 @@ from privacy_policy_analyzer.patterns.en import (
     EN_PATTERN_CONFIG,
     EN_SPLITTER_CONFIG,
 )
+
+
+@dataclass(frozen=True)
+class PropagationConfig:
+    """How strictly header propagation is gated.
+
+    With `enabled=False`, headers do not propagate anything.
+
+    Otherwise a label that a heading carries is only propagated to a sentence
+    if the sentence's own model score for that label is at least
+
+        max(min_score, floor_ratio * threshold of that label)
+
+    where `floor_ratio` is the one of the label's kind (scope, topic or
+    content) and the threshold is the one used for classification. A ratio of
+    0.5 lets a sentence inherit a label it nearly reached on its own, and
+    keeps clearly unrelated sentences from picking it up. Sentences that
+    already have a label are not affected.
+
+    All values at 0 (the default) mean there is no gate: everything a heading
+    carries is propagated to all sentences below it.
+    """
+
+    enabled: bool = True
+    context_floor_ratio: float = 0.0
+    topic_floor_ratio: float = 0.0
+    content_floor_ratio: float = 0.0
+    min_score: float = 0.0
+
+    def __post_init__(self):
+        for name in (
+            "context_floor_ratio",
+            "topic_floor_ratio",
+            "content_floor_ratio",
+            "min_score",
+        ):
+            value = getattr(self, name)
+            if not 0.0 <= value <= 1.0:
+                raise ValueError(f"{name} must be between 0 and 1, got {value}")
+
+    @property
+    def gated(self) -> bool:
+        """Whether propagation is conditional on the scores of the sentences."""
+        return self.enabled and any(
+            value > 0.0
+            for value in (
+                self.context_floor_ratio,
+                self.topic_floor_ratio,
+                self.content_floor_ratio,
+                self.min_score,
+            )
+        )
+
+    def build_gate(self, model_configs: ModelConfigs) -> PropagationGate | None:
+        """The gate for the thresholds of `model_configs`; None if there is no gate."""
+        if not self.gated:
+            return None
+
+        def floors(config: ModelConfig | None, ratio: float) -> LabelFloors:
+            return LabelFloors(
+                default=max(self.min_score, ratio * DEFAULT_THRESHOLD),
+                by_label={
+                    label: max(self.min_score, ratio * threshold)
+                    for label, threshold in (
+                        config.thresholds.items() if config is not None else ()
+                    )
+                },
+            )
+
+        return PropagationGate(
+            contexts=floors(model_configs.context, self.context_floor_ratio),
+            topics=floors(model_configs.topic, self.topic_floor_ratio),
+            contents={
+                topic: floors(content_config, self.content_floor_ratio)
+                for topic, content_config in model_configs.content_models().items()
+            },
+            default_contents=floors(None, self.content_floor_ratio),
+        )
 
 
 @dataclass
@@ -54,6 +140,8 @@ class PipelineConfiguration:
     email_pattern_config: EmailPattern
     phone_pattern_config: PhonePattern
     url_pattern_config: UrlPattern
+
+    propagation: PropagationConfig = field(default_factory=PropagationConfig)
 
 
 # common domain endings the NER model mistakenly tags as "ORG"
@@ -128,7 +216,7 @@ EN_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     ),
     processing=ModelConfig(
         model_name="Wravn/privacy-policy-content-processing",
-        thresholds={"Method/Source": 0.4},
+        thresholds={"Source": 0.4},
     ),
     purpose=ModelConfig(
         model_name="Wravn/privacy-policy-content-purpose",
@@ -192,7 +280,7 @@ DE_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     context=ModelConfig(
         model_name="Immerwinter/gbert-large-privacy-policy-context",
         thresholds={
-            "Other": 0.6,
+            "Unspecified": 0.6,
             "Website": 0.6,
             "App": 0.1,
             "Device": 0.85,
@@ -307,7 +395,7 @@ DE_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
             "Tracking/Conversion": 0.1,
             "Profiling": 0.15,
             "AutomatedDecisionMaking": 0.1,
-            "Method/Source": 0.1,
+            "Source": 0.1,
         },
     ),
     purpose=ModelConfig(

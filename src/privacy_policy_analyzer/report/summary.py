@@ -750,7 +750,7 @@ def extract_processing_information(
 
                 elif cnt.content == "Tracking/Conversion":
                     tracking.update(cnt.attributes)
-                elif cnt.content == "Method/Source":
+                elif cnt.content == "Source":
                     method_source.update(cnt.attributes)
 
     return ProcessingInformation(
@@ -1078,7 +1078,7 @@ def extract_context_information(
                 services += 1
             elif ctx == "Event/Program":
                 event += 1
-            elif ctx == "Other":
+            elif ctx == "Unspecified":
                 other += 1
             else:
                 assert False

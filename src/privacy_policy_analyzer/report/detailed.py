@@ -149,7 +149,7 @@ def create_detailed_report(
                 for cnt in tpc.contents:
                     if cnt.content == "DataType":
                         data_types.extend(cnt.attributes)
-                    elif cnt.content == "Method/Source":
+                    elif cnt.content == "Source":
                         method_source.extend(cnt.attributes)
                     elif cnt.content == "Tracking/Conversion":
                         data_types.extend(cnt.attributes)

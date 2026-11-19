@@ -1,8 +1,13 @@
+from dataclasses import asdict
+
 from privacy_policy_analyzer.analysis.post_processing import (
     DEFAULT_SKIPS,
+    LabelFloors,
+    PropagationGate,
     SkipRule,
     combine_table_rows,
     filter_src,
+    merge_scores,
     propagate_headers,
     smooth_context,
 )
@@ -12,7 +17,11 @@ from privacy_policy_analyzer.analysis.structure import (
     TableCell,
     Text,
 )
-from privacy_policy_analyzer.shared.annotation import ContentAnnotation, TopicAnnotation
+from privacy_policy_analyzer.shared.annotation import (
+    ContentAnnotation,
+    EntryScores,
+    TopicAnnotation,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -24,12 +33,14 @@ def make_entry(
     contexts: list[str] | None = None,
     topics: list[TopicAnnotation] | None = None,
     structure=None,
+    scores: EntryScores | None = None,
 ) -> StructuredEntry:
     return StructuredEntry(
         text=text,
         contexts=contexts or [],
         topics=topics or [],
         structure=structure or Text(0),
+        scores=scores,
     )
 
 
@@ -216,10 +227,10 @@ class TestPropagateHeaders:
         assert stats["contexts"]["total"] == 0
 
     def test_context_stats_other_excluded(self):
-        h1 = make_entry(contexts=["Other"], structure=Header(level=1))
+        h1 = make_entry(contexts=["Unspecified"], structure=Header(level=1))
         body = make_entry(contexts=[], structure=Text(1))
         stats = propagate_headers([h1, body], skips=[])
-        assert "Other" not in stats["contexts"]
+        assert "Unspecified" not in stats["contexts"]
 
     def test_context_stats_total_always_present(self):
         stats = propagate_headers([], skips=[])
@@ -325,7 +336,7 @@ class TestPropagateHeaders:
 
     def test_other_dropped_when_header_adds_a_real_label(self):
         header = make_entry(contexts=["Website"], structure=Header(level=1))
-        body = make_entry(contexts=["Other"], structure=Text(1))
+        body = make_entry(contexts=["Unspecified"], structure=Text(1))
         propagate_headers([header, body], skips=[])
         assert body.contexts == ["Website"]
 
@@ -369,6 +380,360 @@ class TestPropagateHeaders:
         propagate_headers([header, body], skips=[])
         assert body.contexts is contexts and contexts == ["Website"]
         assert body.topics is topics and len(topics) == 1
+
+
+# ---------------------------------------------------------------------------
+# propagate_headers - gated by the receiving entry's own scores
+# ---------------------------------------------------------------------------
+
+
+def make_scores(
+    contexts: dict[str, float] | None = None,
+    topics: dict[str, float] | None = None,
+    contents: dict[str, dict[str, float]] | None = None,
+) -> EntryScores:
+    return EntryScores(
+        contexts=contexts or {}, topics=topics or {}, contents=contents or {}
+    )
+
+
+def uniform_gate(
+    contexts: float = 0.0, topics: float = 0.0, contents: float = 0.0
+) -> PropagationGate:
+    return PropagationGate(
+        contexts=LabelFloors(contexts),
+        topics=LabelFloors(topics),
+        default_contents=LabelFloors(contents),
+    )
+
+
+class TestGatedPropagation:
+    def test_context_inherited_when_own_score_reaches_floor(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(
+            structure=Text(1), scores=make_scores(contexts={"Website": 0.3})
+        )
+        stats = propagate_headers(
+            [header, body], skips=[], gate=uniform_gate(contexts=0.25)
+        )
+        assert body.contexts == ["Website"]
+        assert stats["blocked"]["contexts"]["total"] == 0
+
+    def test_context_blocked_when_own_score_is_below_floor(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(
+            contexts=["App"],
+            structure=Text(1),
+            scores=make_scores(contexts={"Website": 0.1, "App": 0.9}),
+        )
+        stats = propagate_headers(
+            [header, body], skips=[], gate=uniform_gate(contexts=0.25)
+        )
+        assert body.contexts == ["App"]
+        assert stats["blocked"]["contexts"] == {"Website": 1, "total": 1}
+        # a blocked label is not counted as added
+        assert stats["contexts"]["total"] == 0
+
+    def test_score_equal_to_floor_passes(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(
+            structure=Text(1), scores=make_scores(contexts={"Website": 0.25})
+        )
+        propagate_headers([header, body], skips=[], gate=uniform_gate(contexts=0.25))
+        assert body.contexts == ["Website"]
+
+    def test_labels_the_entry_already_has_do_not_need_a_score(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(
+            contexts=["Website"], structure=Text(1), scores=make_scores()
+        )
+        stats = propagate_headers(
+            [header, body], skips=[], gate=uniform_gate(contexts=0.9)
+        )
+        assert body.contexts == ["Website"]
+        assert stats["blocked"]["contexts"]["total"] == 0
+
+    def test_topic_blocked_below_floor_and_inherited_at_floor(self):
+        def run(topic_score: float) -> tuple[StructuredEntry, dict]:
+            header = make_entry(
+                topics=[make_topic("Sharing", ("DataType", []))],
+                structure=Header(level=1),
+            )
+            body = make_entry(
+                structure=Text(1), scores=make_scores(topics={"Sharing": topic_score})
+            )
+            stats = propagate_headers(
+                [header, body], skips=[], gate=uniform_gate(topics=0.3)
+            )
+            return body, stats
+
+        body, stats = run(0.2)
+        assert body.topics == []
+        assert stats["blocked"]["topics"] == {"Sharing": 1, "total": 1}
+
+        body, stats = run(0.35)
+        assert [t.topic for t in body.topics] == ["Sharing"]
+        assert stats["blocked"]["topics"]["total"] == 0
+
+    def test_contents_of_a_blocked_topic_are_not_counted_separately(self):
+        header = make_entry(
+            topics=[make_topic("Sharing", ("DataType", []), ("Country", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(structure=Text(1), scores=make_scores())
+        stats = propagate_headers(
+            [header, body], skips=[], gate=uniform_gate(topics=0.3, contents=0.3)
+        )
+        assert stats["blocked"]["topics"]["total"] == 1
+        assert stats["blocked"]["contents"]["total"] == 0
+
+    def test_content_gated_by_content_score_of_its_topic(self):
+        def run(score: float) -> tuple[StructuredEntry, dict]:
+            header = make_entry(
+                topics=[make_topic("Sharing", ("DataType", []), ("Country", []))],
+                structure=Header(level=1),
+            )
+            body = make_entry(
+                topics=[make_topic("Sharing")],  # has the topic natively
+                structure=Text(1),
+                scores=make_scores(
+                    contents={"Sharing": {"DataType": score, "Country": 0.0}}
+                ),
+            )
+            stats = propagate_headers(
+                [header, body], skips=[], gate=uniform_gate(contents=0.3)
+            )
+            return body, stats
+
+        body, stats = run(0.1)
+        assert body.topics[0].contents == []
+        assert stats["blocked"]["contents"] == {
+            "Sharing/DataType": 1,
+            "Sharing/Country": 1,
+            "total": 2,
+        }
+
+        body, stats = run(0.4)
+        assert [c.content for c in body.topics[0].contents] == ["DataType"]
+        assert stats["blocked"]["contents"] == {"Sharing/Country": 1, "total": 1}
+
+    def test_content_the_entry_already_has_still_gets_attributes_merged(self):
+        header = make_entry(
+            topics=[make_topic("Processing", ("DataType", ["x"]))],
+            structure=Header(level=1),
+        )
+        body = make_entry(
+            topics=[make_topic("Processing", ("DataType", ["y"]))],
+            structure=Text(1),
+            scores=make_scores(),
+        )
+        propagate_headers([header, body], skips=[], gate=uniform_gate(contents=0.9))
+        assert sorted(body.topics[0].contents[0].attributes) == ["x", "y"]
+
+    def test_floors_can_differ_per_label_and_per_topic(self):
+        gate = PropagationGate(
+            contexts=LabelFloors(0.1, {"Device": 0.8}),
+            contents={"Sharing": LabelFloors(0.9), "Retention": LabelFloors(0.0)},
+        )
+        header = make_entry(
+            contexts=["Website", "Device"],
+            topics=[
+                make_topic("Sharing", ("Country", [])),
+                make_topic("Retention", ("Country", [])),
+            ],
+            structure=Header(level=1),
+        )
+        body = make_entry(
+            topics=[make_topic("Sharing"), make_topic("Retention")],
+            structure=Text(1),
+            scores=make_scores(
+                contexts={"Website": 0.2, "Device": 0.5},
+                contents={
+                    "Sharing": {"Country": 0.5},
+                    "Retention": {"Country": 0.5},
+                },
+            ),
+        )
+        propagate_headers([header, body], skips=[], gate=gate)
+        assert body.contexts == ["Website"]  # Device: 0.5 < its floor of 0.8
+        by_topic = {t.topic: [c.content for c in t.contents] for t in body.topics}
+        assert by_topic == {"Sharing": [], "Retention": ["Country"]}
+
+    def test_entry_without_scores_inherits_nothing_under_a_positive_floor(self):
+        header = make_entry(
+            contexts=["Website"],
+            topics=[make_topic("Sharing")],
+            structure=Header(level=1),
+        )
+        body = make_entry(structure=Text(1), scores=None)
+        propagate_headers(
+            [header, body], skips=[], gate=uniform_gate(contexts=0.1, topics=0.1)
+        )
+        assert body.contexts == [] and body.topics == []
+
+    def test_zero_floors_let_everything_through(self):
+        header = make_entry(
+            contexts=["Website"],
+            topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(structure=Text(1))
+        propagate_headers([header, body], skips=[], gate=uniform_gate())
+        assert body.contexts == ["Website"]
+        assert [c.content for c in body.topics[0].contents] == ["DataType"]
+
+    def test_each_active_header_is_gated_separately(self):
+        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
+        h2 = make_entry(contexts=["App"], structure=Header(level=2))
+        body = make_entry(
+            structure=Text(1),
+            scores=make_scores(contexts={"Website": 0.6, "App": 0.05}),
+        )
+        stats = propagate_headers(
+            [h1, h2, body], skips=[], gate=uniform_gate(contexts=0.3)
+        )
+        assert body.contexts == ["Website"]
+        assert stats["blocked"]["contexts"] == {"App": 1, "total": 1}
+
+    def test_second_pass_adds_contents_once_the_topic_was_inherited(self):
+        # first pass: the header only has the topic (contents are classified later)
+        header = make_entry(topics=[make_topic("Sharing")], structure=Header(level=1))
+        scores = make_scores(topics={"Sharing": 0.4})
+        body = make_entry(structure=Text(1), scores=scores)
+        gate = uniform_gate(topics=0.3, contents=0.3)
+        propagate_headers([header, body], skips=[], gate=gate)
+        assert [t.topic for t in body.topics] == ["Sharing"]
+
+        # content classification: header and body get their contents, the body
+        # scores the header's content just below its floor
+        header.topics[0].contents.append(ContentAnnotation("DataType", []))
+        scores.contents["Sharing"] = {"DataType": 0.2}
+        propagate_headers([header, body], skips=[], gate=gate)
+        assert body.topics[0].contents == []
+
+        scores.contents["Sharing"] = {"DataType": 0.3}
+        propagate_headers([header, body], skips=[], gate=gate)
+        assert [c.content for c in body.topics[0].contents] == ["DataType"]
+
+    def test_skips_still_apply_with_a_gate(self):
+        header = make_entry(
+            topics=[make_topic("Policy"), make_topic("Sharing")],
+            structure=Header(level=1),
+        )
+        body = make_entry(
+            structure=Text(1),
+            scores=make_scores(topics={"Policy": 1.0, "Sharing": 1.0}),
+        )
+        propagate_headers([header, body], gate=uniform_gate(topics=0.5))
+        assert [t.topic for t in body.topics] == ["Sharing"]
+
+    def test_blocked_stats_only_present_with_a_gate(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(structure=Text(1))
+        assert "blocked" not in propagate_headers([header, body], skips=[])
+        stats = propagate_headers([header, body], skips=[], gate=uniform_gate())
+        assert set(stats["blocked"]) == {"contexts", "topics", "contents"}
+        assert stats["blocked"]["contexts"]["total"] == 0
+
+    def test_without_a_gate_scores_are_ignored(self):
+        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        body = make_entry(
+            structure=Text(1), scores=make_scores(contexts={"Website": 0.0})
+        )
+        propagate_headers([header, body], skips=[])
+        assert body.contexts == ["Website"]
+
+
+# ---------------------------------------------------------------------------
+# scores on entries
+# ---------------------------------------------------------------------------
+
+
+class TestMergeScores:
+    def test_none_when_no_entry_has_scores(self):
+        assert merge_scores([None, None]) is None
+        assert merge_scores([]) is None
+
+    def test_takes_the_highest_score_per_label(self):
+        merged = merge_scores(
+            [
+                make_scores(
+                    contexts={"Website": 0.2, "App": 0.9},
+                    topics={"Sharing": 0.1},
+                    contents={"Sharing": {"DataType": 0.3}},
+                ),
+                None,
+                make_scores(
+                    contexts={"Website": 0.7},
+                    topics={"Selling": 0.4},
+                    contents={"Sharing": {"DataType": 0.1, "Country": 0.5}},
+                ),
+            ]
+        )
+        assert merged is not None
+        assert merged.contexts == {"Website": 0.7, "App": 0.9}
+        assert merged.topics == {"Sharing": 0.1, "Selling": 0.4}
+        assert merged.contents == {"Sharing": {"DataType": 0.3, "Country": 0.5}}
+
+    def test_inputs_are_not_modified(self):
+        first = make_scores(contexts={"Website": 0.2}, contents={"Sharing": {"A": 0.1}})
+        second = make_scores(contexts={"Website": 0.7}, contents={"Sharing": {"A": 0.9}})
+        merge_scores([first, second])
+        assert first.contexts == {"Website": 0.2}
+        assert first.contents == {"Sharing": {"A": 0.1}}
+
+    def test_combined_table_row_carries_the_merged_scores(self):
+        cells = [
+            make_entry(
+                text="Data type: email",
+                structure=TableCell(table_id=0, row_id=0),
+                scores=make_scores(contexts={"Website": 0.2}),
+            ),
+            make_entry(
+                text="Purpose: billing",
+                structure=TableCell(table_id=0, row_id=0),
+                scores=make_scores(contexts={"Website": 0.6, "App": 0.1}),
+            ),
+        ]
+        (row,) = combine_table_rows(cells)
+        assert row.scores is not None
+        assert row.scores.contexts == {"Website": 0.6, "App": 0.1}
+
+    def test_combined_table_row_without_any_scores_has_none(self):
+        cells = [
+            make_entry(text="a", structure=TableCell(table_id=0, row_id=0)),
+            make_entry(text="b", structure=TableCell(table_id=0, row_id=0)),
+        ]
+        (row,) = combine_table_rows(cells)
+        assert row.scores is None
+
+    def test_scores_survive_serialization(self):
+        entry = make_entry(
+            text="a sentence",
+            contexts=["Website"],
+            topics=[make_topic("Sharing", ("DataType", []))],
+            scores=make_scores(
+                contexts={"Website": 0.8, "App": 0.1},
+                topics={"Sharing": 0.7},
+                contents={"Sharing": {"DataType": 0.9}},
+            ),
+        )
+        data = asdict(entry)
+        assert data["scores"] == {
+            "contexts": {"Website": 0.8, "App": 0.1},
+            "topics": {"Sharing": 0.7},
+            "contents": {"Sharing": {"DataType": 0.9}},
+        }
+        assert StructuredEntry.from_dict(data) == entry
+
+    def test_entries_without_scores_serialize_to_none_and_load_old_files(self):
+        entry = make_entry(text="no scores")
+        data = asdict(entry)
+        assert data["scores"] is None
+        assert StructuredEntry.from_dict(data).scores is None
+
+        del data["scores"]  # results saved before scores were output
+        assert StructuredEntry.from_dict(data).scores is None
 
 
 # ---------------------------------------------------------------------------
@@ -494,7 +859,7 @@ class TestSmoothContext:
     def test_other_replaced_by_neighbour_intersection(self):
         entries = [
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website"]),
         ]
         smooth_context(entries)
@@ -503,11 +868,11 @@ class TestSmoothContext:
     def test_other_kept_when_no_intersection(self):
         entries = [
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["App"]),
         ]
         smooth_context(entries)
-        assert entries[1].contexts == ["Other"]
+        assert entries[1].contexts == ["Unspecified"]
 
     def test_non_other_context_not_modified(self):
         entries = [
@@ -526,7 +891,7 @@ class TestSmoothContext:
     def test_returns_stats_with_total(self):
         entries = [
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website"]),
         ]
         stats = smooth_context(entries)
@@ -535,30 +900,30 @@ class TestSmoothContext:
 
     def test_other_not_in_returned_stats(self):
         entries = [
-            make_entry(contexts=["Other"]),
-            make_entry(contexts=["Other"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
+            make_entry(contexts=["Unspecified"]),
+            make_entry(contexts=["Unspecified"]),
         ]
         stats = smooth_context(entries)
-        assert "Other" not in stats
+        assert "Unspecified" not in stats
 
     def test_first_and_last_entries_never_smoothed(self):
         entries = [
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
         ]
         smooth_context(entries)
         # Only the middle entry (index 1) is in the smoothing window
-        assert entries[0].contexts == ["Other"]
-        assert entries[2].contexts == ["Other"]
+        assert entries[0].contexts == ["Unspecified"]
+        assert entries[2].contexts == ["Unspecified"]
 
     def test_multiple_smoothed_entries_counted(self):
         entries = [
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website"]),
         ]
         stats = smooth_context(entries)
@@ -568,7 +933,7 @@ class TestSmoothContext:
     def test_intersection_used_when_multiple_shared_contexts(self):
         entries = [
             make_entry(contexts=["Website", "App"]),
-            make_entry(contexts=["Other"]),
+            make_entry(contexts=["Unspecified"]),
             make_entry(contexts=["Website", "App"]),
         ]
         smooth_context(entries)

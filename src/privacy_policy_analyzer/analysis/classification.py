@@ -12,6 +12,7 @@ from transformers import (
 
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.shared.annotation import (
+    UNSPECIFIED_CONTEXT,
     ContentAnnotation,
     RawEntry,
     TopicAnnotation,
@@ -94,6 +95,25 @@ class ModelConfigs:
             ("Third Party", self.third_party),
             ("User Rights", self.user_rights),
         ]
+
+    def content_models(self) -> dict[str, ModelConfig]:
+        """The content model of every topic, keyed by topic name."""
+        return {
+            "Audience": self.audience,
+            "Contact": self.contact,
+            "Control": self.control,
+            "Deletion": self.deletion,
+            "LegalBasis": self.legal_basis,
+            "Policy": self.policy,
+            "Processing": self.processing,
+            "Purpose": self.purpose,
+            "Retention": self.retention,
+            "Security/Privacy": self.security_privacy,
+            "Selling": self.selling,
+            "Sharing": self.sharing,
+            "ThirdParty": self.third_party,
+            "UserRights": self.user_rights,
+        }
 
     def test_load_models(self, prefer_onnx: bool):
         for name, config in self._get_model_configs():
@@ -203,12 +223,13 @@ def classify_context(
 
             label: str = pred["label"]
             score: float = pred["score"]
+            entry.scores.contexts[label] = score
             threshold = config.thresholds.get(label, DEFAULT_THRESHOLD)
             if score >= threshold:
                 entry.contexts.append(label)
 
         if entry.contexts == []:
-            entry.contexts.append("Other")
+            entry.contexts.append(UNSPECIFIED_CONTEXT)
 
     del model
 
@@ -242,6 +263,7 @@ def classify_topics(
 
             label: str = pred["label"]
             score: float = pred["score"]
+            entry.scores.topics[label] = score
             threshold = config.thresholds.get(label, DEFAULT_THRESHOLD)
             if score >= threshold:
                 entry.topics.append(TopicAnnotation(topic=label, contents=[]))
@@ -297,11 +319,13 @@ def classify_content(
         if tpc_idx is None:
             continue
 
+        topic_scores = entries[idx].scores.contents.setdefault(topic, {})
         for pred in prediction:
             pred: dict = pred
 
             label: str = pred["label"]
             score: float = pred["score"]
+            topic_scores[label] = score
             threshold = config.thresholds.get(label, DEFAULT_THRESHOLD)
             if score >= threshold:
                 entries[idx].topics[tpc_idx].contents.append(

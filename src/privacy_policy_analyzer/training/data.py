@@ -12,9 +12,12 @@ from privacy_policy_analyzer.shared.logging import get_logger
 logger = get_logger(__name__)
 
 
-def _build_label2id_map(labels: list[str]) -> dict[str, int]:
-    """Build label to ID mapping with 'Other' as the first label."""
-    label2id: dict[str, int] = {"Other": 0}
+def _build_label2id_map(labels: list[str], fallback: str = "Other") -> dict[str, int]:
+    """Build label to ID mapping with the fallback label as the first label.
+
+    The fallback is 'Other' for topics and contents and 'Unspecified' for contexts.
+    """
+    label2id: dict[str, int] = {fallback: 0}
     for label in labels:
         if label not in label2id:
             label2id[label] = len(label2id)
