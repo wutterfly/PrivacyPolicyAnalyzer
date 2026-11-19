@@ -9,7 +9,7 @@ from privacy_policy_analyzer.analysis.post_processing import (
     filter_src,
     merge_scores,
     propagate_headers,
-    smooth_context,
+    smooth_scope,
 )
 from privacy_policy_analyzer.analysis.structure import (
     Header,
@@ -30,14 +30,14 @@ from privacy_policy_analyzer.shared.annotation import (
 
 def make_entry(
     text: str = "text",
-    contexts: list[str] | None = None,
+    scopes: list[str] | None = None,
     topics: list[TopicAnnotation] | None = None,
     structure=None,
     scores: EntryScores | None = None,
 ) -> StructuredEntry:
     return StructuredEntry(
         text=text,
-        contexts=contexts or [],
+        scopes=scopes or [],
         topics=topics or [],
         structure=structure or Text(0),
         scores=scores,
@@ -96,11 +96,11 @@ class TestFilterSrc:
         )
         assert all(t.topic != "Processing" for t in result.topics)
 
-    def test_text_and_contexts_preserved(self):
-        src = make_entry(text="original text", contexts=["Website"])
+    def test_text_and_scopes_preserved(self):
+        src = make_entry(text="original text", scopes=["Website"])
         result = filter_src(src, [SkipRule(topic="Policy")])
         assert result.text == "original text"
-        assert result.contexts == ["Website"]
+        assert result.scopes == ["Website"]
 
     def test_src_not_mutated_by_filter(self):
         src = make_entry(topics=[make_topic("Policy", ("Overview", []))])
@@ -138,111 +138,111 @@ class TestFilterSrc:
 
 
 class TestPropagateHeaders:
-    def test_h1_context_propagates_to_following_text(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
-        body = make_entry(contexts=[], structure=Text(1))
+    def test_h1_scope_propagates_to_following_text(self):
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
+        body = make_entry(scopes=[], structure=Text(1))
         propagate_headers([header, body], skips=[])
-        assert "Website" in body.contexts
+        assert "Website" in body.scopes
 
     def test_h1_topic_propagates_to_following_text(self):
         header = make_entry(
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[make_topic("Processing", ("General", []))],
             structure=Header(level=1),
         )
-        body = make_entry(contexts=[], topics=[], structure=Text(1))
+        body = make_entry(scopes=[], topics=[], structure=Text(1))
         propagate_headers([header, body], skips=[])
         assert any(t.topic == "Processing" for t in body.topics)
 
     def test_h1_does_not_propagate_past_next_h1(self):
-        h1a = make_entry(contexts=["Website"], structure=Header(level=1))
-        h1b = make_entry(contexts=["App"], structure=Header(level=1))
-        body = make_entry(contexts=[], structure=Text(1))
+        h1a = make_entry(scopes=["Website"], structure=Header(level=1))
+        h1b = make_entry(scopes=["App"], structure=Header(level=1))
+        body = make_entry(scopes=[], structure=Text(1))
         propagate_headers([h1a, h1b, body], skips=[])
         # body follows h1b, so only App should come from header propagation
-        # (body starts with no contexts so it gets App from h1b)
-        assert "App" in body.contexts
+        # (body starts with no scopes so it gets App from h1b)
+        assert "App" in body.scopes
 
     def test_h2_does_not_propagate_upward_past_h1_reset(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        body1 = make_entry(contexts=[], structure=Text(1))
-        h2 = make_entry(contexts=["App"], structure=Header(level=2))
-        body2 = make_entry(contexts=[], structure=Text(2))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        body1 = make_entry(scopes=[], structure=Text(1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        body2 = make_entry(scopes=[], structure=Text(2))
         propagate_headers([h1, body1, h2, body2], skips=[])
         # body1 gets Website from h1; body2 gets both Website (h1) and App (h2)
-        assert "Website" in body1.contexts
-        assert "App" in body2.contexts
+        assert "Website" in body1.scopes
+        assert "App" in body2.scopes
 
     def test_skips_applied_during_propagation(self):
         header = make_entry(
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[
                 make_topic("Policy", ("Overview", [])),
                 make_topic("Processing", ("General", [])),
             ],
             structure=Header(level=1),
         )
-        body = make_entry(contexts=[], topics=[], structure=Text(1))
+        body = make_entry(scopes=[], topics=[], structure=Text(1))
         propagate_headers([header, body], skips=[SkipRule(topic="Policy")])
         topic_names = {t.topic for t in body.topics}
         assert "Policy" not in topic_names
         assert "Processing" in topic_names
 
     def test_non_header_entries_not_used_as_source(self):
-        text_entry = make_entry(contexts=["Website"], structure=Text(0))
-        body = make_entry(contexts=[], structure=Text(1))
+        text_entry = make_entry(scopes=["Website"], structure=Text(0))
+        body = make_entry(scopes=[], structure=Text(1))
         propagate_headers([text_entry, body], skips=[])
         # text_entry is not a header — should not propagate
-        assert body.contexts == []
+        assert body.scopes == []
 
     def test_lower_level_header_resets_on_higher_level(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        h2 = make_entry(contexts=["App"], structure=Header(level=2))
-        body = make_entry(contexts=[], structure=Text(1))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        body = make_entry(scopes=[], structure=Text(1))
         # A new h1 after h2 should clear the h1 tracking; here we check h2 still works
         propagate_headers([h1, h2, body], skips=[])
-        assert "App" in body.contexts
+        assert "App" in body.scopes
 
     # --- stats ---
 
-    def test_returns_dict_with_contexts_and_topics_keys(self):
+    def test_returns_dict_with_scopes_and_topics_keys(self):
         result = propagate_headers([], skips=[])
-        assert "contexts" in result
+        assert "scopes" in result
         assert "topics" in result
 
-    def test_context_stats_count_propagated_contexts(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        body1 = make_entry(contexts=[], structure=Text(1))
-        body2 = make_entry(contexts=[], structure=Text(2))
+    def test_scope_stats_count_propagated_scopes(self):
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        body1 = make_entry(scopes=[], structure=Text(1))
+        body2 = make_entry(scopes=[], structure=Text(2))
         stats = propagate_headers([h1, body1, body2], skips=[])
-        assert stats["contexts"].get("Website") == 2
-        assert stats["contexts"]["total"] == 2
+        assert stats["scopes"].get("Website") == 2
+        assert stats["scopes"]["total"] == 2
 
-    def test_context_stats_only_count_new_contexts(self):
+    def test_scope_stats_only_count_new_scopes(self):
         # body already has Website — propagating Website again should not count it
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        body = make_entry(contexts=["Website"], structure=Text(1))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        body = make_entry(scopes=["Website"], structure=Text(1))
         stats = propagate_headers([h1, body], skips=[])
-        assert stats["contexts"].get("Website", 0) == 0
-        assert stats["contexts"]["total"] == 0
+        assert stats["scopes"].get("Website", 0) == 0
+        assert stats["scopes"]["total"] == 0
 
-    def test_context_stats_other_excluded(self):
-        h1 = make_entry(contexts=["Unspecified"], structure=Header(level=1))
-        body = make_entry(contexts=[], structure=Text(1))
+    def test_scope_stats_other_excluded(self):
+        h1 = make_entry(scopes=["Unspecified"], structure=Header(level=1))
+        body = make_entry(scopes=[], structure=Text(1))
         stats = propagate_headers([h1, body], skips=[])
-        assert "Unspecified" not in stats["contexts"]
+        assert "Unspecified" not in stats["scopes"]
 
-    def test_context_stats_total_always_present(self):
+    def test_scope_stats_total_always_present(self):
         stats = propagate_headers([], skips=[])
-        assert "total" in stats["contexts"]
+        assert "total" in stats["scopes"]
 
-    def test_context_stats_multiple_contexts_counted_separately(self):
-        h1 = make_entry(contexts=["Website", "App"], structure=Header(level=1))
-        body = make_entry(contexts=[], structure=Text(1))
+    def test_scope_stats_multiple_scopes_counted_separately(self):
+        h1 = make_entry(scopes=["Website", "App"], structure=Header(level=1))
+        body = make_entry(scopes=[], structure=Text(1))
         stats = propagate_headers([h1, body], skips=[])
-        assert stats["contexts"].get("Website") == 1
-        assert stats["contexts"].get("App") == 1
-        assert stats["contexts"]["total"] == 2
+        assert stats["scopes"].get("Website") == 1
+        assert stats["scopes"].get("App") == 1
+        assert stats["scopes"]["total"] == 2
 
     def test_topic_stats_count_propagated_topics(self):
         h1 = make_entry(
@@ -298,47 +298,47 @@ class TestPropagateHeaders:
     # --- header nesting ---
 
     def test_nested_headers_all_propagate_when_a_level_is_skipped(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        h3 = make_entry(contexts=["App"], structure=Header(level=3))
-        body = make_entry(contexts=[], structure=Text(1))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h3 = make_entry(scopes=["App"], structure=Header(level=3))
+        body = make_entry(scopes=[], structure=Text(1))
         propagate_headers([h1, h3, body], skips=[])
-        assert set(body.contexts) == {"Website", "App"}
+        assert set(body.scopes) == {"Website", "App"}
 
     def test_shallower_header_closes_deeper_headers(self):
-        h1a = make_entry(contexts=["Website"], structure=Header(level=1))
-        h2a = make_entry(contexts=["App"], structure=Header(level=2))
-        body1 = make_entry(contexts=[], structure=Text(1))
-        h2b = make_entry(contexts=["Device"], structure=Header(level=2))
-        body2 = make_entry(contexts=[], structure=Text(2))
-        h1b = make_entry(contexts=["Store"], structure=Header(level=1))
-        body3 = make_entry(contexts=[], structure=Text(3))
+        h1a = make_entry(scopes=["Website"], structure=Header(level=1))
+        h2a = make_entry(scopes=["App"], structure=Header(level=2))
+        body1 = make_entry(scopes=[], structure=Text(1))
+        h2b = make_entry(scopes=["Device"], structure=Header(level=2))
+        body2 = make_entry(scopes=[], structure=Text(2))
+        h1b = make_entry(scopes=["Store"], structure=Header(level=1))
+        body3 = make_entry(scopes=[], structure=Text(3))
         propagate_headers([h1a, h2a, body1, h2b, body2, h1b, body3], skips=[])
-        assert set(body1.contexts) == {"Website", "App"}
-        assert set(body2.contexts) == {"Website", "Device"}
-        assert set(body3.contexts) == {"Store"}
+        assert set(body1.scopes) == {"Website", "App"}
+        assert set(body2.scopes) == {"Website", "Device"}
+        assert set(body3.scopes) == {"Store"}
 
     def test_headers_do_not_receive_labels_from_parent_headers(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        h2 = make_entry(contexts=[], structure=Header(level=2))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h2 = make_entry(scopes=[], structure=Header(level=2))
         propagate_headers([h1, h2], skips=[])
-        assert h2.contexts == []
-        assert h1.contexts == ["Website"]
+        assert h2.scopes == []
+        assert h1.scopes == ["Website"]
 
     def test_headers_deeper_than_h6_are_ignored(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        h7 = make_entry(contexts=["App"], structure=Header(level=7))
-        body = make_entry(contexts=[], structure=Text(1))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h7 = make_entry(scopes=["App"], structure=Header(level=7))
+        body = make_entry(scopes=[], structure=Text(1))
         propagate_headers([h1, h7, body], skips=[])
         # h7 is neither a source nor does it end h1's section
-        assert body.contexts == ["Website"]
+        assert body.scopes == ["Website"]
 
     # --- merge details ---
 
     def test_other_dropped_when_header_adds_a_real_label(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
-        body = make_entry(contexts=["Unspecified"], structure=Text(1))
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
+        body = make_entry(scopes=["Unspecified"], structure=Text(1))
         propagate_headers([header, body], skips=[])
-        assert body.contexts == ["Website"]
+        assert body.scopes == ["Website"]
 
     def test_attributes_of_same_content_are_merged_without_duplicates(self):
         header = make_entry(
@@ -368,17 +368,17 @@ class TestPropagateHeaders:
         assert body2.topics[0].contents[0].attributes == ["x"]
 
     def test_entry_lists_are_updated_in_place(self):
-        # contexts/topics are shared with the underlying RawEntry in the
+        # scopes/topics are shared with the underlying RawEntry in the
         # pipeline, so they must be mutated, not rebound
         header = make_entry(
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[make_topic("Processing", ("General", []))],
             structure=Header(level=1),
         )
         body = make_entry(structure=Text(1))
-        contexts, topics = body.contexts, body.topics
+        scopes, topics = body.scopes, body.topics
         propagate_headers([header, body], skips=[])
-        assert body.contexts is contexts and contexts == ["Website"]
+        assert body.scopes is scopes and scopes == ["Website"]
         assert body.topics is topics and len(topics) == 1
 
 
@@ -388,70 +388,70 @@ class TestPropagateHeaders:
 
 
 def make_scores(
-    contexts: dict[str, float] | None = None,
+    scopes: dict[str, float] | None = None,
     topics: dict[str, float] | None = None,
     contents: dict[str, dict[str, float]] | None = None,
 ) -> EntryScores:
     return EntryScores(
-        contexts=contexts or {}, topics=topics or {}, contents=contents or {}
+        scopes=scopes or {}, topics=topics or {}, contents=contents or {}
     )
 
 
 def uniform_gate(
-    contexts: float = 0.0, topics: float = 0.0, contents: float = 0.0
+    scopes: float = 0.0, topics: float = 0.0, contents: float = 0.0
 ) -> PropagationGate:
     return PropagationGate(
-        contexts=LabelFloors(contexts),
+        scopes=LabelFloors(scopes),
         topics=LabelFloors(topics),
         default_contents=LabelFloors(contents),
     )
 
 
 class TestGatedPropagation:
-    def test_context_inherited_when_own_score_reaches_floor(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+    def test_scope_inherited_when_own_score_reaches_floor(self):
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(
-            structure=Text(1), scores=make_scores(contexts={"Website": 0.3})
+            structure=Text(1), scores=make_scores(scopes={"Website": 0.3})
         )
         stats = propagate_headers(
-            [header, body], skips=[], gate=uniform_gate(contexts=0.25)
+            [header, body], skips=[], gate=uniform_gate(scopes=0.25)
         )
-        assert body.contexts == ["Website"]
-        assert stats["blocked"]["contexts"]["total"] == 0
+        assert body.scopes == ["Website"]
+        assert stats["blocked"]["scopes"]["total"] == 0
 
-    def test_context_blocked_when_own_score_is_below_floor(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+    def test_scope_blocked_when_own_score_is_below_floor(self):
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(
-            contexts=["App"],
+            scopes=["App"],
             structure=Text(1),
-            scores=make_scores(contexts={"Website": 0.1, "App": 0.9}),
+            scores=make_scores(scopes={"Website": 0.1, "App": 0.9}),
         )
         stats = propagate_headers(
-            [header, body], skips=[], gate=uniform_gate(contexts=0.25)
+            [header, body], skips=[], gate=uniform_gate(scopes=0.25)
         )
-        assert body.contexts == ["App"]
-        assert stats["blocked"]["contexts"] == {"Website": 1, "total": 1}
+        assert body.scopes == ["App"]
+        assert stats["blocked"]["scopes"] == {"Website": 1, "total": 1}
         # a blocked label is not counted as added
-        assert stats["contexts"]["total"] == 0
+        assert stats["scopes"]["total"] == 0
 
     def test_score_equal_to_floor_passes(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(
-            structure=Text(1), scores=make_scores(contexts={"Website": 0.25})
+            structure=Text(1), scores=make_scores(scopes={"Website": 0.25})
         )
-        propagate_headers([header, body], skips=[], gate=uniform_gate(contexts=0.25))
-        assert body.contexts == ["Website"]
+        propagate_headers([header, body], skips=[], gate=uniform_gate(scopes=0.25))
+        assert body.scopes == ["Website"]
 
     def test_labels_the_entry_already_has_do_not_need_a_score(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(
-            contexts=["Website"], structure=Text(1), scores=make_scores()
+            scopes=["Website"], structure=Text(1), scores=make_scores()
         )
         stats = propagate_headers(
-            [header, body], skips=[], gate=uniform_gate(contexts=0.9)
+            [header, body], skips=[], gate=uniform_gate(scopes=0.9)
         )
-        assert body.contexts == ["Website"]
-        assert stats["blocked"]["contexts"]["total"] == 0
+        assert body.scopes == ["Website"]
+        assert stats["blocked"]["scopes"]["total"] == 0
 
     def test_topic_blocked_below_floor_and_inherited_at_floor(self):
         def run(topic_score: float) -> tuple[StructuredEntry, dict]:
@@ -532,11 +532,11 @@ class TestGatedPropagation:
 
     def test_floors_can_differ_per_label_and_per_topic(self):
         gate = PropagationGate(
-            contexts=LabelFloors(0.1, {"Device": 0.8}),
+            scopes=LabelFloors(0.1, {"Device": 0.8}),
             contents={"Sharing": LabelFloors(0.9), "Retention": LabelFloors(0.0)},
         )
         header = make_entry(
-            contexts=["Website", "Device"],
+            scopes=["Website", "Device"],
             topics=[
                 make_topic("Sharing", ("Country", [])),
                 make_topic("Retention", ("Country", [])),
@@ -547,7 +547,7 @@ class TestGatedPropagation:
             topics=[make_topic("Sharing"), make_topic("Retention")],
             structure=Text(1),
             scores=make_scores(
-                contexts={"Website": 0.2, "Device": 0.5},
+                scopes={"Website": 0.2, "Device": 0.5},
                 contents={
                     "Sharing": {"Country": 0.5},
                     "Retention": {"Country": 0.5},
@@ -555,45 +555,45 @@ class TestGatedPropagation:
             ),
         )
         propagate_headers([header, body], skips=[], gate=gate)
-        assert body.contexts == ["Website"]  # Device: 0.5 < its floor of 0.8
+        assert body.scopes == ["Website"]  # Device: 0.5 < its floor of 0.8
         by_topic = {t.topic: [c.content for c in t.contents] for t in body.topics}
         assert by_topic == {"Sharing": [], "Retention": ["Country"]}
 
     def test_entry_without_scores_inherits_nothing_under_a_positive_floor(self):
         header = make_entry(
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[make_topic("Sharing")],
             structure=Header(level=1),
         )
         body = make_entry(structure=Text(1), scores=None)
         propagate_headers(
-            [header, body], skips=[], gate=uniform_gate(contexts=0.1, topics=0.1)
+            [header, body], skips=[], gate=uniform_gate(scopes=0.1, topics=0.1)
         )
-        assert body.contexts == [] and body.topics == []
+        assert body.scopes == [] and body.topics == []
 
     def test_zero_floors_let_everything_through(self):
         header = make_entry(
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[make_topic("Sharing", ("DataType", []))],
             structure=Header(level=1),
         )
         body = make_entry(structure=Text(1))
         propagate_headers([header, body], skips=[], gate=uniform_gate())
-        assert body.contexts == ["Website"]
+        assert body.scopes == ["Website"]
         assert [c.content for c in body.topics[0].contents] == ["DataType"]
 
     def test_each_active_header_is_gated_separately(self):
-        h1 = make_entry(contexts=["Website"], structure=Header(level=1))
-        h2 = make_entry(contexts=["App"], structure=Header(level=2))
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
         body = make_entry(
             structure=Text(1),
-            scores=make_scores(contexts={"Website": 0.6, "App": 0.05}),
+            scores=make_scores(scopes={"Website": 0.6, "App": 0.05}),
         )
         stats = propagate_headers(
-            [h1, h2, body], skips=[], gate=uniform_gate(contexts=0.3)
+            [h1, h2, body], skips=[], gate=uniform_gate(scopes=0.3)
         )
-        assert body.contexts == ["Website"]
-        assert stats["blocked"]["contexts"] == {"App": 1, "total": 1}
+        assert body.scopes == ["Website"]
+        assert stats["blocked"]["scopes"] == {"App": 1, "total": 1}
 
     def test_second_pass_adds_contents_once_the_topic_was_inherited(self):
         # first pass: the header only has the topic (contents are classified later)
@@ -628,20 +628,20 @@ class TestGatedPropagation:
         assert [t.topic for t in body.topics] == ["Sharing"]
 
     def test_blocked_stats_only_present_with_a_gate(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(structure=Text(1))
         assert "blocked" not in propagate_headers([header, body], skips=[])
         stats = propagate_headers([header, body], skips=[], gate=uniform_gate())
-        assert set(stats["blocked"]) == {"contexts", "topics", "contents"}
-        assert stats["blocked"]["contexts"]["total"] == 0
+        assert set(stats["blocked"]) == {"scopes", "topics", "contents"}
+        assert stats["blocked"]["scopes"]["total"] == 0
 
     def test_without_a_gate_scores_are_ignored(self):
-        header = make_entry(contexts=["Website"], structure=Header(level=1))
+        header = make_entry(scopes=["Website"], structure=Header(level=1))
         body = make_entry(
-            structure=Text(1), scores=make_scores(contexts={"Website": 0.0})
+            structure=Text(1), scores=make_scores(scopes={"Website": 0.0})
         )
         propagate_headers([header, body], skips=[])
-        assert body.contexts == ["Website"]
+        assert body.scopes == ["Website"]
 
 
 # ---------------------------------------------------------------------------
@@ -658,28 +658,28 @@ class TestMergeScores:
         merged = merge_scores(
             [
                 make_scores(
-                    contexts={"Website": 0.2, "App": 0.9},
+                    scopes={"Website": 0.2, "App": 0.9},
                     topics={"Sharing": 0.1},
                     contents={"Sharing": {"DataType": 0.3}},
                 ),
                 None,
                 make_scores(
-                    contexts={"Website": 0.7},
+                    scopes={"Website": 0.7},
                     topics={"Selling": 0.4},
                     contents={"Sharing": {"DataType": 0.1, "Country": 0.5}},
                 ),
             ]
         )
         assert merged is not None
-        assert merged.contexts == {"Website": 0.7, "App": 0.9}
+        assert merged.scopes == {"Website": 0.7, "App": 0.9}
         assert merged.topics == {"Sharing": 0.1, "Selling": 0.4}
         assert merged.contents == {"Sharing": {"DataType": 0.3, "Country": 0.5}}
 
     def test_inputs_are_not_modified(self):
-        first = make_scores(contexts={"Website": 0.2}, contents={"Sharing": {"A": 0.1}})
-        second = make_scores(contexts={"Website": 0.7}, contents={"Sharing": {"A": 0.9}})
+        first = make_scores(scopes={"Website": 0.2}, contents={"Sharing": {"A": 0.1}})
+        second = make_scores(scopes={"Website": 0.7}, contents={"Sharing": {"A": 0.9}})
         merge_scores([first, second])
-        assert first.contexts == {"Website": 0.2}
+        assert first.scopes == {"Website": 0.2}
         assert first.contents == {"Sharing": {"A": 0.1}}
 
     def test_combined_table_row_carries_the_merged_scores(self):
@@ -687,17 +687,17 @@ class TestMergeScores:
             make_entry(
                 text="Data type: email",
                 structure=TableCell(table_id=0, row_id=0),
-                scores=make_scores(contexts={"Website": 0.2}),
+                scores=make_scores(scopes={"Website": 0.2}),
             ),
             make_entry(
                 text="Purpose: billing",
                 structure=TableCell(table_id=0, row_id=0),
-                scores=make_scores(contexts={"Website": 0.6, "App": 0.1}),
+                scores=make_scores(scopes={"Website": 0.6, "App": 0.1}),
             ),
         ]
         (row,) = combine_table_rows(cells)
         assert row.scores is not None
-        assert row.scores.contexts == {"Website": 0.6, "App": 0.1}
+        assert row.scores.scopes == {"Website": 0.6, "App": 0.1}
 
     def test_combined_table_row_without_any_scores_has_none(self):
         cells = [
@@ -710,17 +710,17 @@ class TestMergeScores:
     def test_scores_survive_serialization(self):
         entry = make_entry(
             text="a sentence",
-            contexts=["Website"],
+            scopes=["Website"],
             topics=[make_topic("Sharing", ("DataType", []))],
             scores=make_scores(
-                contexts={"Website": 0.8, "App": 0.1},
+                scopes={"Website": 0.8, "App": 0.1},
                 topics={"Sharing": 0.7},
                 contents={"Sharing": {"DataType": 0.9}},
             ),
         )
         data = asdict(entry)
         assert data["scores"] == {
-            "contexts": {"Website": 0.8, "App": 0.1},
+            "scopes": {"Website": 0.8, "App": 0.1},
             "topics": {"Sharing": 0.7},
             "contents": {"Sharing": {"DataType": 0.9}},
         }
@@ -817,14 +817,14 @@ class TestCombineTableRows:
                 "col1",
                 table_id=1,
                 row_id=1,
-                contexts=["Website"],
+                scopes=["Website"],
                 topics=[make_topic("Processing", ("General", []))],
             ),
             self._cell(
                 "col2",
                 table_id=1,
                 row_id=1,
-                contexts=["App"],
+                scopes=["App"],
                 topics=[make_topic("Retention", ("Duration", []))],
             ),
         ]
@@ -851,90 +851,90 @@ class TestCombineTableRows:
 
 
 # ---------------------------------------------------------------------------
-# smooth_context
+# smooth_scope
 # ---------------------------------------------------------------------------
 
 
-class TestSmoothContext:
+class TestSmoothScope:
     def test_other_replaced_by_neighbour_intersection(self):
         entries = [
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website"]),
         ]
-        smooth_context(entries)
-        assert entries[1].contexts == ["Website"]
+        smooth_scope(entries)
+        assert entries[1].scopes == ["Website"]
 
     def test_other_kept_when_no_intersection(self):
         entries = [
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["App"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["App"]),
         ]
-        smooth_context(entries)
-        assert entries[1].contexts == ["Unspecified"]
+        smooth_scope(entries)
+        assert entries[1].scopes == ["Unspecified"]
 
-    def test_non_other_context_not_modified(self):
+    def test_non_other_scope_not_modified(self):
         entries = [
-            make_entry(contexts=["App"]),
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["App"]),
+            make_entry(scopes=["App"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["App"]),
         ]
-        smooth_context(entries)
-        assert entries[1].contexts == ["Website"]
+        smooth_scope(entries)
+        assert entries[1].scopes == ["Website"]
 
     def test_fewer_than_three_entries_returns_empty_dict(self):
-        assert smooth_context([]) == {}
-        assert smooth_context([make_entry()]) == {}
-        assert smooth_context([make_entry(), make_entry()]) == {}
+        assert smooth_scope([]) == {}
+        assert smooth_scope([make_entry()]) == {}
+        assert smooth_scope([make_entry(), make_entry()]) == {}
 
     def test_returns_stats_with_total(self):
         entries = [
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website"]),
         ]
-        stats = smooth_context(entries)
+        stats = smooth_scope(entries)
         assert "total" in stats
         assert stats["total"] == 1
 
     def test_other_not_in_returned_stats(self):
         entries = [
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Unspecified"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Unspecified"]),
         ]
-        stats = smooth_context(entries)
+        stats = smooth_scope(entries)
         assert "Unspecified" not in stats
 
     def test_first_and_last_entries_never_smoothed(self):
         entries = [
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
         ]
-        smooth_context(entries)
+        smooth_scope(entries)
         # Only the middle entry (index 1) is in the smoothing window
-        assert entries[0].contexts == ["Unspecified"]
-        assert entries[2].contexts == ["Unspecified"]
+        assert entries[0].scopes == ["Unspecified"]
+        assert entries[2].scopes == ["Unspecified"]
 
     def test_multiple_smoothed_entries_counted(self):
         entries = [
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website"]),
         ]
-        stats = smooth_context(entries)
+        stats = smooth_scope(entries)
         assert stats["total"] == 2
         assert stats.get("Website", 0) == 2
 
-    def test_intersection_used_when_multiple_shared_contexts(self):
+    def test_intersection_used_when_multiple_shared_scopes(self):
         entries = [
-            make_entry(contexts=["Website", "App"]),
-            make_entry(contexts=["Unspecified"]),
-            make_entry(contexts=["Website", "App"]),
+            make_entry(scopes=["Website", "App"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Website", "App"]),
         ]
-        smooth_context(entries)
-        assert set(entries[1].contexts) == {"Website", "App"}
+        smooth_scope(entries)
+        assert set(entries[1].scopes) == {"Website", "App"}

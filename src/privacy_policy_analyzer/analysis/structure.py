@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from privacy_policy_analyzer.shared.annotation import (
     ContentAnnotation,
@@ -47,12 +47,14 @@ class TableCell:
 @dataclass
 class StructuredEntry:
     text: str
-    contexts: list[str]
+    scopes: list[str]
     topics: list[TopicAnnotation]
     structure: Text | Header | List | TableCell
     # raw model scores for every label (see EntryScores); None where nothing was
     # classified, e.g. for entries without text of their own
     scores: EntryScores | None = None
+    # second scope layer: scope -> specific values (see RawEntry)
+    scope_specifics: dict[str, list[str]] = field(default_factory=dict)
 
     @staticmethod
     def from_dict(data: dict) -> "StructuredEntry":
@@ -96,7 +98,7 @@ class StructuredEntry:
         scores_data = data.get("scores")
         if scores_data is not None:
             scores = EntryScores(
-                contexts=dict(scores_data.get("contexts", {})),
+                scopes=dict(scores_data.get("scopes", {})),
                 topics=dict(scores_data.get("topics", {})),
                 contents={
                     topic: dict(contents)
@@ -106,10 +108,14 @@ class StructuredEntry:
 
         return StructuredEntry(
             text=data["text"],
-            contexts=data["contexts"],
+            scopes=data["scopes"],
             topics=topics,
             structure=structure,
             scores=scores,
+            scope_specifics={
+                scope: list(values)
+                for scope, values in data.get("scope_specifics", {}).items()
+            },
         )
 
 
@@ -210,7 +216,7 @@ class StructuredTextMappings:
 
         # construct raw entries
         raw_entries: list[RawEntry] = [
-            RawEntry(line_number=i, text=text, contexts=[], topics=[])
+            RawEntry(line_number=i, text=text, scopes=[], topics=[])
             for i, text in enumerate(texts)
         ]
 
@@ -227,16 +233,17 @@ class StructuredTextMappings:
                 raw_entry = self.raw_entries[mapping]
                 structured_entry = StructuredEntry(
                     text=raw_entry.text,
-                    contexts=raw_entry.contexts,
+                    scopes=raw_entry.scopes,
                     topics=raw_entry.topics,
                     structure=structure,
                     scores=raw_entry.scores,
+                    scope_specifics=raw_entry.scope_specifics,
                 )
                 structured_entries.append(structured_entry)
             else:
                 structured_entry = StructuredEntry(
                     text="",
-                    contexts=[],
+                    scopes=[],
                     topics=[],
                     structure=structure,
                 )

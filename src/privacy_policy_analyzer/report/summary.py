@@ -1007,11 +1007,11 @@ def extract_change_information(
     )
 
 
-# --------------- Context Information -----------------
+# --------------- Scope Information -----------------
 
 
 @dataclass
-class ContextInformation:
+class ScopeInformation:
     website: int
     app: int
     device: int
@@ -1025,8 +1025,8 @@ class ContextInformation:
     other: int
 
     @staticmethod
-    def from_json(data: dict) -> "ContextInformation":
-        return ContextInformation(
+    def from_json(data: dict) -> "ScopeInformation":
+        return ScopeInformation(
             website=int(data["website"]),
             app=int(data["app"]),
             device=int(data["device"]),
@@ -1041,9 +1041,9 @@ class ContextInformation:
         )
 
 
-def extract_context_information(
+def extract_scope_information(
     data: list[StructuredEntry],
-) -> ContextInformation:
+) -> ScopeInformation:
     website = 0
     app = 0
     device = 0
@@ -1057,33 +1057,33 @@ def extract_context_information(
     other = 0
 
     for entry in data:
-        for ctx in entry.contexts:
-            if ctx == "Website":
+        for scope in entry.scopes:
+            if scope == "Website":
                 website += 1
-            elif ctx == "App":
+            elif scope == "App":
                 app += 1
-            elif ctx == "Device":
+            elif scope == "Device":
                 device += 1
-            elif ctx == "Store":
+            elif scope == "Store":
                 store += 1
-            elif ctx == "BackendService":
+            elif scope == "BackendService":
                 backend += 1
-            elif ctx == "Recruitment":
+            elif scope == "Recruitment":
                 recruitment += 1
-            elif ctx == "Communication":
+            elif scope == "Communication":
                 communication += 1
-            elif ctx == "Account":
+            elif scope == "Account":
                 account += 1
-            elif ctx == "Services":
+            elif scope == "Services":
                 services += 1
-            elif ctx == "Event/Program":
+            elif scope == "Event/Program":
                 event += 1
-            elif ctx == "Unspecified":
+            elif scope == "Unspecified":
                 other += 1
             else:
                 assert False
 
-    return ContextInformation(
+    return ScopeInformation(
         website=website,
         app=app,
         device=device,
@@ -1404,9 +1404,9 @@ def extract_properties(
     look_in = ["Processing", "Sharing", "Retention", "Deletion", "Selling"]
 
     for entry in filtered:
-        if "BackendService" in entry.contexts:
+        if "BackendService" in entry.scopes:
             backend_sentence_number += 1
-        if "Account" in entry.contexts:
+        if "Account" in entry.scopes:
             account_sentence_number += 1
 
         if is_definition_entry(entry):
@@ -1527,7 +1527,7 @@ class SummaryReport:
     """Summary report of a privacy policy analysis."""
 
     policy: PolicyInformation
-    context: ContextInformation
+    scope: ScopeInformation
     purpose: PurposeInformation
     data_type: DataTypeInformation
     processing: ProcessingInformation
@@ -1548,7 +1548,7 @@ class SummaryReport:
     def from_json(data: dict) -> "SummaryReport":
         return SummaryReport(
             policy=PolicyInformation.from_json(data["policy"]),
-            context=ContextInformation.from_json(data["context"]),
+            scope=ScopeInformation.from_json(data["scope"]),
             purpose=PurposeInformation.from_json(data["purpose"]),
             data_type=DataTypeInformation.from_json(data["data_type"]),
             processing=ProcessingInformation.from_json(data["processing"]),
@@ -1575,26 +1575,26 @@ class SummaryReport:
 
 def create_summary_report(
     data: list[StructuredEntry],
-    include_contexts: list[str],
-    exclude_contexts: list[str],
+    include_scopes: list[str],
+    exclude_scopes: list[str],
     data_hierarchy: DataHierarchy = DEFAULT_HIERARCHY,
 ) -> SummaryReport:
     """Create a summary report from structured data entries."""
 
-    # extract context information before filtering
-    context = extract_context_information(data)
+    # extract scope information before filtering
+    scope = extract_scope_information(data)
 
     filtered = []
     for entry in data:
         include = False
-        for ctx in entry.contexts:
-            if include_contexts and ctx in include_contexts:
+        for scope in entry.scopes:
+            if include_scopes and scope in include_scopes:
                 include = True
-            if exclude_contexts and ctx in exclude_contexts:
+            if exclude_scopes and scope in exclude_scopes:
                 include = False
                 break
 
-        if include or (not include_contexts and not exclude_contexts):
+        if include or (not include_scopes and not exclude_scopes):
             filtered.append(entry)
 
     data_type = extract_data_type_information(filtered, data_hierarchy)
@@ -1608,10 +1608,10 @@ def create_summary_report(
     purpose = extract_purpose_information(filtered)
     third_party = extract_third_party_information(filtered)
 
-    # these are context-agnostic: contact details, user rights, boilerplate
+    # these are scope-agnostic: contact details, user rights, boilerplate
     # ratio and policy/change info apply to the whole policy regardless of
-    # which contexts were included/excluded, so they're extracted from the
-    # unfiltered data (like `context` above) rather than `filtered`.
+    # which scopes were included/excluded, so they're extracted from the
+    # unfiltered data (like `scope` above) rather than `filtered`.
     policy = extract_change_information(data)
     contact = extract_contact_information(data)
     user_rights = extract_user_rights_information(data)
@@ -1623,7 +1623,7 @@ def create_summary_report(
     #
     return SummaryReport(
         policy=policy,
-        context=context,
+        scope=scope,
         data_type=data_type,
         processing=processing,
         retention=retention,

@@ -61,14 +61,14 @@ class PropagationConfig:
     """
 
     enabled: bool = True
-    context_floor_ratio: float = 0.0
+    scope_floor_ratio: float = 0.0
     topic_floor_ratio: float = 0.0
     content_floor_ratio: float = 0.0
     min_score: float = 0.0
 
     def __post_init__(self):
         for name in (
-            "context_floor_ratio",
+            "scope_floor_ratio",
             "topic_floor_ratio",
             "content_floor_ratio",
             "min_score",
@@ -83,7 +83,7 @@ class PropagationConfig:
         return self.enabled and any(
             value > 0.0
             for value in (
-                self.context_floor_ratio,
+                self.scope_floor_ratio,
                 self.topic_floor_ratio,
                 self.content_floor_ratio,
                 self.min_score,
@@ -107,7 +107,7 @@ class PropagationConfig:
             )
 
         return PropagationGate(
-            contexts=floors(model_configs.context, self.context_floor_ratio),
+            scopes=floors(model_configs.scope, self.scope_floor_ratio),
             topics=floors(model_configs.topic, self.topic_floor_ratio),
             contents={
                 topic: floors(content_config, self.content_floor_ratio)
@@ -175,7 +175,7 @@ COMMON_ORG_EXCLUDED_TERMS: list[str] = [
 # --------- EN defaults ---------
 
 EN_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
-    context=ModelConfig(
+    scope=ModelConfig(
         model_name="Wravn/privacy-policy-context",
         thresholds={},
     ),
@@ -277,7 +277,7 @@ EN_DEFAULT_CONFIGURATION: PipelineConfiguration = PipelineConfiguration(
 # --------- DE defaults ---------
 
 DE_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
-    context=ModelConfig(
+    scope=ModelConfig(
         model_name="Immerwinter/gbert-large-privacy-policy-context",
         thresholds={
             "Unspecified": 0.6,

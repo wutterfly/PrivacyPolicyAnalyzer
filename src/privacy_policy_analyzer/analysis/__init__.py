@@ -15,7 +15,7 @@ from privacy_policy_analyzer.analysis.attributes import (
 from privacy_policy_analyzer.analysis.classification import (
     ModelConfigs,
     classify_content,
-    classify_context,
+    classify_scope,
     classify_topics,
 )
 from privacy_policy_analyzer.analysis.err import ModelLoadError
@@ -26,18 +26,18 @@ from privacy_policy_analyzer.shared.logging import get_logger
 logger = get_logger(__name__)
 
 
-def classify_contexts_and_topics(
+def classify_scopes_and_topics(
     entries: list[RawEntry],
     model_config: ModelConfigs,
     prefer_onnx: bool,
     cached: bool,
 ) -> ModelLoadError | None:
-    """Classify contexts and topics only (no contents, no attributes) - the
+    """Classify scopes and topics only (no contents, no attributes) - the
     first stage, run before header propagation so content classification can
     later see topics inherited from parent headers."""
     try:
-        logger.debug("Classifying contexts and topics for entries=%d", len(entries))
-        classify_context(entries, model_config.context, prefer_onnx, cached)
+        logger.debug("Classifying scopes and topics for entries=%d", len(entries))
+        classify_scope(entries, model_config.scope, prefer_onnx, cached)
         classify_topics(entries, model_config.topic, prefer_onnx, cached)
     except ModelLoadError as e:
         return e

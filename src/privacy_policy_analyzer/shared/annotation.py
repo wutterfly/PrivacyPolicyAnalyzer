@@ -6,9 +6,9 @@ from privacy_policy_analyzer.shared.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Fallback labels used when no real label applies: scopes (contexts) fall back
+# Fallback labels used when no real label applies: scopes (scopes) fall back
 # to "Unspecified", topics and contents fall back to "Other".
-UNSPECIFIED_CONTEXT = "Unspecified"
+UNSPECIFIED_SCOPE = "Unspecified"
 OTHER = "Other"
 
 
@@ -37,7 +37,7 @@ class EntryScores:
     propagation. Transient: never serialized with the analysis results.
     """
 
-    contexts: dict[str, float] = field(default_factory=dict)
+    scopes: dict[str, float] = field(default_factory=dict)
     topics: dict[str, float] = field(default_factory=dict)
     # topic -> content -> score; only for topics the entry had when the
     # content model of that topic ran
@@ -50,9 +50,12 @@ class RawEntry:
 
     line_number: int
     text: str
-    contexts: list[str]
+    scopes: list[str]
     topics: list[TopicAnnotation]
     scores: EntryScores = field(default_factory=EntryScores, repr=False, compare=False)
+    # second scope layer: for every scope with specifics (e.g. Device, Communication,
+    # Event/Program) a list of specific values, possibly empty, e.g. {"Device": ["Camera"]}
+    scope_specifics: dict[str, list[str]] = field(default_factory=dict)
 
 
 def read_raw_entry(data: dict) -> RawEntry:
@@ -60,10 +63,23 @@ def read_raw_entry(data: dict) -> RawEntry:
 
     line_number = data["line_number"]
     text = data["text"]
-    contexts = data.get("annotations", data)["contexts"]
-    assert all(isinstance(context, str) for context in contexts), (
-        "All contexts must be strings"
+    scopes = data.get("annotations", data)["scopes"]
+    assert all(isinstance(scope, str) for scope in scopes), (
+        "All scopes must be strings"
     )
+    annotations_ = data.get("annotations", data)
+    assert "scopeSpecifics" in annotations_, "scopeSpecifics is required"
+    scope_specifics_ = annotations_["scopeSpecifics"]
+    assert isinstance(scope_specifics_, dict) and all(
+        isinstance(scope, str)
+        and isinstance(values, list)
+        and all(isinstance(value, str) for value in values)
+        for scope, values in scope_specifics_.items()
+    ), "scopeSpecifics must map a scope to a list of strings"
+    assert all(scope in scopes for scope in scope_specifics_), (
+        "scopeSpecifics may only have keys of selected scopes"
+    )
+    scope_specifics = {scope: list(values) for scope, values in scope_specifics_.items()}
     topics_ = data.get("annotations", data)["topics"]
     topics = []
     try:
@@ -94,8 +110,9 @@ def read_raw_entry(data: dict) -> RawEntry:
     return RawEntry(
         line_number=line_number,
         text=text,
-        contexts=contexts,
+        scopes=scopes,
         topics=topics,
+        scope_specifics=scope_specifics,
     )
 
 

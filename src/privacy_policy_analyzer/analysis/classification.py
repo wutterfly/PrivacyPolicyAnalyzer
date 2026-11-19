@@ -12,7 +12,7 @@ from transformers import (
 
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.shared.annotation import (
-    UNSPECIFIED_CONTEXT,
+    UNSPECIFIED_SCOPE,
     ContentAnnotation,
     RawEntry,
     TopicAnnotation,
@@ -58,7 +58,7 @@ class ModelConfig:
 class ModelConfigs:
     """Configuration for all models used in the pipeline."""
 
-    context: ModelConfig
+    scope: ModelConfig
     topic: ModelConfig
     audience: ModelConfig
     contact: ModelConfig
@@ -78,7 +78,7 @@ class ModelConfigs:
     def _get_model_configs(self) -> list[tuple[str, ModelConfig]]:
         """Return all model configs with their display names."""
         return [
-            ("Context", self.context),
+            ("Scope", self.scope),
             ("Topic", self.topic),
             ("Audience", self.audience),
             ("Contact", self.contact),
@@ -194,7 +194,7 @@ def _load_pipeline(
         return ModelLoadError(model_name, str(e))
 
 
-def classify_context(
+def classify_scope(
     entries: list[RawEntry], config: ModelConfig, prefer_onnx: bool, cached: bool
 ):
     model = _load_pipeline(
@@ -205,7 +205,7 @@ def classify_context(
     )
     if isinstance(model, ModelLoadError):
         raise model
-    logger.debug("Classifying context ....")
+    logger.debug("Classifying scope ....")
 
     texts = [entry.text for entry in entries]
 
@@ -223,13 +223,13 @@ def classify_context(
 
             label: str = pred["label"]
             score: float = pred["score"]
-            entry.scores.contexts[label] = score
+            entry.scores.scopes[label] = score
             threshold = config.thresholds.get(label, DEFAULT_THRESHOLD)
             if score >= threshold:
-                entry.contexts.append(label)
+                entry.scopes.append(label)
 
-        if entry.contexts == []:
-            entry.contexts.append(UNSPECIFIED_CONTEXT)
+        if entry.scopes == []:
+            entry.scopes.append(UNSPECIFIED_SCOPE)
 
     del model
 

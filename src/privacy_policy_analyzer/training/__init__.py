@@ -26,7 +26,7 @@ from transformers.trainer_callback import PrinterCallback
 
 from privacy_policy_analyzer.shared.annotation import (
     OTHER,
-    UNSPECIFIED_CONTEXT,
+    UNSPECIFIED_SCOPE,
     RawEntry,
 )
 from privacy_policy_analyzer.shared.logging import get_logger
@@ -34,7 +34,7 @@ from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
 from privacy_policy_analyzer.training.data import (
     _build_label2id_map,
     extract_training_data_content,
-    extract_training_data_context,
+    extract_training_data_scope,
     extract_training_data_topics,
     oversample_minority_labels,
     # split_dataset,
@@ -334,7 +334,7 @@ class ModelTrainingConfig:
     output_dir: Path
     training_files: list[list[RawEntry]]
     labels: list[str]
-    scope: Literal["context", "topic", "content"]
+    level: Literal["scope", "topic", "content"]
     content_topic: str | None
     train_eval_test_split: tuple[float, float, float]
     oversampling_ratio: float
@@ -344,14 +344,14 @@ class ModelTrainingConfig:
         """Execute the training based on the configuration."""
 
         # load label2id mapping
-        fallback = UNSPECIFIED_CONTEXT if self.scope == "context" else OTHER
+        fallback = UNSPECIFIED_SCOPE if self.level == "scope" else OTHER
         label2id = _build_label2id_map(self.labels, fallback)
 
-        # extract dataset based on scope
+        # extract dataset based on level
         dataset: Dataset | None = None
-        if self.scope == "context":
-            dataset = extract_training_data_context(self.training_files, label2id)
-        elif self.scope == "topic":
+        if self.level == "scope":
+            dataset = extract_training_data_scope(self.training_files, label2id)
+        elif self.level == "topic":
             dataset = extract_training_data_topics(self.training_files, label2id)
         else:  # content
             assert self.content_topic is not None
@@ -361,7 +361,7 @@ class ModelTrainingConfig:
 
         assert dataset is not None
         logger.info(
-            "Training dataset size=%d samples scope=%s", len(dataset), self.scope
+            "Training dataset size=%d samples level=%s", len(dataset), self.level
         )
         _train_model_on_dataset(
             dataset=dataset,
@@ -394,13 +394,13 @@ def get_label_distribution(
     else:
         assert False, "Invalid data for label distribution."
 
-    contexts: dict[str, int] = {}
+    scopes: dict[str, int] = {}
     topics: dict[str, int] = {}
     contents: dict[str, dict[str, int]] = {}
 
     for entry in combined:
-        for ctx in entry.contexts:
-            contexts[ctx] = contexts.get(ctx, 0) + 1
+        for scope in entry.scopes:
+            scopes[scope] = scopes.get(scope, 0) + 1
 
         for tpc in entry.topics:
             topics[tpc.topic] = topics.get(tpc.topic, 0) + 1
@@ -412,7 +412,7 @@ def get_label_distribution(
 
     return {
         "len": len(combined),
-        "contexts": contexts,
+        "scopes": scopes,
         "topics": topics,
         "contents": contents,
     }

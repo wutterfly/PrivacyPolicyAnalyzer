@@ -12,7 +12,7 @@ from privacy_policy_analyzer.analysis.structure import (
 dst = StructuredEntry(
     text="We use cookies to track your activity on our website.",
     structure=Text(1),
-    contexts=["Website"],
+    scopes=["Website"],
     topics=[
         TopicAnnotation(
             topic="Processing",
@@ -28,7 +28,7 @@ dst = StructuredEntry(
 src = StructuredEntry(
     text="We also use web beacons and share data with Google Analytics.",
     structure=Text(1),
-    contexts=["App"],
+    scopes=["App"],
     topics=[
         TopicAnnotation(
             topic="Processing",
@@ -54,9 +54,9 @@ src = StructuredEntry(
 )
 
 
-def test_contexts_merged():
+def test_scopes_merged():
     result = merge_entries(dst, src)
-    assert set(result.contexts) == {"Website", "App"}
+    assert set(result.scopes) == {"Website", "App"}
 
 
 def test_dst_text_preserved():
@@ -96,13 +96,13 @@ def test_third_party_company_attribute():
 
 def test_dst_not_mutated():
     merge_entries(dst, src)
-    assert dst.contexts == ["Website"]
+    assert dst.scopes == ["Website"]
     assert len(dst.topics) == 1
 
 
 def test_src_not_mutated():
     merge_entries(dst, src)
-    assert src.contexts == ["App"]
+    assert src.scopes == ["App"]
     assert len(src.topics) == 3
 
 

@@ -375,6 +375,19 @@
                 margin-top: 8px;
             }
 
+            .specifics-section {
+                margin-top: 8px;
+                margin-left: 12px;
+                padding-left: 8px;
+                border-left: 3px solid #cfd8dc;
+            }
+
+            .add-specific-button {
+                padding: 4px 10px;
+                margin-left: 4px;
+                cursor: pointer;
+            }
+
             .add-attribute-section {
                 margin-top: 8px;
                 padding: 8px;
@@ -621,11 +634,11 @@
 
                             // Validate schema structure
                             if (
-                                !loadedSchema.context ||
-                                !Array.isArray(loadedSchema.context)
+                                !loadedSchema.scope ||
+                                !Array.isArray(loadedSchema.scope)
                             ) {
                                 throw new Error(
-                                    "Schema must have a 'context' array",
+                                    "Schema must have a 'scope' array",
                                 );
                             }
                             if (
@@ -817,7 +830,8 @@
                 }
 
                 const annotation = annotations[currentIndex] || {
-                    contexts: [],
+                    scopes: [],
+                    scopeSpecifics: {},
                     topics: [],
                 };
                 area.innerHTML = createAnnotationLineHTML(
@@ -851,26 +865,27 @@
                           </div>
                           <div class="line-text">${escapeHtml(line)}</div>
 
-                          <!-- Context Section -->
+                          <!-- Scope Section -->
                           <div class="annotation-section">
-                              <div class="section-title">Context (select one or "Unspecified")</div>
+                              <div class="section-title">Scope (select one or "Unspecified")</div>
                               <div class="label-buttons">
-                                  ${SCHEMA.context
+                                  ${SCHEMA.scope
                                       .map(
-                                          (ctx) => `
-                                      <button class="label-button context-button ${
-                                          annotation.contexts.includes(ctx)
+                                          (scope) => `
+                                      <button class="label-button scope-button ${
+                                          annotation.scopes.includes(scope)
                                               ? "selected"
                                               : ""
                                       }"
                                               data-line="${index}"
-                                              data-context="${ctx}">
-                                          ${ctx}
+                                              data-scope="${scope}">
+                                          ${scope}
                                       </button>
                                   `,
                                       )
                                       .join("")}
                               </div>
+                              ${createScopeSpecificsHTML(index, annotation)}
                           </div>
 
                           <!-- Topics Section -->
@@ -1078,11 +1093,23 @@
             }
 
             function attachEventListeners() {
-                // Context buttons
+                // Scope specifics buttons
                 document
-                    .querySelectorAll(".context-button")
+                    .querySelectorAll(".specific-button")
                     .forEach((button) => {
-                        button.addEventListener("click", handleContextClick);
+                        button.addEventListener("click", handleSpecificClick);
+                    });
+                document
+                    .querySelectorAll(".add-specific-button")
+                    .forEach((button) => {
+                        button.addEventListener("click", handleAddSpecific);
+                    });
+
+                // Scope buttons
+                document
+                    .querySelectorAll(".scope-button")
+                    .forEach((button) => {
+                        button.addEventListener("click", handleScopeClick);
                     });
 
                 // Topic buttons
@@ -1152,42 +1179,178 @@
                 });
             }
 
-            function handleContextClick(e) {
+            function createScopeSpecificsHTML(index, annotation) {
+                const specificsSchema = SCHEMA.scopeSpecifics || {};
+                const chosen = annotation.scopeSpecifics || {};
+                return annotation.scopes
+                    .filter((scope) => specificsSchema[scope] !== undefined)
+                    .map(
+                        (scope) => `
+                              <div class="specifics-section">
+                                  <div class="section-title">Specific ${scope} (optional)</div>
+                                  <div class="label-buttons">
+                                      ${(specificsSchema[scope] || [])
+                                          .map(
+                                              (sp) => `
+                                          <button class="label-button specific-button ${
+                                              (chosen[scope] || []).includes(sp)
+                                                  ? "selected"
+                                                  : ""
+                                          }"
+                                                  data-line="${index}"
+                                                  data-scope="${scope}"
+                                                  data-specific="${sp}">
+                                              ${sp}
+                                          </button>
+                                      `,
+                                          )
+                                          .join("")}
+                                      ${(chosen[scope] || [])
+                                          .filter(
+                                              (sp) =>
+                                                  !(specificsSchema[scope] || []).includes(
+                                                      sp,
+                                                  ),
+                                          )
+                                          .map(
+                                              (sp) => `
+                                          <button class="label-button specific-button custom-attribute selected"
+                                                  data-line="${index}"
+                                                  data-scope="${scope}"
+                                                  data-specific="${sp}">
+                                              ${sp}
+                                          </button>
+                                      `,
+                                          )
+                                          .join("")}
+                                  </div>
+                                  <div class="custom-attribute-input">
+                                      <input type="text"
+                                             placeholder="Other ${scope} value"
+                                             class="custom-attr-input specific-input">
+                                      <button class="add-specific-button"
+                                              data-line="${index}"
+                                              data-scope="${scope}">
+                                          Add
+                                      </button>
+                                  </div>
+                              </div>
+                          `,
+                    )
+                    .join("");
+            }
+
+            function handleSpecificClick(e) {
                 const lineIndex = parseInt(e.target.dataset.line);
-                const context = e.target.dataset.context;
+                const scope = e.target.dataset.scope;
+                const specific = e.target.dataset.specific;
+
+                const annotation = annotations[lineIndex];
+                if (!annotation || !annotation.scopes.includes(scope)) return;
+                if (!annotation.scopeSpecifics) annotation.scopeSpecifics = {};
+                if (!annotation.scopeSpecifics[scope]) annotation.scopeSpecifics[scope] = [];
+
+                const values = annotation.scopeSpecifics[scope];
+                const idx = values.indexOf(specific);
+                if (idx > -1) {
+                    values.splice(idx, 1);
+                } else {
+                    values.push(specific);
+                }
+                syncScopeSpecifics(lineIndex);
+                renderCurrentSentence();
+            }
+
+            function handleAddSpecific(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const scope = e.target.dataset.scope;
+                const value = e.target.previousElementSibling.value.trim();
+                if (!value) return;
+
+                const annotation = annotations[lineIndex];
+                if (!annotation || !annotation.scopes.includes(scope)) return;
+                if (!annotation.scopeSpecifics) annotation.scopeSpecifics = {};
+                if (!annotation.scopeSpecifics[scope]) annotation.scopeSpecifics[scope] = [];
+                if (!annotation.scopeSpecifics[scope].includes(value)) {
+                    annotation.scopeSpecifics[scope].push(value);
+                }
+
+                // Add to schema if not already present
+                if (!SCHEMA.scopeSpecifics) SCHEMA.scopeSpecifics = {};
+                if (!SCHEMA.scopeSpecifics[scope]) SCHEMA.scopeSpecifics[scope] = [];
+                if (!SCHEMA.scopeSpecifics[scope].includes(value)) {
+                    SCHEMA.scopeSpecifics[scope].push(value);
+                }
+                renderCurrentSentence();
+            }
+
+            // scopeSpecifics always has one list (possibly empty) for every selected
+            // scope that has specifics in the schema, and nothing for other scopes
+            function requiredSpecifics(annotation) {
+                const schemaSpecifics = (SCHEMA && SCHEMA.scopeSpecifics) || {};
+                const current = annotation.scopeSpecifics || {};
+                const result = {};
+                annotation.scopes.forEach((scope) => {
+                    if (schemaSpecifics[scope] !== undefined) {
+                        result[scope] = current[scope] || [];
+                    }
+                });
+                return result;
+            }
+
+            function syncScopeSpecifics(lineIndex) {
+                const annotation = annotations[lineIndex];
+                if (!annotation) return;
+                annotation.scopeSpecifics = requiredSpecifics(annotation);
+            }
+
+            // Annotation as exported: scopes, scopeSpecifics (required), topics
+            function cleanAnnotation(annotation) {
+                const base = annotation || { scopes: [], topics: [] };
+                return {
+                    scopes: base.scopes,
+                    scopeSpecifics: requiredSpecifics(base),
+                    topics: base.topics,
+                };
+            }
+
+            function handleScopeClick(e) {
+                const lineIndex = parseInt(e.target.dataset.line);
+                const scope = e.target.dataset.scope;
 
                 if (!annotations[lineIndex]) {
-                    annotations[lineIndex] = { contexts: [], topics: [] };
+                    annotations[lineIndex] = { scopes: [], scopeSpecifics: {}, topics: [] };
                 }
 
                 // If clicking "Unspecified"
-                if (context === "Unspecified") {
+                if (scope === "Unspecified") {
                     // If "Unspecified" is already selected, deselect it
-                    if (annotations[lineIndex].contexts.includes("Unspecified")) {
-                        annotations[lineIndex].contexts = [];
+                    if (annotations[lineIndex].scopes.includes("Unspecified")) {
+                        annotations[lineIndex].scopes = [];
                     } else {
                         // Otherwise, select only "Unspecified"
-                        annotations[lineIndex].contexts = ["Unspecified"];
+                        annotations[lineIndex].scopes = ["Unspecified"];
                     }
                 } else {
-                    // Clicking a non-Unspecified context
+                    // Clicking a non-Unspecified scope
                     // First check if "Unspecified" is selected, if so, remove it
                     const otherIndex =
-                        annotations[lineIndex].contexts.indexOf("Unspecified");
+                        annotations[lineIndex].scopes.indexOf("Unspecified");
                     if (otherIndex > -1) {
-                        annotations[lineIndex].contexts.splice(otherIndex, 1);
+                        annotations[lineIndex].scopes.splice(otherIndex, 1);
                     }
 
-                    // Then toggle the clicked context
-                    const contextIndex =
-                        annotations[lineIndex].contexts.indexOf(context);
-                    if (contextIndex > -1) {
-                        annotations[lineIndex].contexts.splice(contextIndex, 1);
+                    // Then toggle the clicked scope
+                    const scopeIndex =
+                        annotations[lineIndex].scopes.indexOf(scope);
+                    if (scopeIndex > -1) {
+                        annotations[lineIndex].scopes.splice(scopeIndex, 1);
                     } else {
-                        annotations[lineIndex].contexts.push(context);
+                        annotations[lineIndex].scopes.push(scope);
                     }
                 }
 
+                syncScopeSpecifics(lineIndex);
                 renderCurrentSentence();
             }
 
@@ -1196,7 +1359,7 @@
                 const topic = e.target.dataset.topic;
 
                 if (!annotations[lineIndex]) {
-                    annotations[lineIndex] = { contexts: [], topics: [] };
+                    annotations[lineIndex] = { scopes: [], scopeSpecifics: {}, topics: [] };
                 }
 
                 // If clicking "Other" topic
@@ -1365,7 +1528,7 @@
 
             function handleClearClick(e) {
                 const lineIndex = parseInt(e.target.dataset.line);
-                annotations[lineIndex] = { contexts: [], topics: [] };
+                annotations[lineIndex] = { scopes: [], scopeSpecifics: {}, topics: [] };
                 renderCurrentSentence();
             }
 
@@ -1376,10 +1539,7 @@
                     const exportData = lines.map((line, index) => ({
                         line_number: index + 1,
                         text: line,
-                        annotations: annotations[index] || {
-                            contexts: [],
-                            topics: [],
-                        },
+                        annotations: cleanAnnotation(annotations[index]),
                     }));
 
                     const dataStr = JSON.stringify(exportData, null, 2);

@@ -18,11 +18,11 @@ if __name__ == "__main__":
     # Assuming `policy_result` is an instance of `PolicyResult` obtained from analysis
     policy: PolicyResult = PolicyResult.from_json(policy_json)
 
-    include_contexts: list[str] = []
-    exclude_contexts: list[str] = []
+    include_scopes: list[str] = []
+    exclude_scopes: list[str] = []
 
     # Generate and print summary report
-    summary = create_summary_report(policy.analyzed, include_contexts, exclude_contexts)
+    summary = create_summary_report(policy.analyzed, include_scopes, exclude_scopes)
 
     with open("summary_report.json", "w", encoding="utf-8") as f:
         json.dump(summary.to_json(), f, indent=2)

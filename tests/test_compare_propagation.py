@@ -19,13 +19,13 @@ spec.loader.exec_module(cp)
 
 def entry(
     text: str = "a sentence",
-    contexts: list[str] | None = None,
+    scopes: list[str] | None = None,
     topics: dict[str, list[str]] | None = None,
     scores: dict | None = None,
 ) -> dict:
     return {
         "text": text,
-        "contexts": contexts or [],
+        "scopes": scopes or [],
         "topics": [
             {"topic": t, "contents": [{"content": c, "attributes": []} for c in cs]}
             for t, cs in (topics or {}).items()
@@ -42,7 +42,7 @@ def entry(
 
 class TestLabels:
     def test_label_sets_per_level(self):
-        e = entry(contexts=["Website"], topics={"Sharing": ["DataType", "Country"], "Selling": []})
+        e = entry(scopes=["Website"], topics={"Sharing": ["DataType", "Country"], "Selling": []})
         sets = cp.label_sets(e)
         assert sets["scope"] == {"Website"}
         assert sets["topic"] == {"Sharing", "Selling"}
@@ -56,7 +56,7 @@ class TestLabels:
 
     def test_own_score_of_every_level(self):
         scores = {
-            "contexts": {"Website": 0.8},
+            "scopes": {"Website": 0.8},
             "topics": {"Sharing": 0.35},
             "contents": {"Sharing": {"DataType": 0.9}},
         }
@@ -66,7 +66,7 @@ class TestLabels:
         assert cp.own_score(e, "content", ("Sharing", "DataType")) == 0.9
 
     def test_own_score_is_none_when_missing(self):
-        scores = {"contexts": {}, "topics": {}, "contents": {}}
+        scores = {"scopes": {}, "topics": {}, "contents": {}}
         assert cp.own_score(entry(scores=None), "scope", "Website") is None
         assert cp.own_score(entry(scores=scores), "scope", "Website") is None
         assert cp.own_score(entry(scores=scores), "content", ("Sharing", "DataType")) is None
@@ -97,10 +97,10 @@ class TestLabels:
 class TestSummarize:
     def test_shares_and_labels_per_entry(self):
         entries = [
-            entry("a", contexts=["Website"], topics={"Sharing": ["DataType"]}),
-            entry("b", contexts=["Unspecified"], topics={"Other": []}),
-            entry("c", contexts=["App", "Device"], topics={"Sharing": []}),
-            entry("", contexts=["Website"]),  # no text of its own: not counted
+            entry("a", scopes=["Website"], topics={"Sharing": ["DataType"]}),
+            entry("b", scopes=["Unspecified"], topics={"Other": []}),
+            entry("c", scopes=["App", "Device"], topics={"Sharing": []}),
+            entry("", scopes=["Website"]),  # no text of its own: not counted
         ]
         s = cp.summarize([entries])
         assert s["entries"] == 3
@@ -116,7 +116,7 @@ class TestSummarize:
         assert s["label_counts"]["content"] == {"Sharing:DataType": 1}
 
     def test_works_over_several_policies(self):
-        s = cp.summarize([[entry("a", contexts=["Website"])], [entry("b", contexts=["Unspecified"])]])
+        s = cp.summarize([[entry("a", scopes=["Website"])], [entry("b", scopes=["Unspecified"])]])
         assert s["entries"] == 2
         assert s["scope_other_share"] == 0.5
 
@@ -126,7 +126,7 @@ class TestSummarize:
 
 class TestCompareRuns:
     def test_identical_runs(self):
-        lists = [[entry("a", contexts=["Website"], topics={"Sharing": ["DataType"]})]]
+        lists = [[entry("a", scopes=["Website"], topics={"Sharing": ["DataType"]})]]
         result = cp.compare_runs(lists, lists)
         for level in cp.LEVELS:
             assert result[level]["differing_entries"] == 0
@@ -134,10 +134,10 @@ class TestCompareRuns:
             assert result[level]["labels_only_in_a"] == result[level]["labels_only_in_b"] == 0
 
     def test_differences_per_level(self):
-        a = [[entry("one", contexts=["Website"]), entry("two", topics={"Sharing": []})]]
+        a = [[entry("one", scopes=["Website"]), entry("two", topics={"Sharing": []})]]
         b = [
             [
-                entry("one", contexts=["Website", "App"]),
+                entry("one", scopes=["Website", "App"]),
                 entry("two", topics={"Sharing": [], "Selling": []}),
             ]
         ]
@@ -162,7 +162,7 @@ class TestCompareRuns:
         assert result["content"]["top_only_in_a"] == [("Sharing:DataType", 1)]
 
     def test_entries_without_text_are_ignored(self):
-        result = cp.compare_runs([[entry("", contexts=["A"])]], [[entry("", contexts=["B"])]])
+        result = cp.compare_runs([[entry("", scopes=["A"])]], [[entry("", scopes=["B"])]])
         assert result["scope"]["entries"] == 0
         assert result["scope"]["differing_entries"] == 0
 
@@ -172,7 +172,7 @@ class TestAddedLabelScores:
         base = [[entry("one"), entry("two"), entry("three")]]
 
         def scored(topic_score: float) -> dict:
-            return {"contexts": {}, "topics": {"Sharing": topic_score}, "contents": {}}
+            return {"scopes": {}, "topics": {"Sharing": topic_score}, "contents": {}}
 
         run = [
             [
@@ -197,38 +197,38 @@ class TestAddedLabelScores:
         assert added["median"] is None
 
     def test_nothing_added(self):
-        lists = [[entry("one", contexts=["Website"])]]
+        lists = [[entry("one", scopes=["Website"])]]
         added = cp.added_label_scores(lists, lists)
         assert all(added[level]["added"] == 0 for level in cp.LEVELS)
 
 
 def test_propagation_totals_count_what_was_added_in_both_passes_and_blocked_once():
     def stats(added_topics: int, blocked: dict | None) -> dict:
-        part = {"contexts": {"total": 1}, "topics": {"total": added_topics}}
+        part = {"scopes": {"total": 1}, "topics": {"total": added_topics}}
         if blocked:
             part["blocked"] = {k: {"total": v} for k, v in blocked.items()}
         return part
 
     def result(first: dict, second: dict) -> dict:
-        return {"stats": {"propagate": {"context_topic": first, "content": second}}}
+        return {"stats": {"propagate": {"scope_topic": first, "content": second}}}
 
     totals = cp.propagation_totals(
         [
             result(
-                stats(2, {"contexts": 1, "topics": 2, "contents": 0}),
+                stats(2, {"scopes": 1, "topics": 2, "contents": 0}),
                 # the second pass blocks the same scopes and topics again, plus contents
-                stats(0, {"contexts": 1, "topics": 2, "contents": 3}),
+                stats(0, {"scopes": 1, "topics": 2, "contents": 3}),
             ),
             result(
-                stats(1, {"contexts": 0, "topics": 1, "contents": 0}),
-                stats(0, {"contexts": 0, "topics": 1, "contents": 4}),
+                stats(1, {"scopes": 0, "topics": 1, "contents": 0}),
+                stats(0, {"scopes": 0, "topics": 1, "contents": 4}),
             ),
         ]
     )
     assert totals == {
         "added_scopes": 4,
         "added_topics": 3,
-        "blocked_contexts": 1,
+        "blocked_scopes": 1,
         "blocked_topics": 3,
         "blocked_contents": 7,
     }
@@ -273,7 +273,7 @@ def topic_scores(text: str) -> dict[str, float]:
 def fake_models(monkeypatch):
     base = EN_DEFAULT_CONFIGURATION.model_configs
     score_fns = {
-        base.context.model_name: lambda text: {"Website": 0.8},
+        base.scope.model_name: lambda text: {"Website": 0.8},
         base.topic.model_name: topic_scores,
     }
     for config in base.content_models().values():

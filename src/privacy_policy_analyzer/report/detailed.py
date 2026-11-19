@@ -77,8 +77,8 @@ class DetailedReport:
 
 def create_detailed_report(
     data: list[StructuredEntry],
-    include_contexts: list[str],
-    exclude_contexts: list[str],
+    include_scopes: list[str],
+    exclude_scopes: list[str],
 ) -> DetailedReport:
     """Create a detailed report from structured data entries."""
 
@@ -93,11 +93,11 @@ def create_detailed_report(
 
         # check current entry include/exclude
         include = False
-        for ctx in entry.contexts:
-            if exclude_contexts and ctx in exclude_contexts:
+        for scope in entry.scopes:
+            if exclude_scopes and scope in exclude_scopes:
                 include = False
                 break
-            if include_contexts and ctx in include_contexts:
+            if include_scopes and scope in include_scopes:
                 include = True
         if not include:
             continue
@@ -105,11 +105,11 @@ def create_detailed_report(
         # check previous entry include/exclude
         if prev_entry:
             include = False
-            for ctx in prev_entry.contexts:
-                if exclude_contexts and ctx in exclude_contexts:
+            for scope in prev_entry.scopes:
+                if exclude_scopes and scope in exclude_scopes:
                     prev_entry = None
                     break
-                if include_contexts and ctx in include_contexts:
+                if include_scopes and scope in include_scopes:
                     include = True
 
             if not include:
@@ -118,11 +118,11 @@ def create_detailed_report(
         # check next entry include/exclude
         if next_entry:
             include = False
-            for ctx in next_entry.contexts:
-                if exclude_contexts and ctx in exclude_contexts:
+            for scope in next_entry.scopes:
+                if exclude_scopes and scope in exclude_scopes:
                     next_entry = None
                     break
-                if include_contexts and ctx in include_contexts:
+                if include_scopes and scope in include_scopes:
                     include = True
 
             if not include:

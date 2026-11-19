@@ -1,5 +1,5 @@
 {
-  "context": [
+  "scope": [
     "Website",
     "App",
     "Device",
@@ -12,10 +12,47 @@
     "Event/Program",
     "Unspecified"
   ],
-  "contextSpecifics": {
-    "Device": [],
-    "Communication": [],
-    "Event/Program": []
+  "scopeSpecifics": {
+    "Device": [
+      "Camera",
+      "Doorbell",
+      "Lock",
+      "Thermostat",
+      "RobotVacuum",
+      "Speaker",
+      "TV",
+      "Router",
+      "Hub",
+      "Light",
+      "Plug",
+      "Sensor",
+      "Wearable",
+      "Scale",
+      "PetFeeder",
+      "Appliance"
+    ],
+    "Communication": [
+      "CustomerSupport",
+      "Newsletter",
+      "Notification",
+      "Marketing",
+      "Survey",
+      "Chat",
+      "Email",
+      "SMS",
+      "SocialMedia",
+      "Feedback"
+    ],
+    "Event/Program": [
+      "Raffle",
+      "Contest",
+      "Sweepstake",
+      "Promotion",
+      "LoyaltyProgram",
+      "BetaProgram",
+      "Webinar",
+      "Trial"
+    ]
   },
   "topics": [
     "UserRights",

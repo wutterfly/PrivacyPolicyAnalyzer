@@ -9,7 +9,7 @@ from privacy_policy_analyzer.analysis.structure import (
     TableCell,
 )
 from privacy_policy_analyzer.shared.annotation import (
-    UNSPECIFIED_CONTEXT,
+    UNSPECIFIED_SCOPE,
     ContentAnnotation,
     EntryScores,
     TopicAnnotation,
@@ -51,7 +51,7 @@ class PropagationGate:
     inherits nothing).
     """
 
-    contexts: LabelFloors = field(default_factory=LabelFloors)
+    scopes: LabelFloors = field(default_factory=LabelFloors)
     topics: LabelFloors = field(default_factory=LabelFloors)
     # content floors per topic, as each topic has its own content model
     contents: dict[str, LabelFloors] = field(default_factory=dict)
@@ -90,7 +90,7 @@ def filter_src(src: StructuredEntry, skip_rules: list[SkipRule]) -> StructuredEn
 
     return StructuredEntry(
         text=src.text,
-        contexts=src.contexts,
+        scopes=src.scopes,
         topics=filtered_topics,
         structure=deepcopy(src.structure),
     )
@@ -105,8 +105,8 @@ def merge_entries(
     if skips:
         src = filter_src(src, skips)
 
-    # Merge contexts as a flat deduplicated list of strings
-    merged_contexts = list(set(dst.contexts + src.contexts))
+    # Merge scopes as a flat deduplicated list of strings
+    merged_scopes = list(set(dst.scopes + src.scopes))
 
     # Build a dict keyed by topic string for O(1) lookups during merge.
     # Deep-copy dst's topics and contents so the original dst is not mutated.
@@ -155,11 +155,11 @@ def merge_entries(
 
     merged_topic_list = list(merged_topics.values())
 
-    # Remove fallback entries ("Unspecified" for contexts, "Other" for topics and
+    # Remove fallback entries ("Unspecified" for scopes, "Other" for topics and
     # contents) at each level only when non-fallback alternatives exist, so the
     # fallback is kept if it is the only value present
-    if len(merged_contexts) > 1:
-        merged_contexts = [c for c in merged_contexts if c != UNSPECIFIED_CONTEXT]
+    if len(merged_scopes) > 1:
+        merged_scopes = [c for c in merged_scopes if c != UNSPECIFIED_SCOPE]
     if len(merged_topic_list) > 1:
         merged_topic_list = [tpc for tpc in merged_topic_list if tpc.topic != "Other"]
     for tpc in merged_topic_list:
@@ -167,7 +167,7 @@ def merge_entries(
             tpc.contents = [cnt for cnt in tpc.contents if cnt.content != "Other"]
 
     return StructuredEntry(
-        contexts=merged_contexts,
+        scopes=merged_scopes,
         topics=merged_topic_list,
         text=dst.text,
         structure=deepcopy(dst.structure),
@@ -179,27 +179,27 @@ _MAX_HEADER_LEVEL = 6  # h1 - h6; headers outside this range are ignored
 
 def _merge_header_into(
     entry: StructuredEntry,
-    src_contexts: list[str],
+    src_scopes: list[str],
     src_topics: list[TopicAnnotation],
 ) -> tuple[set[str], set[str]]:
     """In-place equivalent of `merge_entries` with a header as source, for
-    header labels (`src_contexts`, `src_topics`) that have already been
+    header labels (`src_scopes`, `src_topics`) that have already been
     filtered with the skip rules (and gate).
 
-    Mutates `entry.contexts` and `entry.topics` in place (they may be the same
+    Mutates `entry.scopes` and `entry.topics` in place (they may be the same
     list objects as an underlying RawEntry's, which later classification
     stages read). Everything taken from the header labels is copied, so no
     mutable state is shared between the header and the entry. Returns the
-    context names and topic names that were not on the entry before this
+    scope names and topic names that were not on the entry before this
     merge.
     """
-    known_contexts = set(entry.contexts)
+    known_scopes = set(entry.scopes)
     known_topics = {tpc.topic for tpc in entry.topics}
 
-    # contexts: deduplicated union, "Unspecified" dropped when something else exists
-    contexts = list(dict.fromkeys(entry.contexts + src_contexts))
-    if len(contexts) > 1:
-        contexts = [c for c in contexts if c != UNSPECIFIED_CONTEXT]
+    # scopes: deduplicated union, "Unspecified" dropped when something else exists
+    scopes = list(dict.fromkeys(entry.scopes + src_scopes))
+    if len(scopes) > 1:
+        scopes = [c for c in scopes if c != UNSPECIFIED_SCOPE]
 
     # topics, keyed by name (insertion order = entry's topics, then new ones)
     topics: dict[str, TopicAnnotation] = {tpc.topic: tpc for tpc in entry.topics}
@@ -234,13 +234,13 @@ def _merge_header_into(
         if len(tpc.contents) > 1:
             tpc.contents = [cnt for cnt in tpc.contents if cnt.content != "Other"]
 
-    new_contexts = set(contexts) - known_contexts
+    new_scopes = set(scopes) - known_scopes
     new_topics = {tpc.topic for tpc in topic_list} - known_topics
 
-    entry.contexts[:] = contexts
+    entry.scopes[:] = scopes
     entry.topics[:] = topic_list
 
-    return new_contexts, new_topics
+    return new_scopes, new_topics
 
 
 _NO_SCORES = EntryScores()
@@ -258,23 +258,23 @@ def _gate_header(
 ) -> tuple[list[str], list[TopicAnnotation], list[str], list[str], list[str]]:
     """The part of a header's labels that `entry` may inherit under `gate`.
 
-    Returns (contexts, topics, blocked contexts, blocked topics, blocked
+    Returns (scopes, topics, blocked scopes, blocked topics, blocked
     contents). A label the entry already has always passes, and a topic the
     entry has passes regardless of its own score; its contents are then gated
     one by one against the content scores of that topic (`entry.scores`).
     """
     scores = entry.scores or _NO_SCORES
-    blocked_contexts: list[str] = []
+    blocked_scopes: list[str] = []
     blocked_topics: list[str] = []
     blocked_contents: list[str] = []
 
-    own_contexts = set(entry.contexts)
-    contexts: list[str] = []
-    for label in header.contexts:
-        if label in own_contexts or _passes(scores.contexts, label, gate.contexts):
-            contexts.append(label)
+    own_scopes = set(entry.scopes)
+    scopes: list[str] = []
+    for label in header.scopes:
+        if label in own_scopes or _passes(scores.scopes, label, gate.scopes):
+            scopes.append(label)
         else:
-            blocked_contexts.append(label)
+            blocked_scopes.append(label)
 
     own_topics = {tpc.topic: tpc for tpc in entry.topics}
     topics: list[TopicAnnotation] = []
@@ -300,7 +300,7 @@ def _gate_header(
                 blocked_contents.append(f"{topic}/{cnt.content}")
         topics.append(TopicAnnotation(topic=topic, contents=contents))
 
-    return contexts, topics, blocked_contexts, blocked_topics, blocked_contents
+    return scopes, topics, blocked_scopes, blocked_topics, blocked_contents
 
 
 def _count_stats(counter: Counter, fallback: str = "Other") -> dict[str, int]:
@@ -313,7 +313,7 @@ def _count_stats(counter: Counter, fallback: str = "Other") -> dict[str, int]:
 
 def empty_propagation_stats() -> dict[str, dict]:
     """The stats of `propagate_headers` for a run where nothing was propagated."""
-    return {"contexts": {"total": 0}, "topics": {"total": 0}}
+    return {"scopes": {"total": 0}, "topics": {"total": 0}}
 
 
 def propagate_headers(
@@ -341,9 +341,9 @@ def propagate_headers(
     Returns counts of the labels that were added, and with a gate also of
     those that were blocked, under "blocked".
     """
-    added_contexts = Counter()
+    added_scopes = Counter()
     added_topics = Counter()
-    blocked_contexts = Counter()
+    blocked_scopes = Counter()
     blocked_topics = Counter()
     blocked_contents = Counter()
 
@@ -364,27 +364,27 @@ def propagate_headers(
 
         for _, header in active:
             if gate is None:
-                new_contexts, new_topics = _merge_header_into(
-                    entry, header.contexts, header.topics
+                new_scopes, new_topics = _merge_header_into(
+                    entry, header.scopes, header.topics
                 )
             else:
-                contexts, topics, b_contexts, b_topics, b_contents = _gate_header(
+                scopes, topics, b_scopes, b_topics, b_contents = _gate_header(
                     entry, header, gate
                 )
-                blocked_contexts.update(b_contexts)
+                blocked_scopes.update(b_scopes)
                 blocked_topics.update(b_topics)
                 blocked_contents.update(b_contents)
-                new_contexts, new_topics = _merge_header_into(entry, contexts, topics)
-            added_contexts.update(new_contexts)
+                new_scopes, new_topics = _merge_header_into(entry, scopes, topics)
+            added_scopes.update(new_scopes)
             added_topics.update(new_topics)
 
     result: dict[str, dict] = {
-        "contexts": _count_stats(added_contexts, UNSPECIFIED_CONTEXT),
+        "scopes": _count_stats(added_scopes, UNSPECIFIED_SCOPE),
         "topics": _count_stats(added_topics),
     }
     if gate is not None:
         result["blocked"] = {
-            "contexts": _count_stats(blocked_contexts, UNSPECIFIED_CONTEXT),
+            "scopes": _count_stats(blocked_scopes, UNSPECIFIED_SCOPE),
             "topics": _count_stats(blocked_topics),
             "contents": _count_stats(blocked_contents),
         }
@@ -406,7 +406,7 @@ def merge_scores(all_scores: Iterable[EntryScores | None]) -> EntryScores | None
 
     merged = EntryScores()
     for scores in present:
-        _max_into(merged.contexts, scores.contexts)
+        _max_into(merged.scopes, scores.scopes)
         _max_into(merged.topics, scores.topics)
         for topic, contents in scores.contents.items():
             _max_into(merged.contents.setdefault(topic, {}), contents)
@@ -428,7 +428,7 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
                 table_id=last_entry.structure.table_id,
                 row_id=last_entry.structure.row_id,
             ),
-            contexts=[],
+            scopes=[],
             topics=[],
         )
         for buffered_entry in row_buffer:
@@ -483,29 +483,29 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
     return combined_entries
 
 
-def smooth_context(entries: list[StructuredEntry]) -> dict[str, int]:
+def smooth_scope(entries: list[StructuredEntry]) -> dict[str, int]:
     if len(entries) < 3:
         return {}
 
-    added_contexts = Counter()
+    added_scopes = Counter()
 
     for i in range(1, len(entries) - 1):
         prev_entry = entries[i - 1]
         current_entry = entries[i]
         next_entry = entries[i + 1]
 
-        if current_entry.contexts == [UNSPECIFIED_CONTEXT]:
-            intersect = set(prev_entry.contexts).intersection(set(next_entry.contexts))
+        if current_entry.scopes == [UNSPECIFIED_SCOPE]:
+            intersect = set(prev_entry.scopes).intersection(set(next_entry.scopes))
             if intersect:
-                current_entry.contexts = list(intersect)
-                added_contexts.update(intersect)
+                current_entry.scopes = list(intersect)
+                added_scopes.update(intersect)
 
-    smooth_stats = dict(added_contexts)
+    smooth_stats = dict(added_scopes)
 
-    # remove the Unspecified context if it was added
-    if UNSPECIFIED_CONTEXT in smooth_stats:
-        del smooth_stats[UNSPECIFIED_CONTEXT]
+    # remove the Unspecified scope if it was added
+    if UNSPECIFIED_SCOPE in smooth_stats:
+        del smooth_stats[UNSPECIFIED_SCOPE]
 
-    smooth_stats["total"] = sum(added_contexts.values())
+    smooth_stats["total"] = sum(added_scopes.values())
 
     return smooth_stats

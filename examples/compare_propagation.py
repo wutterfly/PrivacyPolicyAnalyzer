@@ -68,7 +68,7 @@ def make_runs(mild: float, strict: float, min_score: float) -> dict:
 
     def gated(ratio: float) -> PropagationConfig:
         return PropagationConfig(
-            context_floor_ratio=ratio,
+            scope_floor_ratio=ratio,
             topic_floor_ratio=ratio,
             content_floor_ratio=ratio,
             min_score=min_score,
@@ -90,7 +90,7 @@ def make_runs(mild: float, strict: float, min_score: float) -> dict:
 def label_sets(entry: dict) -> dict[str, set]:
     """The labels of an analyzed entry per level; contents as (topic, content)."""
     return {
-        "scope": set(entry["contexts"]),
+        "scope": set(entry["scopes"]),
         "topic": {t["topic"] for t in entry["topics"]},
         "content": {
             (t["topic"], c["content"]) for t in entry["topics"] for c in t["contents"]
@@ -109,7 +109,7 @@ def own_score(entry: dict, level: str, label) -> float | None:
     if not scores:
         return None
     if level == "scope":
-        return scores["contexts"].get(label)
+        return scores["scopes"].get(label)
     if level == "topic":
         return scores["topics"].get(label)
     topic, content = label
@@ -185,10 +185,10 @@ def propagation_totals(results: list[dict]) -> dict:
     """
     totals = Counter()
     for result in results:
-        first = result["stats"]["propagate"]["context_topic"]
+        first = result["stats"]["propagate"]["scope_topic"]
         second = result["stats"]["propagate"]["content"]
         for stats in (first, second):
-            totals["added_scopes"] += stats["contexts"].get("total", 0)
+            totals["added_scopes"] += stats["scopes"].get("total", 0)
             totals["added_topics"] += stats["topics"].get("total", 0)
         for kind, blocked in first.get("blocked", {}).items():
             totals[f"blocked_{kind}"] += blocked.get("total", 0)
@@ -199,7 +199,7 @@ def propagation_totals(results: list[dict]) -> dict:
         for key in (
             "added_scopes",
             "added_topics",
-            "blocked_contexts",
+            "blocked_scopes",
             "blocked_topics",
             "blocked_contents",
         )
@@ -341,7 +341,7 @@ def _describe(config: dict) -> str:
     if not config["enabled"]:
         return "headings pass nothing on"
     ratios = (
-        config["context_floor_ratio"],
+        config["scope_floor_ratio"],
         config["topic_floor_ratio"],
         config["content_floor_ratio"],
     )
@@ -381,7 +381,7 @@ def render_markdown(comparison: dict) -> str:
                 _pct(s["with_content_share"]),
                 " / ".join(_num(s["labels_per_entry"][level]) for level in LEVELS),
                 f"{p['added_scopes']} / {p['added_topics']}",
-                f"{p['blocked_contexts']} / {p['blocked_topics']} / {p['blocked_contents']}",
+                f"{p['blocked_scopes']} / {p['blocked_topics']} / {p['blocked_contents']}",
             ]
         )
     lines += _table(

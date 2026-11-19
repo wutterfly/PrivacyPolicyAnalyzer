@@ -46,7 +46,7 @@ class FakeModel:
 def fake_models(monkeypatch):
     base = EN_DEFAULT_CONFIGURATION.model_configs
     score_fns = {
-        base.context.model_name: lambda text: {"Website": 0.8},
+        base.scope.model_name: lambda text: {"Website": 0.8},
         base.topic.model_name: lambda text: TOPIC_SCORES[text],
     }
     for config in base.content_models().values():
@@ -86,7 +86,7 @@ class TestPipelinePropagation:
             "We give data to partners.": ["Sharing"],
             "The weather is nice.": ["Sharing"],
         }
-        assert "blocked" not in result.stats["propagate"]["context_topic"]
+        assert "blocked" not in result.stats["propagate"]["scope_topic"]
 
     def test_with_a_gate_only_sentences_that_nearly_scored_it_inherit_the_topic(self):
         # floor = 0.5 * 0.6 = 0.3: passes for 0.35, blocks 0.02
@@ -95,7 +95,7 @@ class TestPipelinePropagation:
         assert topics["We give data to partners."] == ["Sharing"]
         assert "Sharing" not in topics["The weather is nice."]
 
-        blocked = result.stats["propagate"]["context_topic"]["blocked"]
+        blocked = result.stats["propagate"]["scope_topic"]["blocked"]
         assert blocked["topics"] == {"Sharing": 1, "total": 1}
 
     def test_content_model_runs_on_sentences_that_inherited_the_topic(self):
@@ -112,15 +112,15 @@ class TestPipelinePropagation:
         assert "Sharing" not in topics["We give data to partners."]
         assert "Sharing" not in topics["The weather is nice."]
         propagate = result.stats["propagate"]
-        assert propagate["context_topic"] == {"contexts": {"total": 0}, "topics": {"total": 0}}
-        assert propagate["content"] == {"contexts": {"total": 0}, "topics": {"total": 0}}
+        assert propagate["scope_topic"] == {"scopes": {"total": 0}, "topics": {"total": 0}}
+        assert propagate["content"] == {"scopes": {"total": 0}, "topics": {"total": 0}}
 
     def test_scores_of_every_label_are_part_of_the_serialized_result(self):
         result = analyze(PropagationConfig())
         entries = {e["text"]: e for e in result.to_json()["analyzed"]}
 
         scores = entries["We give data to partners."]["scores"]
-        assert scores["contexts"] == {"Website": 0.8}
+        assert scores["scopes"] == {"Website": 0.8}
         assert scores["topics"] == {"Sharing": 0.35}  # below its threshold, kept anyway
         # contents are scored for the topics the sentence had when the model ran
         assert scores["contents"]["Sharing"] == {"DataType": 0.9}

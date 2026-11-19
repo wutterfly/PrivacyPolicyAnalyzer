@@ -8,7 +8,7 @@ from privacy_policy_analyzer.analysis.classification import (
     ModelConfig,
     ModelConfigs,
     classify_content,
-    classify_context,
+    classify_scope,
     classify_topics,
 )
 from privacy_policy_analyzer.shared.annotation import RawEntry, TopicAnnotation
@@ -40,7 +40,7 @@ def install_fake_model(monkeypatch):
 
 
 def make_raw_entry(text: str, topics: list[TopicAnnotation] | None = None) -> RawEntry:
-    return RawEntry(line_number=0, text=text, contexts=[], topics=topics or [])
+    return RawEntry(line_number=0, text=text, scopes=[], topics=topics or [])
 
 
 def make_model_configs() -> ModelConfigs:
@@ -49,21 +49,21 @@ def make_model_configs() -> ModelConfigs:
     )
 
 
-def test_context_scores_are_kept_for_every_label_not_only_those_above_threshold(
+def test_scope_scores_are_kept_for_every_label_not_only_those_above_threshold(
     install_fake_model,
 ):
     install_fake_model({"a sentence": {"Website": 0.8, "App": 0.2, "Device": 0.49}})
     entry = make_raw_entry("a sentence")
 
-    classify_context(
+    classify_scope(
         [entry],
         ModelConfig("m", {"App": 0.1}),  # App passes with its own lower threshold
         prefer_onnx=False,
         cached=False,
     )
 
-    assert entry.contexts == ["Website", "App"]
-    assert entry.scores.contexts == {"Website": 0.8, "App": 0.2, "Device": 0.49}
+    assert entry.scopes == ["Website", "App"]
+    assert entry.scores.scopes == {"Website": 0.8, "App": 0.2, "Device": 0.49}
 
 
 def test_topic_scores_are_kept_for_every_label(install_fake_model):
@@ -100,8 +100,8 @@ def test_content_scores_are_kept_per_topic_for_entries_that_have_the_topic(
 def test_each_entry_has_its_own_scores():
     first = make_raw_entry("first")
     second = make_raw_entry("second")
-    first.scores.contexts["Website"] = 1.0
-    assert second.scores.contexts == {}
+    first.scores.scopes["Website"] = 1.0
+    assert second.scores.scopes == {}
 
 
 def test_content_models_cover_every_topic_model():
@@ -109,7 +109,7 @@ def test_content_models_cover_every_topic_model():
     content_models = configs.content_models()
 
     assert len(content_models) == 14
-    expected = {f.name for f in fields(ModelConfigs)} - {"context", "topic"}
+    expected = {f.name for f in fields(ModelConfigs)} - {"scope", "topic"}
     assert {config.model_name for config in content_models.values()} == expected
 
 

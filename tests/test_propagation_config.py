@@ -9,7 +9,7 @@ from privacy_policy_analyzer.config import (
 
 
 def make_model_configs(
-    context: dict[str, float] | None = None,
+    scope: dict[str, float] | None = None,
     topic: dict[str, float] | None = None,
     sharing: dict[str, float] | None = None,
 ) -> ModelConfigs:
@@ -32,7 +32,7 @@ def make_model_configs(
         )
     }
     return ModelConfigs(
-        context=ModelConfig("context", context or {}),
+        scope=ModelConfig("scope", scope or {}),
         topic=ModelConfig("topic", topic or {}),
         sharing=ModelConfig("sharing", sharing or {}),
         **configs,
@@ -61,7 +61,7 @@ def test_disabled_propagation_has_no_gate_whatever_the_ratios_are():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"context_floor_ratio": -0.1},
+        {"scope_floor_ratio": -0.1},
         {"topic_floor_ratio": 1.5},
         {"content_floor_ratio": 2},
         {"min_score": -1},
@@ -82,9 +82,9 @@ def test_floor_is_ratio_times_the_threshold_of_the_label():
 
 
 def test_labels_without_a_threshold_use_the_default_threshold():
-    gate = PropagationConfig(context_floor_ratio=0.5).build_gate(make_model_configs())
+    gate = PropagationConfig(scope_floor_ratio=0.5).build_gate(make_model_configs())
     assert gate is not None
-    assert gate.contexts.get("Website") == pytest.approx(0.25)  # 0.5 * 0.5
+    assert gate.scopes.get("Website") == pytest.approx(0.25)  # 0.5 * 0.5
 
 
 def test_ratios_apply_per_kind_of_label():
@@ -93,7 +93,7 @@ def test_ratios_apply_per_kind_of_label():
     )
     assert gate is not None
     assert gate.topics.get("Sharing") == pytest.approx(0.6)
-    assert gate.contexts.get("Website") == 0.0
+    assert gate.scopes.get("Website") == 0.0
     assert gate.contents["Sharing"].get("DataType") == 0.0
 
 

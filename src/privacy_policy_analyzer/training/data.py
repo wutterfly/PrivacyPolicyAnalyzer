@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 def _build_label2id_map(labels: list[str], fallback: str = "Other") -> dict[str, int]:
     """Build label to ID mapping with the fallback label as the first label.
 
-    The fallback is 'Other' for topics and contents and 'Unspecified' for contexts.
+    The fallback is 'Other' for topics and contents and 'Unspecified' for scopes.
     """
     label2id: dict[str, int] = {fallback: 0}
     for label in labels:
@@ -28,18 +28,21 @@ def _build_label2id_map(labels: list[str], fallback: str = "Other") -> dict[str,
 class LabelSchema:
     """Schema for sentence labeling annotation."""
 
-    context: list[str]
+    scope: list[str]
     topics: list[str]
     topicContents: dict[str, list[str]]
     contentAttributes: dict[str, list[str]]
+    # second scope layer: scope -> allowed specific values (empty for schemas without it)
+    scopeSpecifics: dict[str, list[str]] = field(default_factory=dict)
 
     @staticmethod
     def from_dict(schema_dict: dict) -> "LabelSchema":
         return LabelSchema(
-            context=schema_dict.get("context", []),
+            scope=schema_dict.get("scope", []),
             topics=schema_dict.get("topics", []),
             topicContents=schema_dict.get("topicContents", {}),
             contentAttributes=schema_dict.get("contentAttributes", {}),
+            scopeSpecifics=schema_dict.get("scopeSpecifics", {}),
         )
 
 
@@ -51,7 +54,7 @@ def read_annotation_schema(schema_file: Path) -> LabelSchema:
     return LabelSchema.from_dict(schema)
 
 
-def extract_training_data_context(
+def extract_training_data_scope(
     raw_data: list[list[RawEntry]], label2id: dict[str, int]
 ) -> Dataset:
     num_labels: int = len(label2id)
@@ -60,15 +63,15 @@ def extract_training_data_context(
     data: dict[str, list] = {"text": [], "labels": []}
     for raw in raw_data:
         for entry in raw:
-            context_flags: list[float] = [0.0] * num_labels
-            for context in entry.contexts:
-                context_flags[label2id[context]] = 1.0
+            scope_flags: list[float] = [0.0] * num_labels
+            for scope in entry.scopes:
+                scope_flags[label2id[scope]] = 1.0
 
             data["text"].append(entry.text)
-            data["labels"].append(context_flags)
+            data["labels"].append(scope_flags)
 
     # Create Dataset
-    return Dataset.from_dict(data, info=DatasetInfo(description="context"))
+    return Dataset.from_dict(data, info=DatasetInfo(description="scope"))
 
 
 def extract_training_data_topics(

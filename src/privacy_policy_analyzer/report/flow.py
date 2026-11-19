@@ -166,7 +166,7 @@ def generate_topic_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
     return buf.getvalue()
 
 
-CONTEXT_COLOR_MAP = {
+SCOPE_COLOR_MAP = {
     "Website": "#1f77b4",  # Blue
     "App": "#ff7f0e",  # Orange
     "Device": "#2ca02c",  # Green
@@ -181,40 +181,40 @@ CONTEXT_COLOR_MAP = {
 }
 
 
-def generate_context_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
-    """Generate a context map visualization from structured entries."""
+def generate_scope_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
+    """Generate a scope map visualization from structured entries."""
 
     # Filter to only items with text
     data = [item for item in data if item.text.strip()]
 
-    # Get all unique contexts (excluding 'Unspecified')
-    context_counts = defaultdict(int)
+    # Get all unique scopes (excluding 'Unspecified')
+    scope_counts = defaultdict(int)
     for item in data:
-        for context in item.contexts:
-            if context != "Unspecified":
-                context_counts[context] += 1
+        for scope in item.scopes:
+            if scope != "Unspecified":
+                scope_counts[scope] += 1
 
-    # Keep only contexts that appear at least 5 times (reduce clutter)
-    significant_contexts = {
-        context for context, count in context_counts.items() if count >= 5
+    # Keep only scopes that appear at least 5 times (reduce clutter)
+    significant_scopes = {
+        scope for scope, count in scope_counts.items() if count >= 5
     }
-    all_contexts = sorted(list(significant_contexts))
+    all_scopes = sorted(list(significant_scopes))
 
-    # Map contexts to colors
-    context_colors = {}
+    # Map scopes to colors
+    scope_colors = {}
     fallback_colors = ["#999999", "#666666", "#CCCCCC", "#555555"]
     fallback_idx = 0
 
-    for context in all_contexts:
-        if context in CONTEXT_COLOR_MAP:
-            context_colors[context] = CONTEXT_COLOR_MAP[context]
+    for scope in all_scopes:
+        if scope in SCOPE_COLOR_MAP:
+            scope_colors[scope] = SCOPE_COLOR_MAP[scope]
         else:
-            # Unknown context - use fallback color
-            context_colors[context] = fallback_colors[
+            # Unknown scope - use fallback color
+            scope_colors[scope] = fallback_colors[
                 fallback_idx % len(fallback_colors)
             ]
             fallback_idx += 1
-            logger.warning("Unknown context using fallback color: context=%s", context)
+            logger.warning("Unknown scope using fallback color: scope=%s", scope)
 
     # Create the visualization - thinner width
     fig, ax = plt.subplots(figsize=(8, 12))
@@ -224,27 +224,27 @@ def generate_context_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
     chunks = []
     for i in range(0, len(data), chunk_size):
         chunk = data[i : i + chunk_size]
-        # Count contexts in this chunk
-        chunk_contexts = defaultdict(int)
+        # Count scopes in this chunk
+        chunk_scopes = defaultdict(int)
         for item in chunk:
-            item_contexts = [c for c in item.contexts if c in significant_contexts]
-            for context in item_contexts:
-                chunk_contexts[context] += 1
-        chunks.append(chunk_contexts)
+            item_scopes = [c for c in item.scopes if c in significant_scopes]
+            for scope in item_scopes:
+                chunk_scopes[scope] += 1
+        chunks.append(chunk_scopes)
 
     # Draw chunked bars
     y_position = len(chunks)
     bar_height = 1
 
-    for chunk_contexts in chunks:
-        if chunk_contexts:
-            total = sum(chunk_contexts.values())
+    for chunk_scopes in chunks:
+        if chunk_scopes:
+            total = sum(chunk_scopes.values())
             x_offset = 0
-            for context in all_contexts:
-                count = chunk_contexts.get(context, 0)
+            for scope in all_scopes:
+                count = chunk_scopes.get(scope, 0)
                 if count > 0:
                     width = count / total
-                    color = context_colors[context]
+                    color = scope_colors[scope]
                     ax.barh(
                         y_position,
                         width,
@@ -270,10 +270,10 @@ def generate_context_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
     # Create legend with counts - place below the chart in 4 columns
     legend_patches = [
         mpatches.Patch(
-            color=context_colors[context],
-            label=f"{context} ({context_counts[context]})",
+            color=scope_colors[scope],
+            label=f"{scope} ({scope_counts[scope]})",
         )
-        for context in all_contexts
+        for scope in all_scopes
     ]
     ax.legend(
         handles=legend_patches,
@@ -282,17 +282,17 @@ def generate_context_map(data: list[StructuredEntry], dpi: int = 300) -> bytes:
         fontsize=9,
         frameon=True,
         ncol=4,
-        title="Contexts (count)",
+        title="Scopes (count)",
         title_fontsize=10,
     )
 
     # Styling
     ax.set_xlim(0, 1)
     ax.set_ylim(0, len(chunks))
-    ax.set_xlabel("Context Distribution", fontsize=12, fontweight="bold")
+    ax.set_xlabel("Scope Distribution", fontsize=12, fontweight="bold")
     ax.set_ylabel("Position in Policy", fontsize=12, fontweight="bold")
     ax.set_title(
-        f"Privacy Policy Context Distribution\n(Each bar = ~({chunk_size}) items)",
+        f"Privacy Policy Scope Distribution\n(Each bar = ~({chunk_size}) items)",
         fontsize=14,
         fontweight="bold",
         pad=15,

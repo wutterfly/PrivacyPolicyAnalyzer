@@ -5,7 +5,7 @@ from typing import Any
 from privacy_policy_analyzer import Language, UnsupportedLanguage
 from privacy_policy_analyzer.analysis import (
     classify_contents,
-    classify_contexts_and_topics,
+    classify_scopes_and_topics,
     extract_all_attributes,
 )
 from privacy_policy_analyzer.analysis.err import ModelLoadError
@@ -13,7 +13,7 @@ from privacy_policy_analyzer.analysis.post_processing import (
     combine_table_rows,
     empty_propagation_stats,
     propagate_headers,
-    smooth_context,
+    smooth_scope,
 )
 from privacy_policy_analyzer.analysis.structure import (
     StructuredEntry,
@@ -220,9 +220,9 @@ class Pipeline:
 
         logger.info("Extracting information from policy=%s", policy.name)
 
-        # classify contexts/topics first, then propagate headers, so content
+        # classify scopes/topics first, then propagate headers, so content
         # classification below can see topics inherited from parent headers
-        error = classify_contexts_and_topics(
+        error = classify_scopes_and_topics(
             entries=mapping.raw_entries,
             model_config=config.model_configs,
             prefer_onnx=self.prefer_onnx,
@@ -232,7 +232,7 @@ class Pipeline:
             return error
 
         # entries stays a live view over mapping.raw_entries - propagate_headers
-        # mutates contexts/topics in place, so later stages operating on
+        # mutates scopes/topics in place, so later stages operating on
         # mapping.raw_entries see the propagated results
         entries = mapping.build_structured_entries()
         # with a gate, headers only pass labels on to sentences that scored
@@ -241,9 +241,9 @@ class Pipeline:
         propagation = config.propagation
         gate = propagation.build_gate(config.model_configs)
         if propagation.enabled:
-            propagate_context_topic_stats = propagate_headers(entries, gate=gate)
+            propagate_scope_topic_stats = propagate_headers(entries, gate=gate)
         else:
-            propagate_context_topic_stats = empty_propagation_stats()
+            propagate_scope_topic_stats = empty_propagation_stats()
 
         error = classify_contents(
             entries=mapping.raw_entries,
@@ -279,7 +279,7 @@ class Pipeline:
         logger.info("Completed information collection for policy=%s", policy.name)
 
         entries = combine_table_rows(entries)
-        smoothing_stats = smooth_context(entries)
+        smoothing_stats = smooth_scope(entries)
 
         return PolicyResult(
             name=policy.name,
@@ -294,7 +294,7 @@ class Pipeline:
             stats={
                 "smoothing": smoothing_stats,
                 "propagate": {
-                    "context_topic": propagate_context_topic_stats,
+                    "scope_topic": propagate_scope_topic_stats,
                     "content": propagate_content_stats,
                 },
             },

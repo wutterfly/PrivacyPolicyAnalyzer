@@ -114,17 +114,17 @@ from privacy_policy_analyzer.report.summary import create_summary_report
 # Assuming `policy_result` is an instance of `PolicyResult` obtained from analysis
 policy: PolicyResult = ...  # Replace with actual PolicyResult object
 
-include_contexts: list[str] = []
-exclude_contexts: list[str] = []
+include_scopes: list[str] = []
+exclude_scopes: list[str] = []
 
 # Generate and print detailed report
 detailed = create_detailed_report(
-    policy.analyzed, include_contexts, exclude_contexts
+    policy.analyzed, include_scopes, exclude_scopes
 )
 print(detailed)
 
 # Generate and print summary report
-summary = create_summary_report(policy.analyzed, include_contexts, exclude_contexts)
+summary = create_summary_report(policy.analyzed, include_scopes, exclude_scopes)
 print(summary)
 
 # Generate and print score report
@@ -196,10 +196,10 @@ schema: LabelSchema = read_annotation_schema(annotation_schema_file)
 configs = [
     ModelTrainingConfig(
         model_name=model_name,
-        output_dir=output_dir / Path("context"),
+        output_dir=output_dir / Path("scope"),
         training_files=training_files,
-        labels=schema.context,
-        scope="context",
+        labels=schema.scope,
+        level="scope",
         content_topic=None,
         test_eval_split=0.2,
         oversampling_ratio=0.5,
@@ -210,7 +210,7 @@ configs = [
         output_dir=output_dir / Path("topic"),
         training_files=training_files,
         labels=schema.topics,
-        scope="topic",
+        level="topic",
         content_topic=None,
         test_eval_split=0.2,
         oversampling_ratio=0.5,
@@ -221,7 +221,7 @@ configs = [
         output_dir=output_dir / Path("content") / Path("UserRights"),
         training_files=training_files,
         labels=schema.topicContents["UserRights"],
-        scope="content",
+        level="content",
         content_topic="UserRights",
         test_eval_split=0.2,
         oversampling_ratio=0.7,
@@ -246,7 +246,7 @@ These configurations define which models to use and what classification threshol
 The default model configurations can be imported from `privacy_policy_analyzer.config.DEFAULT_MODEL_CONFIGS`.
 They use pre-trained models hosted on HuggingFace.
 
-- [Context Classifier](https://huggingface.co/Wravn/privacy-policy-context)
+- [Scope Classifier](https://huggingface.co/Wravn/privacy-policy-context)
 - [Topic Classifier](https://huggingface.co/Wravn/privacy-policy-topic)
 - Content Classifiers for each topic, e.g.:
   - [User Rights Content Classifier](https://huggingface.co/Wravn/privacy-policy-content-userrights)
