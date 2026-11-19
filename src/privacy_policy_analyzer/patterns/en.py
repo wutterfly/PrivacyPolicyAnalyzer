@@ -995,10 +995,16 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     method_source=AttributePattern.from_dict(
         {
             "UserProvided": [
-                "\\byou(.){0,20}(provide|submit|enter|upload|give|share|send|post)",
+                "\\byou\\b(.){0,20}(provid|submit|enter|upload|give|share|send|post|input|supply|disclos)",
                 "\\b(enter|submit|provide)(.){0,20}by you",
                 "\\bto (enter|submit|provide)\\b",
                 "\\b(login|register|sign up|sign in)\\b",
+                "\\bfrom you\\b",
+                "\\b(?:provid\\w*\\b(?!\\s+by\\s+(?!you\\b))|submit\\w*|suppl(?:y|ied|ies|ying)|input\\w*|upload\\w*|entered|enter)\\b.{0,40}\\b(?:information|data|details|address|name|numbers?|files?|images?|videos?|content|documents?)\\b",
+                "\\b(?:information|data|details)\\b.{0,15}\\b(?:input|entered|submitted|provided|supplied|uploaded)\\b(?!\\s+by\\s+(?!you\\b))",
+                "\\b(?:provided|submitted|supplied|sent|given) to us\\b",
+                "\\b(?:the )?(?:user|customer|visitor|individual)s? (?:has |have |had )?(?:shared|provided|submitted|entered|uploaded|posted|input)\\b",
+                "\\b(?:notify|inform|tell) us of\\b.{0,40}\\b(?:changes?|updates?)\\b",
             ],
             "Inferred": [
                 "\\bderive(d)?\\b",
@@ -1010,13 +1016,20 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "from public sources",
                 "\\bdata you make public",
                 "\\bmade public by you\\b",
+                "\\bpublic (disclosure|forum|source|record|domain)s?\\b",
+                "\\bdisclosed the information via\\b",
             ],
             "Purchased": [
-                "(?=.*\\bwe\\b)(?=.*\\b(purchase|buy|acquire)\\b)(?=.*\\b(data|information)\\b)"
+                "\\bwe (?:may |also |sometimes )?(?:purchase|buy|acquire)\\b",
+                "\\b(?:purchase|buy|acquire)s? (?:personal )?(?:data|information)\\b",
+                "\\b(?:purchased|bought|acquired) (?:from|data|information)\\b",
             ],
             "ThirdPartyProvided": [
-                "(?=.*(obtain|receive|collect from))(?=.*(third(-| )party|external source))",
+                "\\bfrom\\b.{0,40}\\b(?:third[- ]part(?:y|ies)|external sources?|other sources?)\\b",
+                "\\bfrom\\b.{0,30}\\b(?:(?:advertising|business|marketing|data|joint marketing|channel|analytics|service|payment) )?(?:partners?|providers?|vendors?|affiliates?|advertisers?|carriers?|brokers?|institutions?|processors?|retailers?|resellers?)\\b",
+                "\\b(?:provided|supplied|sent|shared|disclosed|made available) (?:to us )?by (?:third|(?:our )?(?:(?:advertising|business|marketing|data|joint marketing|channel|analytics|service|payment) )?(?:partners?|providers?|vendors?|affiliates?|advertisers?|carriers?|brokers?|institutions?|processors?|retailers?|resellers?))",
                 "\\breceive.*from.*(partner|vendor|affiliate|provider)s?\\b",
+                "\\b(?:providers?|partners?|vendors?|affiliates?)\\b.{0,80}\\b(?:provide|send|supply|share) us with\\b",
             ],
             "SocialMedia": [
                 "\\bsocial media\\b",
@@ -1031,13 +1044,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     trigger_condition=AttributePattern.from_dict(
         {
             "OnRegister": [
-                "\\b(regist(er|ers|ered|ering|ration)|sign(s|ing)? up|creat(e|es|ing) (an |your |a )?account)\\b",
+                "\\bregist(er|ers|ered|ering|ration)\\b",
+                "\\bcreat(e|es|ing) (an |your |a )?(user )?account\\b",
+                "\\bsign(s|ing)? up\\b(?!.{0,40}\\b(newsletters?|mailing|marketing|updates|e-?mails?|lists?)\\b)",
             ],
             "OnPurchase": [
                 "\\b(purchas(e|es|ed|ing)|buy(s|ing)?|order(s|ed|ing)?|check-?out)\\b",
             ],
             "OnInteractWithAd": [
-                "(?=.*\\b(ads?|advert(s|isements?|ising)?|banners?)\\b)(?=.*\\b(click(s|ed|ing)?|interact(s|ed|ing)?|view(s|ed|ing)?|engag(e|es|ed|ing))\\b)",
+                "\\A(?=[\\s\\S]*?\\b(?:ads?(?!\\s+(?:beacons?|tags?|servers?))|advert(?:s|isements?|ising)?|banners?)\\b)(?=[\\s\\S]*?\\b(?:click(?:s|ed|ing)?|interact(?:s|ed|ing)?|view(?:s|ed|ing)?|engag(?:e|es|ed|ing))\\b)",
             ],
             "OnAppDownloaded": [
                 "\\b(download(s|ed|ing)?|install(s|ed|ing)?)\\b.{0,40}\\bapps?\\b",
@@ -1053,8 +1068,9 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(brows(e|es|ed|ing)|visit(s|ed|ing)?)\\b.{0,30}\\b(web ?site|site|web ?pages?|pages?)\\b",
             ],
             "OnSubscribe": [
-                "\\bsubscrib(e|es|ed|ing)\\b",
-                "\\bsign(s|ing)? up for\\b.{0,30}\\b(newsletter|updates|mailing)",
+                "\\bsubscri(be|bes|bed|bing|ption|ptions)\\b",
+                "\\bsign(s|ing)? up (for|to)\\b.{0,40}\\b(newsletters?|mailing|marketing|updates|e-?mails?|lists?)\\b",
+                "\\b(marketing|mailing) lists?\\b",
             ],
             "Automatically": [
                 "\\bautomatic(ally)?\\b",
@@ -1073,12 +1089,15 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     ),
     consequences=AttributePattern.from_dict(
         {
-            "DoNotUse": [
+            "RefusalOfServices": [
+                "\\b(will|would|may|might) not be able to (use|access|log ?in|sign in|register)\\b",
+                "\\bunable to (use|access|register)\\b",
+                "\\bno longer (be able to )?(use|access)\\b",
                 "\\b(do not|don't|should not|shall not|must not|cannot|can not)\\s+(use|access)\\b",
                 "\\bstop(ping)? using\\b",
                 "\\bdiscontinue (your |the )?(use|access)\\b",
                 "\\b(refrain|abstain) from using\\b",
-                "(?=.*\\b(do not agree|disagree|not accept)\\b)(?=.*\\b(use|access)\\b)",
+                "\\A(?=[\\s\\S]*?\\b(do not agree|disagree|not accept)\\b)(?=[\\s\\S]*?\\b(use|access)\\b)",
             ],
         }
     ),
@@ -1184,27 +1203,6 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "AnalyticsService": [
                 "\\banalytic(s)? (service|provider|partner|compan(y|ies)|platform)"
             ],
-            "CompatibleApp": [
-                "third(-| )party(.){0,20}app",
-                "\\bapp made by (third(-| )party|external)",
-                "(compatible|external) app",
-            ],
-            "CompatibleDevice": [
-                "third(-| )party(.){0,20}(device|product)",
-                "\\bdevice made by (third(-| )party|external)",
-                "(compatible|external) device",
-            ],
-            "CompatibleService": [
-                "third(?:-| )party (?:(?:product|device|software|app)s? (?:or|and) )?(?:(?:smart[- ]home|home automation|voice assistant|voice|login|log-in|sign-in|single sign-on|cloud|streaming|music|assistant|integration)\\s+)*services?\\b(?!\\s+providers?)",
-                "\\bservice made by (third(-| )party|external)",
-                "(compatible|external) service",
-            ],
-            "PartnerIntegrations": [
-                "\\bpartner integration(s)?\\b",
-                "connectivity platform",
-                "\\bintegrated service(s)?\\b",
-                "\\bwho integrate with\\b",
-            ],
             "ExternalAccount": [
                 "\\bexternal account(s)?\\b",
                 "account from (third(-| )party|external)",
@@ -1289,8 +1287,33 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\binsurer(s)?\\b",
                 "\\binsurance (company|companies|provider)(s)?\\b",
             ],
+        }
+    ),
+    plugin_integration=AttributePattern.from_dict(
+        {
+            "CompatibleApp": [
+                "third(-| )party(.){0,20}app",
+                "\\bapp made by (third(-| )party|external)",
+                "(compatible|external) app",
+            ],
+            "CompatibleDevice": [
+                "third(-| )party(.){0,20}(device|product)",
+                "\\bdevice made by (third(-| )party|external)",
+                "(compatible|external) device",
+            ],
+            "CompatibleService": [
+                "third(?:-| )party (?:(?:product|device|software|app)s? (?:or|and) )?(?:(?:smart[- ]home|home automation|voice assistant|voice|login|log-in|sign-in|single sign-on|cloud|streaming|music|assistant|integration)\\s+)*services?\\b(?!\\s+providers?)",
+                "\\bservice made by (third(-| )party|external)",
+                "(compatible|external) service",
+            ],
+            "PartnerIntegrations": [
+                "\\bpartner integration(s)?\\b",
+                "connectivity platform",
+                "\\bintegrated service(s)?\\b",
+                "\\bwho integrate with\\b",
+            ],
             "SmartHomePlatform": [
-                "\\bsmart home platform(s)?\\b",
+                "\\bsmart[- ]home platform(s)?\\b",
                 "\\bhome automation platform(s)?\\b",
             ],
         }

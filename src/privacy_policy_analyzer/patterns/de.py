@@ -1246,7 +1246,7 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "\\b(Kauf|kaufen|kauft|Bestellung(en)?|bestellen|erwerben|Einkauf|einkaufen)\\b",
             ],
             "OnInteractWithAd": [
-                "(?=.*(Werbung|Anzeige|Werbeanzeige|Banner))(?=.*(klicken|anklicken|interagieren|ansehen|betrachten))",
+                "\\A(?=[\\s\\S]*?(Werbung|Anzeige|Werbeanzeige|Banner))(?=[\\s\\S]*?(klicken|anklicken|interagieren|ansehen|betrachten))",
             ],
             "OnAppDownloaded": [
                 "(App|Anwendung).{0,40}(herunterlad|download|installier)",
@@ -1284,11 +1284,13 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
     ),
     consequences=AttributePattern.from_dict(
         {
-            "DoNotUse": [
+            "RefusalOfServices": [
+                "nicht (mehr )?(nutzen|verwenden|benutzen|zugreifen|registrieren) (können|zu können)",
+                "(keine|nicht) (Nutzung|Zugang|Zugriff) (möglich|gewährt)",
                 "nicht.{0,20}(nutzen|verwenden|benutzen) Sie",
                 "Nutzung (einstellen|beenden)",
                 "(nutzen|verwenden|benutzen) Sie.{0,20}nicht",
-                "(?=.*nicht (mit|einverstanden))(?=.*(nutzen|verwenden|benutzen))",
+                "\\A(?=[\\s\\S]*?nicht (mit|einverstanden))(?=[\\s\\S]*?(nutzen|verwenden|benutzen))",
             ],
         }
     ),
@@ -1393,24 +1395,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "Analyse-.{0,20}(service|dienst|anbieter|dienstanbieter|plattform|tool)",
                 "Anbieter von Analysen",
             ],
-            "CompatibleApp": [
-                "Drittanbieter-Apps",
-                "App.{0,30}(von|eines) Drittanbieter",
-                "kompatib(el|le).{0,30}App",
-            ],
-            "CompatibleDevice": [
-                "Drittanbieter-(Gerät|Produkt)",
-                "(Gerät|Produkt).{0,30}(von|eines) Drittanbieter",
-                "kompatib(el|le).{0,30}(Gerät|Produkt)",
-            ],
-            "CompatibleService": [
-                "(Dienst|Dienstleistung|Service).{0,30}(von|eines) Drittanbieter(?!.*betrieben)",
-                "kompatib(el|le).{0,30}(Dienst|Dienstleistung|Service)",
-            ],
-            "PartnerIntegrations": [
-                "Partnerintegration",
-                "Integration.{0,30}(Geräte|Produkte|Dienst|Service)",
-            ],
             "ExternalAccount": [
                 "externes? (((Be)?nutzer)?Kont(o|en))",
                 "(Affiliate|Affiliations|affiliierten|Partner)[- ]?((Be)?nutzer)?Kont(o|en)",
@@ -1491,7 +1475,6 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "(Service|Dienst).{0,20}(Identitätsprüfung|Prüfung.{0,10}Identität)",
             ],
             "Insurer": ["Versicherungen", "Versicherer"],
-            "SmartHomePlatform": ["Smart-Home-(Plattform|Anbieter|Dienst)"],
             "DataProcessor": [
                 "Datenmanagementplattformen",
                 "Auftragsverarbeiter",
@@ -1502,6 +1485,29 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "EventOrganiser": ["Veranstalter", "Organisator(en|s)?\\b"],
             "Successor": ["Nachfolger"],
             "Banks": ["\\bBank(en)?\\b(?!-)"],
+        }
+    ),
+    plugin_integration=AttributePattern.from_dict(
+        {
+            "CompatibleApp": [
+                "Drittanbieter-Apps",
+                "App.{0,30}(von|eines) Drittanbieter",
+                "kompatib(el|le).{0,30}App",
+            ],
+            "CompatibleDevice": [
+                "Drittanbieter-(Gerät|Produkt)",
+                "(Gerät|Produkt).{0,30}(von|eines) Drittanbieter",
+                "kompatib(el|le).{0,30}(Gerät|Produkt)",
+            ],
+            "CompatibleService": [
+                "(Dienst|Dienstleistung|Service).{0,30}(von|eines) Drittanbieter(?!.*betrieben)",
+                "kompatib(el|le).{0,30}(Dienst|Dienstleistung|Service)",
+            ],
+            "PartnerIntegrations": [
+                "Partnerintegration",
+                "Integration.{0,30}(Geräte|Produkte|Dienst|Service)",
+            ],
+            "SmartHomePlatform": ["Smart-Home-(Plattform|Anbieter|Dienst)"],
         }
     ),
     official=AttributePattern.from_dict(

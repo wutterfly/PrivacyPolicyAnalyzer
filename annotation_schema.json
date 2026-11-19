@@ -593,11 +593,6 @@
       "BusinessPartner",
       "CloudService",
       "AnalyticsService",
-      "CompatibleApp",
-      "CompatibleDevice",
-      "CompatibleService",
-      "PartnerIntegrations",
-      "SmartHomePlatform",
       "ExternalAccount",
       "ThirdPartySite",
       "ThirdPartyStore",
@@ -643,6 +638,13 @@
       "PublicHealthAuthorities",
       "EmergencyServices",
       "MunicipalAuthorities"
+    ],
+    "PluginIntegration": [
+      "CompatibleApp",
+      "CompatibleDevice",
+      "CompatibleService",
+      "PartnerIntegrations",
+      "SmartHomePlatform"
     ],
     "Source": [
       "UserProvided",
@@ -1168,7 +1170,7 @@
       "ETSI EN 303 645",
       "CSA STAR"
     ],
-    "Consequences": ["DoNotUse"],
+    "Consequences": ["RefusalOfServices"],
     "UserResponsibility": [
       "BystanderNotice",
       "ParentalResponsibility",

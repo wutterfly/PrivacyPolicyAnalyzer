@@ -48,6 +48,7 @@ class AttributePatterns:
     trigger_condition: AttributePattern
     consequences: AttributePattern
     descriptive: AttributePattern
+    plugin_integration: AttributePattern
     official: AttributePattern
     country: AttributePattern
     company: AttributePattern
@@ -70,6 +71,7 @@ class AttributePatterns:
             "trigger_condition": self.trigger_condition.get_stats(),
             "consequences": self.consequences.get_stats(),
             "descriptive": self.descriptive.get_stats(),
+            "plugin_integration": self.plugin_integration.get_stats(),
             "official": self.official.get_stats(),
             "country": self.country.get_stats(),
             "company": self.company.get_stats(),

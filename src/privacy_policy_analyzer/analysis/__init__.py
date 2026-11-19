@@ -131,6 +131,12 @@ def extract_all_attributes(
             content="Descriptive",
             patterns=pattern_config.descriptive,
         )
+        extract_attributes(
+            entries,
+            topic=["ThirdParty"],
+            content="PluginIntegration",
+            patterns=pattern_config.plugin_integration,
+        )
         if use_ner_for_company:
             extract_entities(
                 entries,

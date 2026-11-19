@@ -184,7 +184,7 @@ set_logging("training.log", level=logging.INFO)
 model_name = "distilbert-base-uncased"
 
 # input and output paths
-training_folder: Path = Path("../../policies/en/labeled")
+training_folder: Path = Path("../../policies/en/labeled/final")
 annotation_schema_file: Path = Path("../../annotation_schema.json")
 output_dir: Path = Path("../../models/en")
 
