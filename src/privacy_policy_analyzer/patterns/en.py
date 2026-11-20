@@ -2244,6 +2244,10 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "DataProcessingAgreement": ["data processing agreement"],
             "StandardContractualClauses": ["standard contractual clauses", "\\bsccs?\\b"],
             "AdequacyDecision": ["adequacy decision"],
+            "DataPrivacyFramework": [
+                "\\bdata privacy framework(s)?\\b",
+                "\\bDPF\\b",
+            ],
             "Audits": ["\\baudits\\b"],
             "Confidentiality": ["\\bconfidentiality\\b", "strictly confidential"],
             "BindingContractualRules": [
@@ -2308,6 +2312,226 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "CSA STAR": ["CSA STAR"],
         }
     ),
+    scope_specifics={
+        "Device": AttributePattern.from_dict(
+            {
+                "Camera": [
+                    "\\b(?:web)?cam(?:era)?s?\\b",
+                ],
+                "Doorbell": [
+                    "\\bdoorbells?\\b",
+                ],
+                "Lock": [
+                    "\\b(?:smart|door|garage|deadbolt) ?locks?\\b",
+                ],
+                "Thermostat": [
+                    "\\bthermostats?\\b",
+                ],
+                "RobotVacuum": [
+                    "\\bvacuum(?: cleaner)?s?\\b",
+                    "\\brobot(?:ic)? (?:cleaner|mop|vacuum)s?\\b",
+                ],
+                "Speaker": [
+                    "\\b(?:smart )?speakers?\\b",
+                    "\\bhomepod\\b",
+                    "\\becho (?:dot|show|plus|studio)\\b",
+                ],
+                "TV": [
+                    "\\btvs?\\b",
+                    "\\btelevisions?\\b",
+                ],
+                "Router": [
+                    "\\brouters?\\b",
+                    "\\bmodems?\\b",
+                ],
+                "Hub": [
+                    "\\bhubs?\\b",
+                    "\\bgateways?\\b",
+                    "\\bbridges?\\b",
+                ],
+                "Light": [
+                    "\\b(?:light |smart |led )?bulbs?\\b",
+                    "\\bsmart lights?\\b",
+                    "\\blamps?\\b",
+                    "\\bled (?:strip|light)s?\\b",
+                ],
+                "Plug": [
+                    "\\bplugs?\\b(?!-?ins?)",
+                    "\\boutlets?\\b",
+                    "\\bsockets?\\b",
+                ],
+                "Sensor": [
+                    "\\bsensors?\\b",
+                    "\\bdetectors?\\b",
+                ],
+                "Wearable": [
+                    "\\bwearables?\\b",
+                    "\\bsmart ?watch(?:es)?\\b",
+                    "\\bbands?\\b",
+                    "\\bfitness trackers?\\b",
+                    "\\bwatch(?:es)?\\b(?! (?:videos?|live|the|your|a|for|over|out))",
+                ],
+                "Scale": [
+                    "\\b(?:smart|body|bathroom|wyze|withings) scales?\\b",
+                ],
+                "PetFeeder": [
+                    "\\bfeeders?\\b",
+                    "\\bpet (?:food )?dispensers?\\b",
+                ],
+                "Appliance": [
+                    "\\bappliances?\\b",
+                    "\\brefrigerators?\\b",
+                    "\\bovens?\\b",
+                    "\\bwashers?\\b",
+                    "\\bdryers?\\b",
+                    "\\bdishwashers?\\b",
+                ],
+                "Computer": [
+                    "\\bcomputers?\\b(?! applications?)",
+                    "\\blaptops?\\b",
+                    "\\bdesktops?\\b",
+                ],
+                "LawnMower": [
+                    "\\b(?:auto|robotic )?(?:lawn ?)?mowers?\\b",
+                    "\\bautomower\\b",
+                ],
+                "MobilePhone": [
+                    "\\b(?:mobile|cell|smart) ?phones?\\b",
+                    "\\btablets?\\b",
+                ],
+                "SmartMeter": [
+                    "\\bsmart meters?\\b",
+                ],
+                "AirPurifier": [
+                    "\\bair purifiers?\\b",
+                    "\\bpurifiers?\\b",
+                ],
+            }
+        ),
+        "Communication": AttributePattern.from_dict(
+            {
+                "Email": [
+                    "\\be-?mails?\\b",
+                    "[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+",
+                    "\\[email\\s*protected\\]",
+                ],
+                "SMS": [
+                    "\\bsms\\b",
+                    "\\btext messag",
+                    "\\btexts\\b",
+                ],
+                "PhoneCall": [
+                    "\\btelephone\\b",
+                    "\\bphone calls?\\b",
+                    "\\bby phone\\b",
+                    "\\bvia phone\\b",
+                    "\\bcall(?:ing)? (?:us|you|our)\\b",
+                    "\\bcall recordings?\\b",
+                    "\\bphone (?:us|you|our)\\b",
+                    "\\b(?:or|and|by|via|,) phone\\b",
+                    "\\b\\d-\\d{3}-\\d{3}-\\d{4}\\b",
+                ],
+                "PostalMail": [
+                    "\\bpostal mail\\b",
+                    "\\bby post\\b",
+                    "\\bdirect mail\\b",
+                    "\\bletters?\\b",
+                    "\\bwrite to us\\b",
+                    "\\bin writing\\b",
+                    "\\bwritten correspondence\\b",
+                    "\\bby writing\\b",
+                    "(?<![-\\w])mail\\b",
+                ],
+                "Notification": [
+                    "\\bnotifications?\\b",
+                    "\\bpush (?:messages?|service)\\b",
+                ],
+                "Chat": [
+                    "\\bchat(?:bot|s)?\\b",
+                    "\\bweb ?chat\\b",
+                    "\\binstant messag",
+                    "\\bmessaging\\b",
+                    "\\bmi (?:talk|message)\\b",
+                ],
+                "SocialMedia": [
+                    "\\bsocial (?:media|network)",
+                    "\\bfacebook\\b",
+                    "\\btwitter\\b",
+                    "\\binstagram\\b",
+                    "\\bfan pages?\\b",
+                ],
+                "Forum": [
+                    "\\bforums?\\b",
+                    "\\bcommunit(?:y|ies)\\b",
+                ],
+                "InPerson": [
+                    "\\bin person\\b",
+                    "\\bface[- ]to[- ]face\\b",
+                ],
+            }
+        ),
+        "Event/Program": AttributePattern.from_dict(
+            {
+                "Raffle": [
+                    "\\braffles?\\b",
+                ],
+                "Contest": [
+                    "\\bcontests?\\b",
+                    "\\bcompetitions?\\b",
+                ],
+                "Sweepstake": [
+                    "\\bsweepstakes?\\b",
+                    "\\bgiveaways?\\b",
+                    "\\bprize draws?\\b",
+                    "\\blotter(?:y|ies)\\b",
+                ],
+                "Promotion": [
+                    "\\bpromotions?\\b",
+                    "\\bpromotional (?:events?|offers?|campaigns?)\\b",
+                    "\\bcoupons?\\b",
+                    "\\bdiscounts?\\b",
+                ],
+                "LoyaltyProgram": [
+                    "\\bloyalty\\b",
+                    "\\bmembership programs?\\b",
+                    "\\brewards? programs?\\b",
+                ],
+                "BetaProgram": [
+                    "\\bbeta\\b",
+                    "\\bearly access\\b",
+                    "\\btest(?:ing)? programs?\\b",
+                    "\\bproduct testers?\\b",
+                ],
+                "Webinar": [
+                    "\\bwebinars?\\b",
+                    "\\bseminars?\\b",
+                    "\\bworkshops?\\b",
+                ],
+                "Trial": [
+                    "\\btrials?\\b",
+                    "\\bpilot\\b",
+                    "\\bfree samples?\\b",
+                ],
+                "ContentSubmissionProgram": [
+                    "\\b(?:submit|share|upload)\\w* [^.]{0,40}\\b(?:videos?|photos?|clips?)\\b[^.]{0,80}\\b(?:program|campaign)\\b",
+                    "\\b(?:program|campaign)\\b[^.]{0,80}\\b(?:videos?|photos?|clips?) you (?:share|submit|upload)\\b",
+                ],
+                "UserExperienceProgram": [
+                    "\\buser experience programs?\\b",
+                ],
+                "WellnessProgram": [
+                    "\\bwellness programs?\\b",
+                ],
+                "TradeShow": [
+                    "\\btrade shows?\\b",
+                    "\\bexhibitions?\\b",
+                ],
+                "ReferralProgram": [
+                    "\\breferral (?:program|scheme)s?\\b",
+                ],
+            }
+        ),
+    },
     user_responsibility=AttributePattern.from_dict(
         {
             "BystanderNotice": [

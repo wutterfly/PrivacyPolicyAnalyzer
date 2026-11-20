@@ -8,6 +8,7 @@ from privacy_policy_analyzer.analysis import (
     classify_scopes_and_topics,
     extract_all_attributes,
 )
+from privacy_policy_analyzer.analysis.attributes import extract_scope_specifics
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.analysis.post_processing import (
     combine_table_rows,
@@ -280,6 +281,8 @@ class Pipeline:
 
         entries = combine_table_rows(entries)
         smoothing_stats = smooth_scope(entries)
+        # the scopes are final now, so the scope specifics can be extracted
+        extract_scope_specifics(entries, config.pattern_configs.scope_specifics)
 
         return PolicyResult(
             name=policy.name,

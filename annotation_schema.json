@@ -32,7 +32,9 @@
       "Appliance",
       "Computer",
       "LawnMower",
-      "MobilePhone"
+      "MobilePhone",
+      "SmartMeter",
+      "AirPurifier"
     ],
     "Communication": [
       "Email",
@@ -55,7 +57,10 @@
       "Webinar",
       "Trial",
       "ContentSubmissionProgram",
-      "UserExperienceProgram"
+      "UserExperienceProgram",
+      "WellnessProgram",
+      "TradeShow",
+      "ReferralProgram"
     ]
   },
   "topics": [
@@ -858,6 +863,7 @@
       "DataProcessingAgreement",
       "StandardContractualClauses",
       "AdequacyDecision",
+      "DataPrivacyFramework",
       "Audits",
       "Confidentiality",
       "BindingContractualRules"

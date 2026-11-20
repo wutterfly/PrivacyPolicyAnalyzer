@@ -62,6 +62,8 @@ class AttributePatterns:
     automated_decision: AttributePattern
     certifications: AttributePattern
     user_responsibility: AttributePattern
+    # scope -> patterns per specific value, e.g. {"Device": <Camera, Lock, ...>}
+    scope_specifics: dict[str, AttributePattern]
 
     def get_stats(self) -> dict[str, dict[str, int]]:
         return {
@@ -85,6 +87,42 @@ class AttributePatterns:
             "automated_decision": self.automated_decision.get_stats(),
             "certifications": self.certifications.get_stats(),
             "user_responsibility": self.user_responsibility.get_stats(),
+            **{
+                f"scope_specifics.{scope}": group.get_stats()
+                for scope, group in self.scope_specifics.items()
+            },
+        }
+
+
+# An e-mail address or a phone number is data, not a channel of communication or a
+# kind of phone: it is removed before the scope specifics are matched.
+_SPECIFICS_NOISE = re.compile(
+    r"\be-?mail addresse?s?\b"
+    r"|\b(?:mobile |cell |telephone |phone )?(?:phone|telephone) numbers?\b"
+    r"|\bmobile numbers?\b",
+    re.IGNORECASE,
+)
+
+
+def extract_scope_specifics(
+    entries: list[RawEntry], patterns: dict[str, AttributePattern]
+) -> None:
+    """Fill `entry.scope_specifics` of every entry from its scopes.
+
+    A scope that has specific values (a key of `patterns`, e.g. Device,
+    Communication or Event/Program) always gets a list, which is empty if nothing
+    matches, and scopes without specifics get no key. The field is therefore
+    always complete, as the annotation format requires.
+
+    Run it on the final entries, after header propagation, scope smoothing and the
+    merging of table rows, because those steps change the scopes and the texts.
+    """
+    for entry in entries:
+        text = _SPECIFICS_NOISE.sub(" ", entry.text)
+        entry.scope_specifics = {
+            scope: patterns[scope].match(text)
+            for scope in entry.scopes
+            if scope in patterns
         }
 
 

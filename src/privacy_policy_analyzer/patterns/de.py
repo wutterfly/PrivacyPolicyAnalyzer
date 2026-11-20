@@ -2589,6 +2589,11 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "angemessenes Datenschutzniveau",
                 "Angemessenheits(mechanism(us|en)|beschluss)",
             ],
+            "DataPrivacyFramework": [
+                "\\bData Privacy Framework\\b",
+                "\\bDPF\\b",
+                "EU-US-Datenschutzrahmen",
+            ],
             "Audits": [
                 "audits",
                 "Sicherheitsprüfung",
@@ -2665,6 +2670,63 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "CSA STAR": ["CSA STAR"],
         }
     ),
+    scope_specifics={
+        "Device": AttributePattern.from_dict(
+            {
+                "Camera": [],
+                "Doorbell": [],
+                "Lock": [],
+                "Thermostat": [],
+                "RobotVacuum": [],
+                "Speaker": [],
+                "TV": [],
+                "Router": [],
+                "Hub": [],
+                "Light": [],
+                "Plug": [],
+                "Sensor": [],
+                "Wearable": [],
+                "Scale": [],
+                "PetFeeder": [],
+                "Appliance": [],
+                "Computer": [],
+                "LawnMower": [],
+                "MobilePhone": [],
+                "SmartMeter": [],
+                "AirPurifier": [],
+            }
+        ),
+        "Communication": AttributePattern.from_dict(
+            {
+                "Email": [],
+                "SMS": [],
+                "PhoneCall": [],
+                "PostalMail": [],
+                "Notification": [],
+                "Chat": [],
+                "SocialMedia": [],
+                "Forum": [],
+                "InPerson": [],
+            }
+        ),
+        "Event/Program": AttributePattern.from_dict(
+            {
+                "Raffle": [],
+                "Contest": [],
+                "Sweepstake": [],
+                "Promotion": [],
+                "LoyaltyProgram": [],
+                "BetaProgram": [],
+                "Webinar": [],
+                "Trial": [],
+                "ContentSubmissionProgram": [],
+                "UserExperienceProgram": [],
+                "WellnessProgram": [],
+                "TradeShow": [],
+                "ReferralProgram": [],
+            }
+        ),
+    },
     user_responsibility=AttributePattern.from_dict(
         {
             "BystanderNotice": [
