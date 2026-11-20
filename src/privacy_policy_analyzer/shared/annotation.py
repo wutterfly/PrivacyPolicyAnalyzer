@@ -116,20 +116,27 @@ def read_raw_entry(data: dict) -> RawEntry:
     )
 
 
-def read_training_data(folder: Path) -> list[list[RawEntry]]:
-    """Reads all training data from the specified folder."""
+def read_training_documents(folder: Path) -> list[tuple[str, list[RawEntry]]]:
+    """Reads all annotated files from the folder as ``(name, entries)`` pairs.
 
-    training_files: list[list[RawEntry]] = []
-    for filename in folder.glob("*.json"):
+    The name is the file stem. Files are returned sorted by name so the result
+    does not depend on the order the file system lists them in.
+    """
+
+    documents: list[tuple[str, list[RawEntry]]] = []
+    for filename in sorted(folder.glob("*.json"), key=lambda p: p.name):
         try:
-            x = filename.open("r", encoding="utf-8")
-            content: dict = json.load(x)
-            contents = []
-            for entry in content:
-                contents.append(read_raw_entry(entry))
-            training_files.append(contents)
+            with filename.open("r", encoding="utf-8") as f:
+                content: list[dict] = json.load(f)
+            documents.append((filename.stem, [read_raw_entry(e) for e in content]))
         except Exception as e:
             logger.error("Error reading file=%s: %s", filename, e)
 
-    logger.info("Loaded %d training files from folder=%s", len(training_files), folder)
-    return training_files
+    logger.info("Loaded %d training files from folder=%s", len(documents), folder)
+    return documents
+
+
+def read_training_data(folder: Path) -> list[list[RawEntry]]:
+    """Reads all training data from the specified folder (entries only)."""
+
+    return [entries for _, entries in read_training_documents(folder)]

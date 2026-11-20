@@ -1,27 +1,23 @@
+"""Label schema, training tasks and conversion of annotated entries to arrays.
+
+Light on purpose (numpy only): everything torch / datasets related lives in
+``trainer.py``.
+"""
+
+from __future__ import annotations
+
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Literal, Sequence
 
 import numpy as np
-from datasets import Dataset, DatasetInfo, concatenate_datasets
-from sklearn.model_selection import train_test_split
 
-from privacy_policy_analyzer.shared.annotation import RawEntry
-from privacy_policy_analyzer.shared.logging import get_logger
+from privacy_policy_analyzer.shared.annotation import OTHER, UNSPECIFIED_SCOPE
+from privacy_policy_analyzer.training.split import Item
 
-logger = get_logger(__name__)
-
-
-def _build_label2id_map(labels: list[str], fallback: str = "Other") -> dict[str, int]:
-    """Build label to ID mapping with the fallback label as the first label.
-
-    The fallback is 'Other' for topics and contents and 'Unspecified' for scopes.
-    """
-    label2id: dict[str, int] = {fallback: 0}
-    for label in labels:
-        if label not in label2id:
-            label2id[label] = len(label2id)
-    return label2id
+Level = Literal["scope", "topic", "content"]
 
 
 @dataclass
@@ -49,134 +45,187 @@ class LabelSchema:
 def read_annotation_schema(schema_file: Path) -> LabelSchema:
     """Read annotation schema from a JSON file."""
 
-    with schema_file.open("r", encoding="utf-8") as f:
-        schema = json.load(f)
-    return LabelSchema.from_dict(schema)
+    with Path(schema_file).open("r", encoding="utf-8") as f:
+        return LabelSchema.from_dict(json.load(f))
 
 
-def extract_training_data_scope(
-    raw_data: list[list[RawEntry]], label2id: dict[str, int]
-) -> Dataset:
-    num_labels: int = len(label2id)
+def build_label2id(labels: Sequence[str], fallback: str) -> dict[str, int]:
+    """Label to ID mapping with the fallback label ('Other' / 'Unspecified') first."""
 
-    # Extract data
-    data: dict[str, list] = {"text": [], "labels": []}
-    for raw in raw_data:
-        for entry in raw:
-            scope_flags: list[float] = [0.0] * num_labels
-            for scope in entry.scopes:
-                scope_flags[label2id[scope]] = 1.0
-
-            data["text"].append(entry.text)
-            data["labels"].append(scope_flags)
-
-    # Create Dataset
-    return Dataset.from_dict(data, info=DatasetInfo(description="scope"))
+    label2id: dict[str, int] = {fallback: 0}
+    for label in labels:
+        label2id.setdefault(label, len(label2id))
+    return label2id
 
 
-def extract_training_data_topics(
-    raw_data: list[list[RawEntry]], label2id: dict[str, int]
-) -> Dataset:
-    num_labels: int = len(label2id)
+def slugify(name: str) -> str:
+    """File-system safe name: ``mukund/privbert`` -> ``mukund_privbert``."""
 
-    # Extract data
-    data: dict[str, list] = {"text": [], "labels": []}
-    for raw in raw_data:
-        for entry in raw:
-            topic_flags: list[float] = [0.0] * num_labels
-            for topic in entry.topics:
-                topic_flags[label2id[topic.topic]] = 1.0
-
-            data["text"].append(entry.text)
-            data["labels"].append(topic_flags)
-
-    # Create Dataset
-    return Dataset.from_dict(data, info=DatasetInfo(description="topic"))
+    return re.sub(r"[^\w.\-]+", "_", name)
 
 
-def extract_training_data_content(
-    raw_data: list[list[RawEntry]], label2id: dict[str, int], topic: str
-) -> Dataset:
-    num_labels: int = len(label2id)
-    data: dict[str, list] = {"text": [], "labels": []}
-    for i, raw in enumerate(raw_data):
-        for entry in raw:
-            for topic_annotation in entry.topics:
-                if topic_annotation.topic == topic:
-                    content_flags: list[float] = [0.0] * num_labels
-                    for content_annotation in topic_annotation.contents:
-                        if content_annotation.content not in label2id:
-                            logger.error(
-                                "Content label not in label2id mapping: label=%s",
-                                content_annotation.content,
-                            )
-                            logger.error(
-                                "Error in entry: index=%d text=%s", i, entry.text
-                            )
-                        content_flags[label2id[content_annotation.content]] = 1.0
+@dataclass(frozen=True)
+class Task:
+    """One classifier to train: the scope model, the topic model, or the content
+    model of one topic."""
 
-                    data["text"].append(entry.text)
-                    data["labels"].append(content_flags)
-    return Dataset.from_dict(data, info=DatasetInfo(description=f"content_{topic}"))
+    level: Level
+    topic: str | None = None  # only for level == "content"
+
+    def __post_init__(self) -> None:
+        if self.level not in ("scope", "topic", "content"):
+            raise ValueError(f"Unknown level: {self.level!r}")
+        if (self.level == "content") != (self.topic is not None):
+            raise ValueError("A topic is required for (and only for) level 'content'")
+
+    @staticmethod
+    def parse(text: str) -> "Task":
+        """``scope``, ``topic`` or ``content:<Topic>`` (e.g. ``content:Security/Privacy``)."""
+
+        level, _, topic = text.partition(":")
+        return Task(level, topic or None)  # type: ignore[arg-type]
+
+    @staticmethod
+    def all(schema: LabelSchema) -> list["Task"]:
+        """Scope, topic and one content task per topic that has content labels."""
+
+        return [Task("scope"), Task("topic")] + [
+            Task("content", topic)
+            for topic, contents in schema.topicContents.items()
+            if contents
+        ]
+
+    def __str__(self) -> str:
+        return self.level if self.topic is None else f"{self.level}:{self.topic}"
+
+    @property
+    def path(self) -> Path:
+        """Relative output location, e.g. ``content/Security_Privacy``."""
+
+        return Path(self.level) / (slugify(self.topic) if self.topic else "")
+
+    @property
+    def fallback(self) -> str:
+        return UNSPECIFIED_SCOPE if self.level == "scope" else OTHER
+
+    @property
+    def default_oversampling(self) -> float:
+        return 0.5 if self.level != "content" else 0.7
+
+    def labels(self, schema: LabelSchema) -> list[str]:
+        if self.level == "scope":
+            return schema.scope
+        if self.level == "topic":
+            return schema.topics
+        assert self.topic is not None
+        if self.topic not in schema.topicContents:
+            raise ValueError(f"Schema has no content labels for topic {self.topic!r}")
+        return schema.topicContents[self.topic]
+
+    def label2id(self, schema: LabelSchema) -> dict[str, int]:
+        return build_label2id(self.labels(schema), self.fallback)
 
 
-def split_dataset(
-    dataset: Dataset, test_size: float, seed: int
-) -> tuple[Dataset, Dataset]:
-    indices = np.arange(len(dataset))
+@dataclass
+class Samples:
+    """Multi-hot encoded sentences of one partition for one task."""
 
-    train_indices, test_indices = train_test_split(
-        indices, test_size=test_size, random_state=seed
-    )
+    texts: list[str]
+    labels: np.ndarray  # (n, n_labels) float32 multi-hot
+    synthetic: np.ndarray  # (n,) bool
 
-    # Create datasets from indices
-    train_dataset = dataset.select(train_indices.tolist())
-    eval_dataset = dataset.select(test_indices.tolist())
+    def __len__(self) -> int:
+        return len(self.texts)
 
-    return train_dataset, eval_dataset
+    def subset(self, mask_or_idx: np.ndarray) -> "Samples":
+        idx = np.flatnonzero(mask_or_idx) if mask_or_idx.dtype == bool else mask_or_idx
+        return Samples(
+            [self.texts[i] for i in idx], self.labels[idx], self.synthetic[idx]
+        )
+
+    def support(self, label_names: Sequence[str]) -> dict[str, int]:
+        return {n: int(self.labels[:, i].sum()) for i, n in enumerate(label_names)}
 
 
-def oversample_minority_labels(dataset: Dataset, ratio: float):
-    labels_array = np.array([example["labels"] for example in dataset])
-    for x, y in zip(labels_array, np.array(dataset["labels"])):
-        assert np.array_equal(x, y)
-    pos_counts = labels_array.sum(axis=0)
-    n_labels = labels_array.shape[1]
+def extract_samples(items: Sequence[Item], task: Task, label2id: dict[str, int]) -> Samples:
+    """Turns annotated sentences into multi-hot rows for ``task``.
 
-    max_count = int(pos_counts.max())
-    target_count = int(max_count * ratio)
+    Content tasks only use sentences annotated with the task's topic.
+    """
 
-    all_indices_to_add = []
+    def flag(names: list[str], where: str) -> np.ndarray:
+        row = np.zeros(len(label2id), dtype=np.float32)
+        for name in names:
+            if name not in label2id:
+                raise ValueError(
+                    f"{where}: label {name!r} is not in the {task} label set "
+                    f"{sorted(label2id)}"
+                )
+            row[label2id[name]] = 1.0
+        return row
 
-    for label_idx in range(n_labels):
-        current_count = int(pos_counts[label_idx])
+    texts: list[str] = []
+    rows: list[np.ndarray] = []
+    synthetic: list[bool] = []
+    for item in items:
+        e = item.entry
+        where = f"{item.source} line {e.line_number}"
+        if task.level == "scope":
+            row = flag(e.scopes, where)
+        elif task.level == "topic":
+            row = flag([t.topic for t in e.topics], where)
+        else:
+            matching = [t for t in e.topics if t.topic == task.topic]
+            if not matching:
+                continue
+            row = flag([c.content for t in matching for c in t.contents], where)
+        texts.append(e.text)
+        rows.append(row)
+        synthetic.append(item.synthetic)
 
-        if current_count >= target_count:
+    labels = np.stack(rows) if rows else np.zeros((0, len(label2id)), dtype=np.float32)
+    return Samples(texts, labels, np.array(synthetic, dtype=bool))
+
+
+def oversample_indices(labels: np.ndarray, ratio: float) -> np.ndarray:
+    """Row indices for a training set where rare labels are repeated.
+
+    Every label with fewer than ``ratio * (count of the most frequent label)``
+    positives gets copies of its positive rows (round robin, deterministic) until
+    it reaches that target. The result starts with all original rows.
+    """
+
+    n = len(labels)
+    if n == 0:
+        return np.arange(0)
+    pos_counts = labels.sum(axis=0)
+    target = int(pos_counts.max() * ratio)
+
+    extra: list[int] = []
+    for label_idx in range(labels.shape[1]):
+        missing = target - int(pos_counts[label_idx])
+        positives = np.flatnonzero(labels[:, label_idx] > 0.5)
+        if missing <= 0 or len(positives) == 0:
             continue
+        copies, remainder = divmod(missing, len(positives))
+        extra.extend(np.repeat(positives, copies).tolist())
+        extra.extend(positives[:remainder].tolist())
 
-        indices_with_label = np.where(labels_array[:, label_idx] > 0.5)[0].tolist()
+    return np.concatenate([np.arange(n), np.array(extra, dtype=int)])
 
-        if len(indices_with_label) == 0:
-            continue
 
-        samples_needed = target_count - current_count
+def label_distribution(items: Sequence[Item]) -> dict:
+    """Counts of scopes, topics and contents per topic over the given sentences."""
 
-        # Calculate how many times to duplicate each sample
-        copies_per_sample = samples_needed // len(indices_with_label)
-        remainder = samples_needed % len(indices_with_label)
-
-        # Add full copies for all samples
-        for idx in indices_with_label:
-            all_indices_to_add.extend([idx] * copies_per_sample)
-
-        # Add remainder copies to first N samples (deterministic)
-        for i in range(remainder):
-            all_indices_to_add.append(indices_with_label[i])
-
-    if len(all_indices_to_add) == 0:
-        return dataset
-
-    oversampled_subset = dataset.select(all_indices_to_add)
-    balanced_dataset = concatenate_datasets([dataset, oversampled_subset])
-
-    return balanced_dataset
+    scopes: dict[str, int] = {}
+    topics: dict[str, int] = {}
+    contents: dict[str, dict[str, int]] = {}
+    for item in items:
+        for scope in item.entry.scopes:
+            scopes[scope] = scopes.get(scope, 0) + 1
+        for tpc in item.entry.topics:
+            topics[tpc.topic] = topics.get(tpc.topic, 0) + 1
+            for cnt in tpc.contents:
+                per_topic = contents.setdefault(tpc.topic, {})
+                per_topic[cnt.content] = per_topic.get(cnt.content, 0) + 1
+    return {"len": len(items), "scopes": scopes, "topics": topics, "contents": contents}

@@ -3,20 +3,37 @@ import os
 import random
 
 import numpy as np
-import torch
-from datasets.utils import disable_progress_bar
-from transformers import set_seed
-from transformers.utils import logging as hf_logging
+
+# torch / transformers / datasets are imported inside the functions that need
+# them, so the data and split modules (and `--dry-run`) work without them.
 
 
-def set_global_seed(seed: int):
-    """Set the global random seed for reproducibility."""
+def set_global_seed(seed: int, deterministic: bool = False):
+    """Seed every random number generator the training touches.
+
+    With ``deterministic`` the GPU is also put into deterministic mode (slower).
+    Operations without a deterministic implementation only warn instead of
+    failing. Call this before CUDA is first used so the cuBLAS setting takes
+    effect.
+    """
+    import torch
+
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    if deterministic:
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    set_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+    if deterministic:
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True, warn_only=True)
+        # the fused attention kernels have non-deterministic backward passes (and
+        # warn_only lets them through); the plain math kernel is deterministic
+        torch.backends.cuda.enable_flash_sdp(False)
+        torch.backends.cuda.enable_mem_efficient_sdp(False)
 
 
 DEBERTA_MODELS = ("deberta-v3", "deberta-v2")
@@ -26,6 +43,8 @@ def get_optimal_precision(model_name: str):
     """
     Determine optimal precision with detailed GPU information.
     """
+    import torch
+
     if not torch.cuda.is_available():
         return {"precision": {}, "info": "No CUDA available"}
 
@@ -80,6 +99,9 @@ def get_optimal_precision(model_name: str):
 
 def disable_logging():
     """Disable logging from transformers and datasets libraries."""
+    from datasets.utils import disable_progress_bar
+    from transformers.utils import logging as hf_logging
+
     disable_progress_bar()
     os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "true"
     os.environ["TRANSFORMERS_VERBOSITY"] = "error"

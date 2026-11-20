@@ -1,418 +1,57 @@
-import json
-import logging
-from dataclasses import dataclass
-from pathlib import Path
-from time import perf_counter
-from typing import Any, Literal
+"""Fine-tuning of the scope / topic / content classifiers.
 
-import numpy as np
-import torch
-from datasets import Dataset, DatasetDict
-from sklearn.metrics import (
-    accuracy_score,
-    f1_score,
-    hamming_loss,
-    precision_score,
-    recall_score,
-)
-from transformers import (
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    DataCollatorWithPadding,
-    Trainer,
-    TrainingArguments,
-)
-from transformers.trainer_callback import PrinterCallback
+Command line::
 
-from privacy_policy_analyzer.shared.annotation import (
-    OTHER,
-    UNSPECIFIED_SCOPE,
-    RawEntry,
-)
-from privacy_policy_analyzer.shared.logging import get_logger
-from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
+    python -m privacy_policy_analyzer.training --data DIR --schema FILE --out DIR \\
+        --models distilbert-base-uncased [--tasks scope topic content:UserRights] [--dry-run]
+
+Python::
+
+    corpus = load_corpus(data_dir)
+    split = prepare_split(corpus, out_dir / "split.json", seed=42)
+    train("distilbert-base-uncased", Task("scope"), split, schema, out_dir)
+
+or ``run_experiment(...)`` for several models and tasks at once. Data is split by
+policy (see ``split.py``); the split is frozen to ``split.json`` next to the models.
+"""
+
+from privacy_policy_analyzer.training.config import TrainingConfig
 from privacy_policy_analyzer.training.data import (
-    _build_label2id_map,
-    extract_training_data_content,
-    extract_training_data_scope,
-    extract_training_data_topics,
-    oversample_minority_labels,
-    # split_dataset,
+    LabelSchema,
+    Task,
+    label_distribution,
+    read_annotation_schema,
 )
-from privacy_policy_analyzer.training.progress import SimpleProgressBarCallback
-from privacy_policy_analyzer.training.util import (
-    get_optimal_precision,
+from privacy_policy_analyzer.training.experiment import run_experiment
+from privacy_policy_analyzer.training.split import (
+    Corpus,
+    DataSplit,
+    load_corpus,
+    make_split,
+    prepare_split,
 )
 
-logger = get_logger(__name__)
-
-# Metrics
-
-
-def _compute_metrics(eval_pred, label_names: list[str], threshold=0.5) -> dict:
-    logits, labels = eval_pred
-    predictions = 1 / (1 + np.exp(-logits))  # Sigmoid
-    predictions = (predictions > threshold).astype(int)  # Threshold
-
-    metrics = {
-        "f1_micro": f1_score(
-            labels, predictions, average="micro", zero_division=np.nan
-        ),
-        "f1_macro": f1_score(
-            labels, predictions, average="macro", zero_division=np.nan
-        ),
-        "f1_weighted": f1_score(
-            labels, predictions, average="weighted", zero_division=np.nan
-        ),
-        "precision_micro": precision_score(
-            labels, predictions, average="micro", zero_division=np.nan
-        ),
-        "precision_macro": precision_score(
-            labels, predictions, average="macro", zero_division=np.nan
-        ),
-        "recall_micro": recall_score(
-            labels, predictions, average="micro", zero_division=np.nan
-        ),
-        "recall_macro": recall_score(
-            labels, predictions, average="macro", zero_division=np.nan
-        ),
-        "accuracy": accuracy_score(labels, predictions),
-        "hamming_loss": hamming_loss(labels, predictions),
-    }
-
-    # Per-label F1 (no averaging)
-    f1_per_label = f1_score(labels, predictions, average=None, zero_division=np.nan)
-    assert isinstance(f1_per_label, np.ndarray)
-
-    # Add each label's F1 score
-    for i, label_name in enumerate(label_names):
-        metrics[f"f1_{label_name}"] = f1_per_label[i]
-
-    return metrics
+__all__ = [
+    "Corpus",
+    "DataSplit",
+    "LabelSchema",
+    "Task",
+    "TrainResult",
+    "TrainingConfig",
+    "label_distribution",
+    "load_corpus",
+    "make_split",
+    "prepare_split",
+    "read_annotation_schema",
+    "run_experiment",
+    "train",
+]
 
 
-def _find_optimal_thresholds(
-    trainer: Trainer,
-    eval_dataset: Dataset,
-    label_names: list[str],
-    metric: Literal["f1_macro", "f1_micro"] = "f1_macro",
-) -> dict[str, float]:
-    predictions = trainer.predict(eval_dataset)
-    logits = predictions.predictions
-    probs = 1 / (1 + np.exp(-logits))  # Sigmoid
-    labels = predictions.label_ids
-    assert isinstance(labels, np.ndarray)
+def __getattr__(name: str):
+    # torch / transformers / datasets are only loaded when training is requested
+    if name in ("train", "TrainResult"):
+        from privacy_policy_analyzer.training import trainer
 
-    thresholds = np.arange(0.1, 0.95, 0.05)
-    optimal_thresholds = {}
-
-    for i, label_name in enumerate(label_names):
-        if labels[:, i].sum() == 0:
-            optimal_thresholds[label_name] = 0.5
-            continue
-
-        # Vectorized: compute all predictions at once
-        preds_all = (
-            probs[:, i, np.newaxis] > thresholds
-        )  # shape: (n_samples, n_thresholds)
-
-        # Compute F1 for all thresholds
-        f1_scores: np.ndarray
-        if metric == "f1_macro":
-            f1_scores = np.array(
-                [
-                    f1_score(
-                        labels[:, i],
-                        preds_all[:, j],
-                        average="macro",
-                        zero_division=np.nan,
-                    )
-                    for j in range(len(thresholds))
-                ]
-            )
-        else:  # f1_micro
-            f1_scores = np.array(
-                [
-                    f1_score(
-                        labels[:, i],
-                        preds_all[:, j],
-                        average="micro",
-                        zero_division=np.nan,
-                    )
-                    for j in range(len(thresholds))
-                ]
-            )
-
-        best_idx = np.argmax(f1_scores)
-        optimal_thresholds[label_name] = float(thresholds[best_idx])
-
-    return optimal_thresholds
-
-
-def _get_compute_metrics(label_names: list[str], threshold=0.5):
-    return lambda eval_pred: _compute_metrics(eval_pred, label_names, threshold)
-
-
-# Model Training Function
-
-
-def _train_model_on_dataset(
-    dataset: Dataset,
-    label2id: dict[str, int],
-    model_name: str,
-    output_dir: Path,
-    oversampling_ratio: float,
-    seed: int,
-    train_test_eval_split: tuple[float, float, float] = (0.7, 0.15, 0.15),
-):
-
-    train_s, test_s, eval_s = train_test_eval_split
-    assert train_s + test_s + eval_s == 1.0
-    logger.info(
-        "Dataset split: train=%.2f%% test=%.2f%% eval=%.2f%%",
-        train_s * 100,
-        test_s * 100,
-        eval_s * 100,
-    )
-
-    cleanup_memory()
-    start = perf_counter()
-    model_output_dir = output_dir / Path(model_name.replace("/", "_"))
-    model_output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Label mappings
-    id2label = {v: k for k, v in label2id.items()}
-
-    # Split and over-sample
-    # train, eval = split_dataset(dataset, test_size=test_eval_split, seed=seed)
-
-    # First split
-    train_test = dataset.train_test_split(test_size=test_s, seed=seed)
-
-    # Second split
-    eval_ratio = eval_s / (train_s + eval_s)
-    train_eval: DatasetDict = train_test["train"].train_test_split(
-        test_size=eval_ratio, seed=seed
-    )
-
-    train_data: Dataset = train_eval["train"]
-    test_data: Dataset = train_test["test"]
-    eval_data: Dataset = train_eval["test"]
-
-    train_data = oversample_minority_labels(train_data, ratio=oversampling_ratio)
-    train_data = train_data.shuffle(seed=seed)
-    eval_data = eval_data.shuffle(seed=seed)
-    test_data = test_data.shuffle(seed=seed)
-
-    # Tokenization
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    def tokenize_function(examples) -> dict:
-        return tokenizer(
-            examples["text"], max_length=512, truncation=True, padding=False
-        )
-
-    tokenized_train = train_data.map(tokenize_function, batched=True)
-    tokenized_eval = eval_data.map(tokenize_function, batched=True)
-    tokenized_test = test_data.map(tokenize_function, batched=True)
-
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
-
-    # Model Initialization
-    device = get_device()
-    logger.info("Using device=%s", device)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_name,
-        num_labels=len(label2id),
-        problem_type="multi_label_classification",
-        id2label=id2label,
-        label2id=label2id,
-        ignore_mismatched_sizes=True,
-        torch_dtype=torch.float32,
-    ).to(device)
-
-    # Training Configuration
-    config = get_optimal_precision(model_name)
-    logger.info("Optimal precision config: %s", config["info"])
-    training_args = TrainingArguments(
-        output_dir=str(model_output_dir),
-        eval_strategy="epoch",
-        save_strategy="best",
-        save_total_limit=1,
-        save_only_model=True,
-        learning_rate=5e-5,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=32,
-        gradient_accumulation_steps=2,
-        auto_find_batch_size=True,
-        num_train_epochs=10,
-        weight_decay=0.01,
-        warmup_ratio=0.1,
-        **config["precision"],
-        # fp16=True,
-        # bf16=True,
-        metric_for_best_model="f1_macro",
-        greater_is_better=True,
-        optim="adamw_bnb_8bit",
-        dataloader_pin_memory=device == "cuda",
-        dataloader_num_workers=4,
-        torch_empty_cache_steps=True,
-        load_best_model_at_end=True,
-        seed=seed,
-        data_seed=seed,
-        #
-        logging_strategy="no",
-        logging_steps=None,
-        logging_first_step=False,
-        disable_tqdm=True,  # Disable progress bars
-        log_level="error",
-        report_to="none",
-    )
-
-    # Trainer Initialization
-    label_names = [k for k in label2id.keys()]
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=tokenized_train,
-        eval_dataset=tokenized_eval,
-        data_collator=data_collator,
-        compute_metrics=_get_compute_metrics(label_names, threshold=0.5),
-        callbacks=[
-            SimpleProgressBarCallback(str(model_output_dir)),
-        ],
-    )
-    trainer.remove_callback(PrinterCallback)
-
-    # Training & Evaluation
-    logger.info("Starting training for model=%s output_dir=%s", model_name, output_dir)
-    trainer.train()
-    final_metrics = trainer.evaluate(eval_dataset=tokenized_test)
-
-    # Find optimal thresholds
-    optimal_thresholds = _find_optimal_thresholds(trainer, tokenized_eval, label_names)
-
-    end = perf_counter()
-
-    # Save final model
-    trainer.save_model(str(model_output_dir))
-
-    results_file = output_dir / Path(
-        f"training_results_{model_name.replace('/', '_')}.json"
-    )
-    with results_file.open("w", encoding="utf-8") as f:
-        json.dump(
-            {
-                "model_name": model_name,
-                "training_duration": end - start,
-                "final_metrics": final_metrics,
-                "optimal_thresholds": optimal_thresholds,
-            },
-            f,
-            indent=2,
-        )
-
-    # Cleanup
-    del model
-    del trainer
-    del data_collator
-    del tokenized_train
-    del tokenized_eval
-    del dataset
-    del tokenizer
-    cleanup_memory()
-
-
-# Training Configuration and Execution
-
-
-@dataclass
-class ModelTrainingConfig:
-    """Configuration for training a model."""
-
-    model_name: str
-    output_dir: Path
-    training_files: list[list[RawEntry]]
-    labels: list[str]
-    level: Literal["scope", "topic", "content"]
-    content_topic: str | None
-    train_eval_test_split: tuple[float, float, float]
-    oversampling_ratio: float
-    seed: int
-
-    def execute_training(self):
-        """Execute the training based on the configuration."""
-
-        # load label2id mapping
-        fallback = UNSPECIFIED_SCOPE if self.level == "scope" else OTHER
-        label2id = _build_label2id_map(self.labels, fallback)
-
-        # extract dataset based on level
-        dataset: Dataset | None = None
-        if self.level == "scope":
-            dataset = extract_training_data_scope(self.training_files, label2id)
-        elif self.level == "topic":
-            dataset = extract_training_data_topics(self.training_files, label2id)
-        else:  # content
-            assert self.content_topic is not None
-            dataset = extract_training_data_content(
-                self.training_files, label2id, self.content_topic
-            )
-
-        assert dataset is not None
-        logger.info(
-            "Training dataset size=%d samples level=%s", len(dataset), self.level
-        )
-        _train_model_on_dataset(
-            dataset=dataset,
-            label2id=label2id,
-            model_name=self.model_name,
-            output_dir=self.output_dir,
-            train_test_eval_split=self.train_eval_test_split,
-            oversampling_ratio=self.oversampling_ratio,
-            seed=self.seed,
-        )
-
-
-def get_label_distribution(
-    data: list[RawEntry] | list[list[RawEntry]],
-) -> dict[str, Any]:
-    """Get label distribution from the training data."""
-
-    combined: list[RawEntry] = []
-
-    if isinstance(data, list) and all(isinstance(i, list) for i in data):
-        for sublist in data:
-            assert isinstance(sublist, list)
-            combined.extend(sublist)
-        data = combined
-    elif isinstance(data, list) and all(isinstance(i, RawEntry) for i in data):
-        for entry in data:
-            assert isinstance(entry, RawEntry)
-            combined.append(entry)
-
-    else:
-        assert False, "Invalid data for label distribution."
-
-    scopes: dict[str, int] = {}
-    topics: dict[str, int] = {}
-    contents: dict[str, dict[str, int]] = {}
-
-    for entry in combined:
-        for scope in entry.scopes:
-            scopes[scope] = scopes.get(scope, 0) + 1
-
-        for tpc in entry.topics:
-            topics[tpc.topic] = topics.get(tpc.topic, 0) + 1
-            for cnt in tpc.contents:
-                contents[tpc.topic] = contents.get(tpc.topic, {})
-                contents[tpc.topic][cnt.content] = (
-                    contents[tpc.topic].get(cnt.content, 0) + 1
-                )
-
-    return {
-        "len": len(combined),
-        "scopes": scopes,
-        "topics": topics,
-        "contents": contents,
-    }
+        return getattr(trainer, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

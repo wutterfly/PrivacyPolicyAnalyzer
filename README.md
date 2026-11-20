@@ -155,86 +155,55 @@ The flow to train a new model is typical as follows:
 - Load the training data files and annotation schema, and configure the training parameters.
 - After training is finished, the trained models will be saved to the specified output directory. They can be used in the analysis pipeline and/or be uploaded to the HuggingFace model hub.
 
+Training is run from the command line (needs the `training` extra: `pip install "privacy-policy-analyzer[training]"`):
+
+```bash
+# see how the data is split and how many samples each task gets, train nothing
+python -m privacy_policy_analyzer.training --data DATA --schema SCHEMA --out OUT \
+    --models distilbert-base-uncased --dry-run
+
+# train scope, topic and one content model per topic
+python -m privacy_policy_analyzer.training --data DATA --schema SCHEMA --out OUT \
+    --models distilbert-base-uncased roberta-base
+
+# a subset of tasks, other hyperparameters
+python -m privacy_policy_analyzer.training --data DATA --schema SCHEMA --out OUT \
+    --models distilbert-base-uncased --tasks scope content:Security/Privacy --epochs 5 --lr 3e-5
+```
+
+or from Python (see [examples/training.py](./examples/training.py)):
+
 ```python
-import logging
 from pathlib import Path
 
-from privacy_policy_analyzer.shared.annotation import (
-    RawEntry,
-    read_training_data,
+from privacy_policy_analyzer.training import TrainingConfig, run_experiment
+
+run_experiment(
+    data_dir=Path("policies/en/labeled/final"),
+    schema_file=Path("annotation_schema.json"),
+    out_dir=Path("models/en"),
+    models=["distilbert-base-uncased"],
+    config=TrainingConfig(seed=42),
 )
-from privacy_policy_analyzer.shared.logging import set_logging
-from privacy_policy_analyzer.training import ModelTrainingConfig
-from privacy_policy_analyzer.training.data import (
-    LabelSchema,
-    read_annotation_schema,
-)
-from privacy_policy_analyzer.training.util import (
-    disable_logging,
-    set_global_seed,
-)
-
-SEED: int = 42
-set_global_seed(SEED)
-
-# disable logging from other modules
-disable_logging()
-set_logging("training.log", level=logging.INFO)
-
-model_name = "distilbert-base-uncased"
-
-# input and output paths
-training_folder: Path = Path("../../policies/en/labeled/final")
-annotation_schema_file: Path = Path("../../annotation_schema.json")
-output_dir: Path = Path("../../models/en")
-
-# read training data and annotation schema
-training_files: list[list[RawEntry]] = read_training_data(training_folder)
-schema: LabelSchema = read_annotation_schema(annotation_schema_file)
-
-# define training configurations
-configs = [
-    ModelTrainingConfig(
-        model_name=model_name,
-        output_dir=output_dir / Path("scope"),
-        training_files=training_files,
-        labels=schema.scope,
-        level="scope",
-        content_topic=None,
-        test_eval_split=0.2,
-        oversampling_ratio=0.5,
-        seed=SEED,
-    ),
-    ModelTrainingConfig(
-        model_name=model_name,
-        output_dir=output_dir / Path("topic"),
-        training_files=training_files,
-        labels=schema.topics,
-        level="topic",
-        content_topic=None,
-        test_eval_split=0.2,
-        oversampling_ratio=0.5,
-        seed=SEED,
-    ),
-    ModelTrainingConfig(
-        model_name=model_name,
-        output_dir=output_dir / Path("content") / Path("UserRights"),
-        training_files=training_files,
-        labels=schema.topicContents["UserRights"],
-        level="content",
-        content_topic="UserRights",
-        test_eval_split=0.2,
-        oversampling_ratio=0.7,
-        seed=SEED,
-    ),
-    # ....
-]
-
-# execute training for each configuration
-for config in configs:
-    config.execute_training()
-
 ```
+
+**Data split.** By default the data is split by policy (`--split-by policy`, 70/15/15 by default,
+`--split`): every real policy goes whole into exactly one of train, eval or test, so near-identical
+sentences of one policy never end up on both sides. The synthesized files (file name contains
+`synthesized`) belong to no policy and are split sentence by sentence with the same ratios.
+`--split-by sentence` splits every sentence individually instead; this leaks policy-specific wording
+into the test set and gives optimistic scores. The split is computed once and frozen to
+`<out>/split.json`: all models and tasks use the same test set, and a rerun with a different seed,
+ratios or split mode (or changed data) stops with an error unless `--resplit` is given. The eval
+partition selects the best epoch and the per-label thresholds; the test partition is evaluated once
+at the end, on all sentences and on the real ones only.
+
+**Reproducibility.** The data is read in sorted order, the split depends only on the seed, and every
+run is re-seeded before the classification head is initialised (so a run does not depend on which
+runs came before it). GPU kernels are deterministic unless `--no-deterministic` is given. Each
+`<out>/<task>/training_results_<model>.json` stores the hyperparameters, the split, a fingerprint of
+the data and the library versions. A run with identical inputs is skipped on a rerun (`--force` to
+repeat it).
 
 ### Defaults & Configurations
 
