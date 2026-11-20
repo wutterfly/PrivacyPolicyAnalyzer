@@ -29,19 +29,21 @@
       "Wearable",
       "Scale",
       "PetFeeder",
-      "Appliance"
+      "Appliance",
+      "Computer",
+      "LawnMower",
+      "MobilePhone"
     ],
     "Communication": [
-      "CustomerSupport",
-      "Newsletter",
-      "Notification",
-      "Marketing",
-      "Survey",
-      "Chat",
       "Email",
       "SMS",
+      "PhoneCall",
+      "PostalMail",
+      "Notification",
+      "Chat",
       "SocialMedia",
-      "Feedback"
+      "Forum",
+      "InPerson"
     ],
     "Event/Program": [
       "Raffle",
@@ -51,7 +53,9 @@
       "LoyaltyProgram",
       "BetaProgram",
       "Webinar",
-      "Trial"
+      "Trial",
+      "ContentSubmissionProgram",
+      "UserExperienceProgram"
     ]
   },
   "topics": [
