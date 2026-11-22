@@ -31,7 +31,8 @@ def describe_plan(split: DataSplit, tasks: Sequence[Task], schema) -> str:
     """Per task: samples per partition, and labels a partition has no positive for."""
 
     lines = [
-        f"split {split.hash} (seed={split.seed}, ratios={split.ratios}, by={split.by})",
+        f"split {split.hash} (seed={split.seed}, ratios={split.ratios}, by={split.by}, "
+        f"stratify={split.stratify})",
         *(
             f"  {p:<5} policies: {', '.join(split.policies[p]) or '-'}"
             for p in PARTITIONS
@@ -84,14 +85,17 @@ def run_experiment(
     resplit: bool = False,
     force: bool = False,
     dry_run: bool = False,
+    stratify: bool = True,
 ) -> list:
     """Trains every model on every task (default: all tasks of the schema).
 
     The data is split once and the split is frozen to ``<out_dir>/split.json``,
     so all models and tasks share train/eval/test and reruns reproduce it.
     ``split_by="policy"`` (default) keeps each policy whole in one partition and
-    splits synthetic sentences one by one; ``"sentence"`` splits every sentence
-    individually (leaks near-duplicates across partitions). Runs that already finished
+    splits synthetic and individual sentences one by one; ``"sentence"`` splits every
+    sentence individually (leaks near-duplicates across partitions). ``stratify``
+    (default) distributes the sentences split one by one label by label, so every
+    label reaches train, eval and test where possible. Runs that already finished
     with identical inputs are skipped unless ``force``.
     ``dry_run`` only prints the split and the per-task sample counts.
     """
@@ -105,7 +109,8 @@ def run_experiment(
         # same split as a real run, but nothing is written
         manifest = out_dir / SPLIT_FILE
         split = prepare_split(
-            corpus, manifest if manifest.exists() else None, config.seed, ratios, resplit, split_by
+            corpus, manifest if manifest.exists() else None, config.seed, ratios, resplit,
+            split_by, stratify,
         )
         print(describe_plan(split, tasks, schema))
         return []
@@ -114,7 +119,9 @@ def run_experiment(
     from privacy_policy_analyzer.training.util import set_global_seed
 
     set_global_seed(config.seed, config.deterministic)
-    split = prepare_split(corpus, out_dir / SPLIT_FILE, config.seed, ratios, resplit, split_by)
+    split = prepare_split(
+        corpus, out_dir / SPLIT_FILE, config.seed, ratios, resplit, split_by, stratify
+    )
 
     results = []
     for model_name in models:

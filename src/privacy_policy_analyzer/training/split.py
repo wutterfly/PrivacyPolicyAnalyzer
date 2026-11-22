@@ -1,6 +1,6 @@
 """Train / eval / test splitting of the annotated corpus.
 
-The corpus has two kinds of files:
+The corpus has three kinds of files:
 
 * **Policies**: real, annotated privacy policies. Sentences of one policy share
   wording and boilerplate, so with ``by="policy"`` (the default) a policy is kept
@@ -8,10 +8,22 @@ The corpus has two kinds of files:
   train into eval/test.
 * **Synthetic files** (file name contains ``synthesized``): generated sentences
   that do not belong to any policy. They are always split sentence by sentence.
+* **Individual files** (file name contains ``individual``): real sentences
+  collected one by one from policies that are not in the corpus otherwise. Like
+  synthetic sentences they are split sentence by sentence, but they count as
+  real (not synthetic) in the reported metrics.
 
 ``by="sentence"`` switches to a plain random split of every sentence, real or
 synthetic, ignoring which policy it came from (the old behaviour; the test
 numbers it gives are optimistic because of the leakage).
+
+With ``stratify=True`` (the default) the sentences that are split one by one
+are not shuffled at random but distributed label by label (iterative
+stratification, rarest label first), taking into account what the whole
+policies already put into each partition. Every label then ends up in train,
+eval and test in roughly the split ratios, and a label with at least 3 such
+positives in total is guaranteed to be in every partition (2: train and test,
+1: train).
 
 The split is computed once for the whole corpus, so every model and every task
 (scope, topic, content) sees the same train/eval/test sentences, and it can be
@@ -24,6 +36,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterator, Literal
@@ -38,11 +51,14 @@ logger = get_logger(__name__)
 
 PARTITIONS = ("train", "eval", "test")
 SYNTHETIC_MARKER = "synthesized"
+INDIVIDUAL_MARKER = "individual"
 MANIFEST_VERSION = 1
 
 SplitBy = Literal["policy", "sentence"]
+Kind = Literal["policy", "synthetic", "individual"]
 Ratios = tuple[float, float, float]
 DEFAULT_RATIOS: Ratios = (0.7, 0.15, 0.15)
+LabelKey = tuple[str, ...]  # ("scope", s) / ("topic", t) / ("content", t, c)
 
 
 @dataclass(frozen=True)
@@ -58,7 +74,16 @@ class Item:
 class Document:
     name: str  # file stem
     entries: list[RawEntry]
-    synthetic: bool
+    kind: Kind
+
+    @property
+    def synthetic(self) -> bool:
+        return self.kind == "synthetic"
+
+    @property
+    def loose(self) -> bool:
+        """Sentences without a policy of their own: always split one by one."""
+        return self.kind != "policy"
 
     def items(self) -> list[Item]:
         return [Item(e, self.name, self.synthetic) for e in self.entries]
@@ -71,11 +96,35 @@ class Corpus:
 
     @property
     def policies(self) -> list[Document]:
-        return [d for d in self.documents if not d.synthetic]
+        return [d for d in self.documents if not d.loose]
+
+    @property
+    def loose(self) -> list[Document]:
+        """Synthetic and individual files."""
+        return [d for d in self.documents if d.loose]
 
     @property
     def synthetic(self) -> list[Document]:
         return [d for d in self.documents if d.synthetic]
+
+
+def _kind(name: str, synthetic_marker: str, individual_marker: str) -> Kind:
+    lowered = name.lower()
+    if synthetic_marker in lowered:
+        return "synthetic"
+    if individual_marker in lowered:
+        return "individual"
+    return "policy"
+
+
+def label_keys(entry: RawEntry) -> frozenset[LabelKey]:
+    """Every label of a sentence over all tasks: scopes, topics and contents."""
+
+    keys: set[LabelKey] = {("scope", s) for s in entry.scopes}
+    for t in entry.topics:
+        keys.add(("topic", t.topic))
+        keys.update(("content", t.topic, c.content) for c in t.contents)
+    return frozenset(keys)
 
 
 def _fingerprint(folder: Path) -> str:
@@ -89,7 +138,11 @@ def _fingerprint(folder: Path) -> str:
     return digest.hexdigest()
 
 
-def load_corpus(folder: Path, synthetic_marker: str = SYNTHETIC_MARKER) -> Corpus:
+def load_corpus(
+    folder: Path,
+    synthetic_marker: str = SYNTHETIC_MARKER,
+    individual_marker: str = INDIVIDUAL_MARKER,
+) -> Corpus:
     """Loads every annotated file in ``folder`` (sorted, so order is stable)."""
 
     folder = Path(folder)
@@ -98,7 +151,7 @@ def load_corpus(folder: Path, synthetic_marker: str = SYNTHETIC_MARKER) -> Corpu
 
     n_files = len(list(folder.glob("*.json")))
     documents = [
-        Document(name, entries, synthetic_marker in name.lower())
+        Document(name, entries, _kind(name, synthetic_marker, individual_marker))
         for name, entries in read_training_documents(folder)
     ]
     if len(documents) != n_files:
@@ -110,7 +163,7 @@ def load_corpus(folder: Path, synthetic_marker: str = SYNTHETIC_MARKER) -> Corpu
         lines = [e.line_number for e in doc.entries]
         if len(set(lines)) != len(lines):
             raise ValueError(f"{doc.name}: line_number values are not unique")
-    if not any(not d.synthetic for d in documents):
+    if not any(not d.loose for d in documents):
         raise ValueError(f"No real policies found in {folder}")
     return Corpus(documents, _fingerprint(folder))
 
@@ -151,6 +204,7 @@ class DataSplit:
     fingerprint: str
     policies: dict[str, list[str]]  # partition -> policies assigned whole (empty if by="sentence")
     sentences: dict[str, dict[str, list[int]]]  # partition -> file -> line numbers assigned one by one
+    stratify: bool = False  # sentences were distributed label by label, not at random
     _items: dict[str, list[Item]] = field(default_factory=dict, repr=False)
 
     def items(self, partition: str) -> list[Item]:
@@ -177,12 +231,13 @@ class DataSplit:
             synthetic = len(self._items[p]) - real
             where = f"{len(self.policies[p])} policies/" if self.by == "policy" else ""
             parts.append(f"{p}: {where}{real} real + {synthetic} synthetic sentences")
-        return f"by {self.by}; " + "; ".join(parts)
+        how = "stratified" if self.stratify else "random"
+        return f"by {self.by}, {how}; " + "; ".join(parts)
 
     # -- persistence ---------------------------------------------------------
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "version": MANIFEST_VERSION,
             "seed": self.seed,
             "ratios": list(self.ratios),
@@ -191,6 +246,11 @@ class DataSplit:
             "policies": self.policies,
             "sentences": self.sentences,
         }
+        # only written when set, so manifests (and hashes) of random splits stay
+        # exactly as they were before stratification existed
+        if self.stratify:
+            d["stratify"] = True
+        return d
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,8 +281,8 @@ class DataSplit:
             by=raw["by"],
             policies=raw["policies"],
             sentences={p: raw["sentences"][p] for p in PARTITIONS},
+            stratify=bool(raw.get("stratify", False)),
         )
-
 
 
 def _materialize(
@@ -232,6 +292,7 @@ def _materialize(
     by: SplitBy,
     policies: dict[str, list[str]],
     sentences: dict[str, dict[str, list[int]]],
+    stratify: bool = False,
 ) -> DataSplit:
     """Builds a ``DataSplit`` and checks that every sentence of the corpus is in
     exactly one partition."""
@@ -245,8 +306,8 @@ def _materialize(
     for p in PARTITIONS:
         for name in policies[p]:
             doc = by_name[name]
-            if doc.synthetic:
-                raise ValueError(f"{name} is synthetic and cannot be assigned as a policy")
+            if doc.loose:
+                raise ValueError(f"{name} is {doc.kind} and cannot be assigned as a policy")
             items[p].extend(doc.items())
             seen[name] = seen.get(name, 0) + len(doc.entries)
         for name, lines in sentences[p].items():
@@ -268,6 +329,7 @@ def _materialize(
         fingerprint=corpus.fingerprint,
         policies={p: list(policies[p]) for p in PARTITIONS},
         sentences={p: {k: list(v) for k, v in sentences[p].items()} for p in PARTITIONS},
+        stratify=stratify,
         _items=items,
     )
 
@@ -282,18 +344,105 @@ def _split_pool(pool: list, ratios: Ratios, rng: random.Random) -> dict[str, lis
     }
 
 
+def _label_floors(n: int, ratios: Ratios, min_per_label: int) -> dict[str, int]:
+    """Least number of positives every partition should get for a label with
+    ``n`` positives in total: train first, then test, then eval, and eval/test
+    never more than train."""
+
+    floors = {p: 0 for p in PARTITIONS}
+    if min_per_label <= 0 or n == 0:
+        return floors
+    if n <= 2:
+        floors["train"] = 1
+        if n == 2:
+            floors["test"] = 1
+    else:
+        m = min(min_per_label, n // 3)
+        floors = {p: m for p in PARTITIONS}
+    return {p: (v if ratios[i] > 0 else 0) for i, (p, v) in enumerate(floors.items())}
+
+
+def _stratified_split(
+    pool: list[Item],
+    ratios: Ratios,
+    rng: random.Random,
+    assigned: dict[str, list[Item]],
+    min_per_label: int,
+) -> dict[str, list[Item]]:
+    """Distributes ``pool`` label by label (iterative stratification, Sechidis
+    et al. 2011), counting the sentences in ``assigned`` (whole policies) too.
+
+    The label with the fewest unplaced sentences goes first; each of its
+    sentences goes to the partition that is furthest below its floor (see
+    ``_label_floors``), otherwise to the one furthest below its share of that
+    label, ties broken by the free room in the partition, then at random.
+    """
+
+    if not pool:
+        return {p: [] for p in PARTITIONS}
+    labels = [label_keys(i.entry) for i in pool]
+    have = {p: Counter(k for i in assigned[p] for k in label_keys(i.entry)) for p in PARTITIONS}
+    total = Counter(k for ks in labels for k in ks)
+    for p in PARTITIONS:
+        total.update(have[p])
+    share = {p: {k: n * ratios[i] for k, n in total.items()} for i, p in enumerate(PARTITIONS)}
+    floors = {k: _label_floors(n, ratios, min_per_label) for k, n in total.items()}
+    room = dict(zip(PARTITIONS, map(float, _partition_sizes(len(pool), ratios))))
+    floor_order = {"train": 2, "test": 1, "eval": 0}  # who gets a missing floor first
+
+    remaining = Counter(k for ks in labels for k in ks)
+    order = list(range(len(pool)))
+    rng.shuffle(order)
+    unplaced = set(order)
+    out: dict[str, list[Item]] = {p: [] for p in PARTITIONS}
+
+    def place(idx: int, p: str) -> None:
+        out[p].append(pool[idx])
+        have[p].update(labels[idx])
+        remaining.subtract(labels[idx])
+        room[p] -= 1
+        unplaced.discard(idx)
+
+    def choose(key: LabelKey | None) -> str:
+        active = [p for i, p in enumerate(PARTITIONS) if ratios[i] > 0]
+        if key is None:  # sentence without any label
+            return max(active, key=lambda p: (room[p], rng.random()))
+        missing = {p: floors[key][p] - have[p][key] for p in active}
+        needy = [p for p in active if missing[p] > 0]
+        if needy:
+            return max(needy, key=lambda p: (missing[p], floor_order[p]))
+        return max(active, key=lambda p: (share[p][key] - have[p][key], room[p], rng.random()))
+
+    while unplaced:
+        open_keys = [k for k, n in remaining.items() if n > 0]
+        if not open_keys:
+            for idx in [i for i in order if i in unplaced]:
+                place(idx, choose(None))
+            break
+        key = min(open_keys, key=lambda k: (remaining[k], k))
+        for idx in [i for i in order if i in unplaced and key in labels[i]]:
+            place(idx, choose(key))
+    return out
+
+
 def make_split(
     corpus: Corpus,
     seed: int = 42,
     ratios: Ratios = DEFAULT_RATIOS,
     by: SplitBy = "policy",
+    stratify: bool = True,
+    min_per_label: int = 1,
 ) -> DataSplit:
     """Splits the corpus deterministically from ``seed``.
 
-    ``by="policy"``: real policies are shuffled and assigned whole; synthetic
-    sentences are pooled over all synthetic files and split sentence by sentence.
+    ``by="policy"``: real policies are shuffled and assigned whole; synthetic and
+    individual sentences are pooled and split sentence by sentence.
     ``by="sentence"``: every sentence of every file is split individually.
-    Both use the same ratios.
+    Both use the same ratios. ``stratify`` distributes the sentences that are
+    split one by one label by label instead of at random (the policies are
+    assigned the same way either way); ``min_per_label`` is the least number of
+    positives per label and partition that stratification aims for (see
+    ``_label_floors``).
     """
 
     ratios = tuple(ratios)  # type: ignore[assignment]
@@ -303,16 +452,24 @@ def make_split(
     rng = random.Random(seed)
 
     policies: dict[str, list[str]] = {p: [] for p in PARTITIONS}
+    whole: dict[str, list[Item]] = {p: [] for p in PARTITIONS}
     if by == "policy":
         names = [d.name for d in corpus.policies]  # already sorted
         chunks = _split_pool(names, ratios, rng)  # type: ignore[arg-type]
         policies = {p: sorted(chunks[p]) for p in PARTITIONS}
-        loose = corpus.synthetic
+        by_name = {d.name: d for d in corpus.documents}
+        whole = {p: [i for n in policies[p] for i in by_name[n].items()] for p in PARTITIONS}
+        loose = corpus.loose
     else:
         loose = corpus.documents
 
-    pool = [(d.name, e.line_number) for d in loose for e in d.entries]
-    chunks = _split_pool(pool, ratios, rng)  # type: ignore[arg-type]
+    if stratify:
+        items = [i for d in loose for i in d.items()]
+        placed = _stratified_split(items, ratios, rng, whole, min_per_label)  # type: ignore[arg-type]
+        chunks = {p: [(i.source, i.entry.line_number) for i in placed[p]] for p in PARTITIONS}
+    else:
+        pool = [(d.name, e.line_number) for d in loose for e in d.entries]
+        chunks = _split_pool(pool, ratios, rng)  # type: ignore[arg-type]
     sentences: dict[str, dict[str, list[int]]] = {}
     for p, chunk in chunks.items():
         per_file: dict[str, list[int]] = {}
@@ -320,7 +477,7 @@ def make_split(
             per_file.setdefault(name, []).append(line)
         sentences[p] = per_file
 
-    return _materialize(corpus, seed, ratios, by, policies, sentences)  # type: ignore[arg-type]
+    return _materialize(corpus, seed, ratios, by, policies, sentences, stratify)  # type: ignore[arg-type]
 
 
 def prepare_split(
@@ -330,25 +487,29 @@ def prepare_split(
     ratios: Ratios = DEFAULT_RATIOS,
     resplit: bool = False,
     by: SplitBy = "policy",
+    stratify: bool = True,
 ) -> DataSplit:
     """Returns the frozen split from ``manifest``, creating it on first use.
 
-    A manifest that was written with a different seed, ratios or split mode is an
-    error (rather than silently reused), unless ``resplit`` is set.
+    A manifest that was written with a different seed, ratios, split mode or
+    stratification is an error (rather than silently reused), unless ``resplit``
+    is set. Manifests from before stratification existed count as not stratified.
     """
 
     ratios = tuple(ratios)  # type: ignore[assignment]
     if manifest is not None and Path(manifest).exists() and not resplit:
         split = DataSplit.load(Path(manifest), corpus)
-        if (split.seed, tuple(split.ratios), split.by) != (seed, ratios, by):
+        made = (split.seed, tuple(split.ratios), split.by, split.stratify)
+        if made != (seed, ratios, by, stratify):
             raise ValueError(
                 f"{manifest} was made with seed={split.seed} ratios={tuple(split.ratios)} "
-                f"by={split.by}, but seed={seed} ratios={ratios} by={by} was requested. "
+                f"by={split.by} stratify={split.stratify}, but seed={seed} ratios={ratios} "
+                f"by={by} stratify={stratify} was requested. "
                 "Use the same settings, resplit=True / --resplit, or another output folder."
             )
         logger.info("Using frozen split from %s", manifest)
     else:
-        split = make_split(corpus, seed, ratios, by)  # type: ignore[arg-type]
+        split = make_split(corpus, seed, ratios, by, stratify)  # type: ignore[arg-type]
         if manifest is not None:
             split.save(Path(manifest))
             logger.info("Wrote split manifest to %s", manifest)

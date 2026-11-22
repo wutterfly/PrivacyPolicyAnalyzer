@@ -160,6 +160,153 @@ class TestManifest:
         assert prepare_split(corpus, manifest, **kwargs).hash == again.hash
 
 
+def labeled(line: int, text: str, scope: str = "Unspecified", content: tuple[str, str] | None = None) -> dict:
+    topics = [] if content is None else [
+        {"topic": content[0], "contents": [{"content": content[1], "attributes": []}]}
+    ]
+    return {
+        "line_number": line,
+        "text": text,
+        "annotations": {"scopes": [scope], "scopeSpecifics": {}, "topics": topics},
+    }
+
+
+def write_entries(folder: Path, name: str, entries: list[dict]) -> None:
+    (folder / f"{name}.json").write_text(json.dumps(entries), encoding="utf-8")
+
+
+def positives(split: DataSplit, partition: str, topic: str, content: str) -> int:
+    return sum(
+        any(t.topic == topic and any(c.content == content for c in t.contents) for t in i.entry.topics)
+        for i in split.items(partition)
+    )
+
+
+@pytest.fixture
+def rare_folder(tmp_path: Path) -> Path:
+    """Ten plain policies, one policy with a label no other policy has, and a
+    synthetic file with rare labels among many unlabeled sentences."""
+
+    for i in range(10):
+        write_file(tmp_path, f"{i}__policy", 10)
+    write_entries(tmp_path, "10__policy", [
+        labeled(n, f"owner {n}", content=("Policy", "ResponsiblePerson")) for n in range(6)
+    ])
+    entries = [labeled(n, f"plain {n}") for n in range(200)]
+    rare = {"Three": 3, "Two": 2, "One": 1, "Five": 5}
+    line = 200
+    for content, n in rare.items():
+        for _ in range(n):
+            entries.append(labeled(line, f"{content} {line}", content=("Deletion", content)))
+            line += 1
+    write_entries(tmp_path, "999__synthesized", entries)
+    return tmp_path
+
+
+class TestStratifiedSplit:
+    @pytest.mark.parametrize("seed", range(10))
+    def test_rare_labels_reach_every_partition(self, rare_folder, seed):
+        split = make_split(load_corpus(rare_folder), seed=seed)
+        counts = lambda c: [positives(split, p, "Deletion", c) for p in PARTITIONS]
+        assert all(n >= 1 for n in counts("Three")) and sum(counts("Three")) == 3
+        assert all(n >= 1 for n in counts("Five"))
+        assert counts("Two") == [1, 0, 1]  # train and test
+        assert counts("One") == [1, 0, 0]  # train
+
+    def test_random_split_misses_rare_labels_for_some_seed(self, rare_folder):
+        corpus = load_corpus(rare_folder)
+        misses = [
+            seed for seed in range(10)
+            if any(positives(make_split(corpus, seed=seed, stratify=False), p, "Deletion", "Three") == 0
+                   for p in PARTITIONS)
+        ]
+        assert misses  # which is what stratification is for
+
+    def test_policies_are_assigned_as_without_stratification(self, rare_folder):
+        corpus = load_corpus(rare_folder)
+        assert make_split(corpus).policies == make_split(corpus, stratify=False).policies
+
+    def test_ratios_are_kept(self, rare_folder):
+        corpus = load_corpus(rare_folder)
+        split = make_split(corpus, by="sentence")
+        total = sum(len(d.entries) for d in corpus.documents)
+        sizes = [len(split.items(p)) / total for p in PARTITIONS]
+        assert sizes == pytest.approx([0.7, 0.15, 0.15], abs=0.02)
+
+    def test_whole_policies_are_taken_into_account(self, tmp_path):
+        # 10__policy is the only policy with ResponsiblePerson; individual sentences
+        # with it should fill the partitions that policy is not in
+        for i in range(10):
+            write_file(tmp_path, f"{i}__policy", 10)
+        write_entries(tmp_path, "10__policy", [
+            labeled(n, f"owner {n}", content=("Policy", "ResponsiblePerson")) for n in range(20)
+        ])
+        write_entries(tmp_path, "00000_individual", [
+            labeled(n, f"person {n}", content=("Policy", "ResponsiblePerson")) for n in range(6)
+        ] + [labeled(100 + n, f"plain {n}") for n in range(30)])
+        split = make_split(load_corpus(tmp_path), seed=3)
+        holder = next(p for p in PARTITIONS if "10__policy" in split.policies[p])
+        for p in PARTITIONS:
+            if p != holder:
+                assert positives(split, p, "Policy", "ResponsiblePerson") >= 3
+
+    def test_every_sentence_is_in_exactly_one_partition(self, rare_folder):
+        corpus = load_corpus(rare_folder)
+        for by in ("policy", "sentence"):
+            split = make_split(corpus, by=by)
+            all_ids = [x for p in PARTITIONS for x in sentence_ids(split, p)]
+            assert len(all_ids) == len(set(all_ids)) == sum(len(d.entries) for d in corpus.documents)
+
+    def test_same_seed_same_split(self, rare_folder):
+        corpus = load_corpus(rare_folder)
+        assert make_split(corpus, 5).hash == make_split(corpus, 5).hash
+        assert make_split(corpus, 5).hash != make_split(corpus, 6).hash
+
+
+class TestIndividualFile:
+    def test_is_split_by_sentence_and_counts_as_real(self, folder):
+        write_entries(folder, "00000_individual", [labeled(n, f"found {n}") for n in range(40)])
+        corpus = load_corpus(folder)
+        doc = next(d for d in corpus.documents if d.name == "00000_individual")
+        assert doc.kind == "individual" and doc.loose and not doc.synthetic
+        assert doc not in corpus.policies
+        split = make_split(corpus)
+        for p in PARTITIONS:
+            assert "00000_individual" not in split.policies[p]
+            assert any(i.source == "00000_individual" for i in split.real_items(p))
+
+    def test_cannot_be_assigned_as_a_policy(self, folder, tmp_path):
+        write_entries(folder, "00000_individual", [labeled(n, f"found {n}") for n in range(5)])
+        corpus = load_corpus(folder)
+        split = make_split(corpus)
+        raw = split.to_dict()
+        raw["policies"]["train"].append("00000_individual")
+        (tmp_path / "split.json").write_text(json.dumps(raw), encoding="utf-8")
+        with pytest.raises(ValueError, match="individual"):
+            DataSplit.load(tmp_path / "split.json", corpus)
+
+
+class TestStratifyManifest:
+    def test_roundtrip_keeps_stratify(self, rare_folder, tmp_path):
+        corpus = load_corpus(rare_folder)
+        split = make_split(corpus)
+        split.save(tmp_path / "split.json")
+        loaded = DataSplit.load(tmp_path / "split.json", corpus)
+        assert loaded.stratify and loaded.hash == split.hash
+
+    def test_random_split_manifest_has_no_stratify_key(self, rare_folder):
+        # keeps manifests and hashes of earlier (random) splits unchanged
+        assert "stratify" not in make_split(load_corpus(rare_folder), stratify=False).to_dict()
+
+    def test_old_manifest_is_not_stratified_and_is_refused_for_stratified_run(self, rare_folder, tmp_path):
+        corpus = load_corpus(rare_folder)
+        manifest = tmp_path / "split.json"
+        make_split(corpus, stratify=False).save(manifest)
+        assert prepare_split(corpus, manifest, stratify=False).stratify is False
+        with pytest.raises(ValueError, match="stratify"):
+            prepare_split(corpus, manifest)
+
+
 class TestEdgeCases:
     def test_bad_ratios(self, folder):
         corpus = load_corpus(folder)

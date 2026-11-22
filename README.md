@@ -190,11 +190,22 @@ run_experiment(
 **Data split.** By default the data is split by policy (`--split-by policy`, 70/15/15 by default,
 `--split`): every real policy goes whole into exactly one of train, eval or test, so near-identical
 sentences of one policy never end up on both sides. The synthesized files (file name contains
-`synthesized`) belong to no policy and are split sentence by sentence with the same ratios.
+`synthesized`) and the individual files (file name contains `individual`: real sentences collected
+one by one from policies that are not in the corpus otherwise) belong to no policy and are split
+sentence by sentence with the same ratios; individual sentences count as real in the metrics.
 `--split-by sentence` splits every sentence individually instead; this leaks policy-specific wording
-into the test set and gives optimistic scores. The split is computed once and frozen to
+into the test set and gives optimistic scores.
+
+The sentences that are split one by one are distributed label by label (stratified, the default;
+`--no-stratify` for a random split): rarest label first, each sentence goes to the partition that is
+furthest below its share of that label, counting what the whole policies already put there. So
+every label reaches train, eval and test in roughly the split ratios where the data allows; a label
+with at least 3 such positives in total is guaranteed in every partition (2: train and test,
+1: train). The policies themselves are assigned exactly as without stratification.
+
+The split is computed once and frozen to
 `<out>/split.json`: all models and tasks use the same test set, and a rerun with a different seed,
-ratios or split mode (or changed data) stops with an error unless `--resplit` is given. The eval
+ratios, split mode or stratification (or changed data) stops with an error unless `--resplit` is given. The eval
 partition selects the best epoch and the per-label thresholds; the test partition is evaluated once
 at the end, on all sentences and on the real ones only.
 

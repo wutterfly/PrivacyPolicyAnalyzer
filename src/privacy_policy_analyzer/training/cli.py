@@ -19,7 +19,8 @@ def build_parser() -> argparse.ArgumentParser:
         prog="python -m privacy_policy_analyzer.training",
         description="Fine-tune the scope / topic / content classifiers. The annotated "
         "data is split into train/eval/test (by policy unless --split-by sentence; "
-        "synthetic sentences are always split sentence by sentence); the split is frozen to <out>/split.json.",
+        "synthetic and individual sentences are always split sentence by sentence, label by label "
+        "unless --no-stratify); the split is frozen to <out>/split.json.",
     )
     g = p.add_argument_group("inputs and outputs")
     g.add_argument("--data", type=Path, required=True, help="folder with the annotated *.json files")
@@ -37,6 +38,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--split-by", choices=["policy", "sentence"], default="policy",
         help="policy (default): each policy goes whole into one partition, so nothing leaks "
         "between partitions; sentence: every sentence is split individually (optimistic scores)",
+    )
+    g.add_argument(
+        "--no-stratify", action="store_true",
+        help="split synthetic / individual sentences at random instead of label by label "
+        "(the default stratified split puts every label into train, eval and test where possible)",
     )
     g.add_argument("--resplit", action="store_true", help="overwrite an existing split.json")
 
@@ -96,6 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         resplit=args.resplit,
         force=args.force,
         dry_run=args.dry_run,
+        stratify=not args.no_stratify,
     )
     return 0
 
