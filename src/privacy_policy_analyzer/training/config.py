@@ -25,8 +25,12 @@ class TrainingConfig:
     warmup_ratio: float = 0.1
     max_length: int = 512
     # Oversampling of rare labels in the training partition, as a fraction of the
-    # most frequent label's count. None: 0.5 for scope/topic, 0.7 for content.
+    # most frequent label's count (the fallback label is left out). None: 0.5 for
+    # scope/topic, 0.7 for content.
     oversampling: float | None = None
+    # At most this many extra copies of one sentence; None: no limit. Keeps labels
+    # with only a handful of examples from being repeated dozens of times.
+    oversampling_max_copies: int | None = 5
     # "auto" picks bf16 / fp16 / fp32 from the GPU. Fix it for runs across machines.
     precision: Literal["auto", "fp32", "fp16", "bf16"] = "auto"
     # The old trainer asked for 8-bit AdamW (bitsandbytes). Plain AdamW needs no

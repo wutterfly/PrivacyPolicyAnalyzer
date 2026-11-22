@@ -54,6 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--grad-accum", type=int, default=_DEFAULTS.grad_accum_steps, dest="grad_accum_steps")
     g.add_argument("--max-length", type=int, default=_DEFAULTS.max_length)
     g.add_argument("--oversampling", type=float, default=None, help="rare-label oversampling ratio (default: 0.5 scope/topic, 0.7 content)")
+    g.add_argument("--max-copies", type=int, default=_DEFAULTS.oversampling_max_copies, dest="oversampling_max_copies", help="at most this many extra copies of one sentence when oversampling, 0 or less: no limit (default: %(default)s)")
     g.add_argument("--precision", choices=["auto", "fp32", "fp16", "bf16"], default=_DEFAULTS.precision)
     g.add_argument("--optim", default=_DEFAULTS.optim)
     g.add_argument("--no-deterministic", action="store_true", help="allow non-deterministic GPU kernels (faster)")
@@ -84,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         grad_accum_steps=args.grad_accum_steps,
         max_length=args.max_length,
         oversampling=args.oversampling,
+        oversampling_max_copies=args.oversampling_max_copies if args.oversampling_max_copies > 0 else None,
         precision=args.precision,
         optim=args.optim,
         deterministic=not args.no_deterministic,

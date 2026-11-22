@@ -120,6 +120,42 @@ class TestOversampling:
     def test_empty(self):
         assert len(oversample_indices(np.zeros((0, 3), dtype=np.float32), 0.5)) == 0
 
+    def test_skipped_fallback_sets_no_target_and_gets_no_copies(self):
+        # label 0 (fallback) is on every row; without it the largest label has 2
+        y = self.labels()
+        assert oversample_indices(y, 0.5, skip=[0]).tolist() == list(range(10))  # target int(2 * 0.5) = 1
+        # a rare fallback is not topped up either
+        y = np.zeros((10, 2), dtype=np.float32)
+        y[:, 1] = 1
+        y[0, 0] = 1
+        idx = oversample_indices(y, 1.0, skip=[0])
+        assert len(idx) == 10
+
+    def test_copies_count_for_every_label_on_the_row(self):
+        # labels 1 and 2 always occur together: topping up one tops up the other
+        y = np.zeros((12, 3), dtype=np.float32)
+        y[:10, 0] = 1
+        y[10:, 1] = 1
+        y[10:, 2] = 1
+        idx = oversample_indices(y, 0.5)  # target 5
+        counts = y[idx].sum(axis=0)
+        assert counts[1] == 5 and counts[2] == 5
+        assert len(idx) == 15  # 3 copies, not 3 per label
+
+    def test_max_copies_limits_repeats_of_one_row(self):
+        y = self.labels()  # label 2 has a single positive row, needs 4 copies for target 5
+        idx = oversample_indices(y, 0.5, max_copies=2)
+        assert np.bincount(idx).max() <= 3  # original + 2 copies
+        assert y[idx].sum(axis=0)[2] == 3  # stays below the target
+
+    def test_rows_with_fewer_labels_are_copied_first(self):
+        y = np.zeros((6, 3), dtype=np.float32)
+        y[:4, 0] = 1
+        y[4, [0, 1]] = 1  # label 1 together with the frequent label 0
+        y[5, 1] = 1  # label 1 alone
+        idx = oversample_indices(y, 0.75)  # label 0: 5 positives, target 3, label 1 needs one copy
+        assert idx[6:].tolist() == [5]
+
 
 def test_label2id_has_no_duplicates():
     assert build_label2id(["Other", "A", "A"], "Other") == {"Other": 0, "A": 1}

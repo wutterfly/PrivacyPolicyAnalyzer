@@ -180,7 +180,10 @@ def train(
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     ratio = config.oversampling if config.oversampling is not None else task.default_oversampling
-    train_index = oversample_indices(parts["train"].labels, ratio)
+    train_index = oversample_indices(
+        parts["train"].labels, ratio,
+        skip=[label2id[task.fallback]], max_copies=config.oversampling_max_copies,
+    )
     ds_train = _to_dataset(parts["train"], tokenizer, config.max_length, train_index)
     ds_eval = _to_dataset(parts["eval"], tokenizer, config.max_length)
     ds_test = _to_dataset(parts["test"], tokenizer, config.max_length) if sizes["test"] else None

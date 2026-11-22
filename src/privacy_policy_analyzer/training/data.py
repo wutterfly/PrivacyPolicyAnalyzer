@@ -187,29 +187,55 @@ def extract_samples(items: Sequence[Item], task: Task, label2id: dict[str, int])
     return Samples(texts, labels, np.array(synthetic, dtype=bool))
 
 
-def oversample_indices(labels: np.ndarray, ratio: float) -> np.ndarray:
+def oversample_indices(
+    labels: np.ndarray,
+    ratio: float,
+    *,
+    skip: Sequence[int] = (),
+    max_copies: int | None = None,
+) -> np.ndarray:
     """Row indices for a training set where rare labels are repeated.
 
-    Every label with fewer than ``ratio * (count of the most frequent label)``
-    positives gets copies of its positive rows (round robin, deterministic) until
-    it reaches that target. The result starts with all original rows.
+    The target is ``ratio * (count of the most frequent label)``, where labels in
+    ``skip`` (the fallback label) neither set the target nor get copies. Labels
+    are topped up from the rarest one upwards. A copied row counts for every label
+    it carries, so labels that co-occur with rare ones need fewer copies of their
+    own, and none is pushed far past the target. Each label's positives are copied
+    round robin, rows with the fewest labels first, so frequent labels get as few
+    extra positives as possible. A row gets at most ``max_copies`` extra copies
+    (``None``: no limit), so a label with very few examples may stay below the
+    target instead of being repeated dozens of times. The result starts with all
+    original rows, and is deterministic.
     """
 
     n = len(labels)
     if n == 0:
         return np.arange(0)
-    pos_counts = labels.sum(axis=0)
-    target = int(pos_counts.max() * ratio)
+    positive = labels > 0.5
+    counts = positive.sum(axis=0).astype(int)
+    skipped = set(skip)
+    boosted = [i for i in range(labels.shape[1]) if i not in skipped]
+    if not boosted:
+        return np.arange(n)
+    target = int(counts[boosted].max() * ratio)
+    width = positive.sum(axis=1)
+    copies = np.zeros(n, dtype=int)
+    limit = max_copies if max_copies is not None else np.iinfo(int).max
 
     extra: list[int] = []
-    for label_idx in range(labels.shape[1]):
-        missing = target - int(pos_counts[label_idx])
-        positives = np.flatnonzero(labels[:, label_idx] > 0.5)
-        if missing <= 0 or len(positives) == 0:
-            continue
-        copies, remainder = divmod(missing, len(positives))
-        extra.extend(np.repeat(positives, copies).tolist())
-        extra.extend(positives[:remainder].tolist())
+    for label_idx in sorted(boosted, key=lambda i: (counts[i], i)):
+        rows = np.flatnonzero(positive[:, label_idx])
+        rows = rows[np.argsort(width[rows], kind="stable")]
+        while counts[label_idx] < target:
+            rows = rows[copies[rows] < limit]
+            if len(rows) == 0:
+                break
+            for row in rows:
+                if counts[label_idx] >= target:
+                    break
+                extra.append(int(row))
+                copies[row] += 1
+                counts += positive[row]
 
     return np.concatenate([np.arange(n), np.array(extra, dtype=int)])
 
