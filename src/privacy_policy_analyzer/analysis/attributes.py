@@ -1,7 +1,7 @@
 import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from privacy_policy_analyzer.shared.annotation import RawEntry
@@ -14,14 +14,19 @@ class AttributePattern:
     """Holds compiled regex patterns for different attributes."""
 
     patterns: dict[str, list[re.Pattern]]
+    # attribute -> attributes it replaces when both match, e.g. {"PreciseGeolocation": ["LocationData"]}:
+    # "your precise location" is PreciseGeolocation, not also LocationData
+    excludes: dict[str, list[str]] = field(default_factory=dict)
 
     @staticmethod
-    def from_dict(data: dict[str, list[str]]) -> "AttributePattern":
+    def from_dict(
+        data: dict[str, list[str]], excludes: dict[str, list[str]] | None = None
+    ) -> "AttributePattern":
         compiled_patterns = {
             key: [re.compile(pattern, re.IGNORECASE) for pattern in patterns]
             for key, patterns in data.items()
         }
-        return AttributePattern(patterns=compiled_patterns)
+        return AttributePattern(patterns=compiled_patterns, excludes=dict(excludes or {}))
 
     def match(self, text: str) -> list[str]:
         matched_attributes = []
@@ -30,7 +35,12 @@ class AttributePattern:
                 if pattern.search(text):
                     matched_attributes.append(attribute)
                     break
-        return matched_attributes
+        excluded = {
+            other
+            for attribute in matched_attributes
+            for other in self.excludes.get(attribute, [])
+        }
+        return [a for a in matched_attributes if a not in excluded]
 
     def get_stats(self) -> dict[str, int]:
         count: int = len(self.patterns)

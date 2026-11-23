@@ -114,6 +114,10 @@ DEFAULT_HIERARCHY: DataHierarchy = DataHierarchy(
             HierarchyEntry(
                 types=["SensitiveData"],
                 children=[
+                    # precise geolocation is sensitive personal information under the CCPA/CPRA (within a
+                    # 1,850-foot radius) and sensitive data under most other US state laws; coarse location
+                    # (city, region, IP-based) stays under LocationData
+                    HierarchyEntry(types=["PreciseGeolocation"], children=None),
                     HierarchyEntry(
                         types=["HealthData"],
                         children=[
