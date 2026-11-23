@@ -205,7 +205,9 @@ with at least 3 such positives in total is guaranteed in every partition (2: tra
 
 The split is computed once and frozen to
 `<out>/split.json`: all models and tasks use the same test set, and a rerun with a different seed,
-ratios, split mode or stratification (or changed data) stops with an error unless `--resplit` is given. The eval
+ratios, split mode or stratification (or changed data) stops with an error unless `--resplit` is given.
+Changes to fields training does not read (attributes, scope specifics) only log a warning: the split
+also stores a fingerprint of the sentences and their scope, topic and content labels. The eval
 partition selects the best epoch and the per-label thresholds; the test partition is evaluated once
 at the end, on all sentences and on the real ones only.
 

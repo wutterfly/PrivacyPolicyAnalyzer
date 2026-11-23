@@ -27,7 +27,9 @@ positives in total is guaranteed to be in every partition (2: train and test,
 
 The split is computed once for the whole corpus, so every model and every task
 (scope, topic, content) sees the same train/eval/test sentences, and it can be
-frozen to a JSON manifest so later runs reproduce it exactly. This module has no
+frozen to a JSON manifest so later runs reproduce it exactly. The manifest stays
+usable when the data files change only in what training does not read (e.g.
+attributes or scope specifics): see ``label_fingerprint``. This module has no
 torch / datasets dependency.
 """
 
@@ -106,6 +108,20 @@ class Corpus:
     @property
     def synthetic(self) -> list[Document]:
         return [d for d in self.documents if d.synthetic]
+
+    @property
+    def label_fingerprint(self) -> str:
+        """sha256 over what training reads: file names, line numbers, texts and the
+        scope / topic / content labels, in file order. Attributes, scope specifics
+        and any other field are left out, so editing only those keeps a frozen
+        split usable."""
+
+        digest = hashlib.sha256()
+        for doc in self.documents:
+            rows = [[e.line_number, e.text, sorted(label_keys(e))] for e in doc.entries]
+            digest.update(json.dumps([doc.name, rows], ensure_ascii=False).encode("utf-8"))
+            digest.update(b"\0")
+        return digest.hexdigest()
 
 
 def _kind(name: str, synthetic_marker: str, individual_marker: str) -> Kind:
@@ -205,6 +221,7 @@ class DataSplit:
     policies: dict[str, list[str]]  # partition -> policies assigned whole (empty if by="sentence")
     sentences: dict[str, dict[str, list[int]]]  # partition -> file -> line numbers assigned one by one
     stratify: bool = False  # sentences were distributed label by label, not at random
+    label_fingerprint: str | None = None  # Corpus.label_fingerprint; None in older manifests
     _items: dict[str, list[Item]] = field(default_factory=dict, repr=False)
 
     def items(self, partition: str) -> list[Item]:
@@ -220,9 +237,9 @@ class DataSplit:
     @property
     def hash(self) -> str:
         """Identifies the exact assignment (not the data behind it)."""
-        return hashlib.sha256(
-            json.dumps(self.to_dict(), sort_keys=True).encode("utf-8")
-        ).hexdigest()[:16]
+        d = self.to_dict()
+        d.pop("label_fingerprint", None)  # left out, so hashes of older manifests stay the same
+        return hashlib.sha256(json.dumps(d, sort_keys=True).encode("utf-8")).hexdigest()[:16]
 
     def summary(self) -> str:
         parts = []
@@ -250,6 +267,8 @@ class DataSplit:
         # exactly as they were before stratification existed
         if self.stratify:
             d["stratify"] = True
+        if self.label_fingerprint is not None:
+            d["label_fingerprint"] = self.label_fingerprint
         return d
 
     def save(self, path: Path) -> None:
@@ -262,7 +281,9 @@ class DataSplit:
         """Rebuilds a frozen split against ``corpus``.
 
         Fails if the data files changed since the split was written, since the
-        recorded assignment would then no longer describe the same sentences.
+        recorded assignment would then no longer describe the same sentences,
+        unless the manifest has a ``label_fingerprint`` and that still matches:
+        then only fields training does not read changed (e.g. attributes).
         """
 
         with Path(path).open("r", encoding="utf-8") as f:
@@ -270,9 +291,15 @@ class DataSplit:
         if raw.get("version") != MANIFEST_VERSION:
             raise ValueError(f"{path}: unsupported split manifest version")
         if raw["data_fingerprint"] != corpus.fingerprint:
-            raise ValueError(
-                f"{path}: the annotated data changed since this split was made. "
-                "Re-split (resplit=True / --resplit) or use a new output folder."
+            if raw.get("label_fingerprint") != corpus.label_fingerprint:
+                raise ValueError(
+                    f"{path}: the annotated data changed since this split was made. "
+                    "Re-split (resplit=True / --resplit) or use a new output folder."
+                )
+            logger.warning(
+                "%s: the data files changed since this split was made, but no sentence, "
+                "scope, topic or content label did (only e.g. attributes); using the split",
+                path,
             )
         return _materialize(
             corpus,
@@ -330,6 +357,7 @@ def _materialize(
         policies={p: list(policies[p]) for p in PARTITIONS},
         sentences={p: {k: list(v) for k, v in sentences[p].items()} for p in PARTITIONS},
         stratify=stratify,
+        label_fingerprint=corpus.label_fingerprint,
         _items=items,
     )
 

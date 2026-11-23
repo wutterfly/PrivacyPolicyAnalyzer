@@ -324,3 +324,63 @@ class TestEdgeCases:
         write_file(tmp_path, "999__synthesized", 10)
         with pytest.raises(ValueError, match="No real policies"):
             load_corpus(tmp_path)
+
+
+class TestLabelFingerprint:
+    """A frozen split survives edits of fields training does not read."""
+
+    @pytest.fixture
+    def labeled_folder(self, tmp_path: Path) -> Path:
+        for i in range(10):
+            write_entries(tmp_path, f"{i}__policy", [
+                labeled(n, f"{i} sentence {n}", scope="Device", content=("Deletion", "DataType")) for n in range(6)
+            ])
+        write_entries(tmp_path, "999__synthesized", [labeled(n, f"synthetic {n}") for n in range(30)])
+        return tmp_path
+
+    def edit(self, folder: Path, change) -> None:
+        path = folder / "3__policy.json"
+        entries = json.loads(path.read_text(encoding="utf-8"))
+        change(entries[2]["annotations"])
+        path.write_text(json.dumps(entries), encoding="utf-8")
+
+    @pytest.mark.parametrize("change", [
+        lambda a: a["topics"][0]["contents"][0].update(attributes=["PreciseGeolocation"]),
+        lambda a: a.update(scopeSpecifics={"Device": ["Camera"]}),
+    ])
+    def test_unused_fields_keep_the_split(self, labeled_folder, tmp_path_factory, change):
+        manifest = tmp_path_factory.mktemp("out") / "split.json"
+        first = prepare_split(load_corpus(labeled_folder), manifest)
+        before = load_corpus(labeled_folder)
+        self.edit(labeled_folder, change)
+        after = load_corpus(labeled_folder)
+        assert after.fingerprint != before.fingerprint
+        assert after.label_fingerprint == before.label_fingerprint
+        again = prepare_split(after, manifest)
+        for p in PARTITIONS:
+            assert sentence_ids(again, p) == sentence_ids(first, p)
+
+    @pytest.mark.parametrize("change", [
+        lambda a: a["topics"][0]["contents"][0].update(content="WeakDeletion"),
+        lambda a: a.update(scopes=["App"]),
+        lambda a: a.update(topics=[]),
+    ])
+    def test_label_changes_are_refused(self, labeled_folder, tmp_path_factory, change):
+        manifest = tmp_path_factory.mktemp("out") / "split.json"
+        prepare_split(load_corpus(labeled_folder), manifest)
+        self.edit(labeled_folder, change)
+        with pytest.raises(ValueError, match="changed"):
+            prepare_split(load_corpus(labeled_folder), manifest)
+
+    def test_manifest_without_label_fingerprint_stays_strict(self, labeled_folder, tmp_path_factory):
+        manifest = tmp_path_factory.mktemp("out") / "split.json"
+        split = prepare_split(load_corpus(labeled_folder), manifest)
+        raw = json.loads(manifest.read_text(encoding="utf-8"))
+        assert raw["label_fingerprint"] == split.label_fingerprint
+        del raw["label_fingerprint"]
+        manifest.write_text(json.dumps(raw), encoding="utf-8")
+        # an older manifest loads unchanged, with the same hash
+        assert DataSplit.load(manifest, load_corpus(labeled_folder)).hash == split.hash
+        self.edit(labeled_folder, lambda a: a["topics"][0]["contents"][0].update(attributes=["X"]))
+        with pytest.raises(ValueError, match="changed"):
+            DataSplit.load(manifest, load_corpus(labeled_folder))
