@@ -174,76 +174,72 @@ COMMON_ORG_EXCLUDED_TERMS: list[str] = [
 
 # --------- EN defaults ---------
 
+# Best model per task of the by-policy training run of 2026-11-23 (selected by test
+# macro-F1, see privpolicydata/scripts/upload.py). No label overrides the default
+# threshold of 0.5, the threshold the models were evaluated at.
 EN_DEFAULT_MODEL_CONFIGS: ModelConfigs = ModelConfigs(
     scope=ModelConfig(
-        model_name="Wravn/privacy-policy-context",
+        model_name="Wravn/PrivaScope-scope",
         thresholds={},
     ),
     topic=ModelConfig(
-        model_name="Wravn/privacy-policy-topic",
-        thresholds={
-            "Purpose": 0.4,
-            "Sharing": 0.6,
-            "ThirdParty": 0.6,
-            "Selling": 0.65,
-            "Audience": 0.7,
-            "Contact": 0.3,
-        },
+        model_name="Wravn/PrivaScope-topic",
+        thresholds={},
     ),
     audience=ModelConfig(
-        model_name="Wravn/privacy-policy-content-audience",
-        thresholds={"Country": 0.4},
+        model_name="Wravn/PrivaScope-content-audience",
+        thresholds={},
     ),
     contact=ModelConfig(
-        model_name="Wravn/privacy-policy-content-contact",
-        thresholds={"Website": 0.4},
+        model_name="Wravn/PrivaScope-content-contact",
+        thresholds={},
     ),
     control=ModelConfig(
-        model_name="Wravn/privacy-policy-content-control",
+        model_name="Wravn/PrivaScope-content-control",
         thresholds={},
     ),
     deletion=ModelConfig(
-        model_name="Wravn/privacy-policy-content-deletion",
+        model_name="Wravn/PrivaScope-content-deletion",
         thresholds={},
     ),
     legal_basis=ModelConfig(
-        model_name="Wravn/privacy-policy-content-legalbasis",
+        model_name="Wravn/PrivaScope-content-legalbasis",
         thresholds={},
     ),
     policy=ModelConfig(
-        model_name="Wravn/privacy-policy-content-policy",
-        thresholds={"Change": 0.4, "External": 0.65},
+        model_name="Wravn/PrivaScope-content-policy",
+        thresholds={},
     ),
     processing=ModelConfig(
-        model_name="Wravn/privacy-policy-content-processing",
-        thresholds={"Source": 0.4},
+        model_name="Wravn/PrivaScope-content-processing",
+        thresholds={},
     ),
     purpose=ModelConfig(
-        model_name="Wravn/privacy-policy-content-purpose",
+        model_name="Wravn/PrivaScope-content-purpose",
         thresholds={},
     ),
     retention=ModelConfig(
-        model_name="Wravn/privacy-policy-content-retention",
-        thresholds={"StorageDuration": 0.4},
+        model_name="Wravn/PrivaScope-content-retention",
+        thresholds={},
     ),
     security_privacy=ModelConfig(
-        model_name="Wravn/privacy-policy-content-securityprivacy",
-        thresholds={"SecurityHints": 0.4},
+        model_name="Wravn/PrivaScope-content-securityprivacy",
+        thresholds={},
     ),
     selling=ModelConfig(
-        model_name="Wravn/privacy-policy-content-selling",
-        thresholds={"NotSelling": 0.90},
+        model_name="Wravn/PrivaScope-content-selling",
+        thresholds={},
     ),
     sharing=ModelConfig(
-        model_name="Wravn/privacy-policy-content-sharing",
+        model_name="Wravn/PrivaScope-content-sharing",
         thresholds={},
     ),
     third_party=ModelConfig(
-        model_name="Wravn/privacy-policy-content-thirdparty",
-        thresholds={"Company": 0.3, "Descriptive": 0.4},
+        model_name="Wravn/PrivaScope-content-thirdparty",
+        thresholds={},
     ),
     user_rights=ModelConfig(
-        model_name="Wravn/privacy-policy-content-userrights",
+        model_name="Wravn/PrivaScope-content-userrights",
         thresholds={},
     ),
 )

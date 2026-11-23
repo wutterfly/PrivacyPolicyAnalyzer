@@ -228,11 +228,13 @@ These configurations define which models to use and what classification threshol
 The default model configurations can be imported from `privacy_policy_analyzer.config.DEFAULT_MODEL_CONFIGS`.
 They use pre-trained models hosted on HuggingFace.
 
-- [Scope Classifier](https://huggingface.co/Wravn/privacy-policy-context)
-- [Topic Classifier](https://huggingface.co/Wravn/privacy-policy-topic)
-- Content Classifiers for each topic, e.g.:
-  - [User Rights Content Classifier](https://huggingface.co/Wravn/privacy-policy-content-userrights)
+- [Scope Classifier](https://huggingface.co/Wravn/PrivaScope-scope)
+- [Topic Classifier](https://huggingface.co/Wravn/PrivaScope-topic)
+- Content Classifiers for each topic, `Wravn/PrivaScope-content-<topic>`, e.g.:
+  - [User Rights Content Classifier](https://huggingface.co/Wravn/PrivaScope-content-userrights)
   - ...
+
+Every label is assigned at a score of at least 0.5 (`DEFAULT_THRESHOLD`); `thresholds` can raise or lower it per label.
 
 #### **Pattern Configs**
 
