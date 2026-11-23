@@ -422,6 +422,7 @@
       "Lighting",
       "Likes",
       "LocationData",
+      "PreciseGeolocation",
       "LocationHistory",
       "LocationPermissions",
       "LogData",

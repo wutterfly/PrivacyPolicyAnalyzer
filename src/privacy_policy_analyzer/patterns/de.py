@@ -498,6 +498,18 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
                 "geogra(ph|f)ische[rn]? (Standort|Lage)",
                 "Geolokalisierung",
             ],
+            # genauer Standort: ausdrücklich genau / präzise, GPS oder Breiten- und Längengrad;
+            # nicht ungefährer, IP-basierter oder Stadt-/Regionsstandort (bleibt LocationData)
+            "PreciseGeolocation": [
+                "(?<!un)(?:genaue|präzise|exakte)[nmrs]?\\s+(?:oder\\s+ungefähre[nmrs]?\\s+)?(?:geografische[nmrs]?\\s+)?(?:Standort|Position|Geolokalisierung|Lage|Aufenthaltsort)",
+                "(?:Standort|Position)\\s+(?:genau|präzise|exakt)\\b",
+                "\\bGPS\\b",
+                "Breitengrad.{0,40}Längengrad",
+                "Längengrad.{0,40}Breitengrad",
+                "Längen-\\s*(?:und|/)\\s*Breitengrad",
+                "Breiten-\\s*(?:und|/)\\s*Längengrad",
+                "(?:GPS|geografische[nmrs]?|Standort)[- ]?Koordinaten",
+            ],
             "LocationHistory": ["Standort(-.{0,27})?(verlauf|historie)"],
             "GPSData": [
                 "GPS.{0,20}(daten|informationen|koordinaten)",
@@ -1163,7 +1175,8 @@ DE_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             ],
             "InferenceData": ["(Schluss|Inferenz)(-.{0,27})?daten"],
             "MartialStatus": ["Familienstand"],
-        }
+        },
+        excludes={"PreciseGeolocation": ["LocationData"]},
     ),
     track_conv=AttributePattern.from_dict(
         {

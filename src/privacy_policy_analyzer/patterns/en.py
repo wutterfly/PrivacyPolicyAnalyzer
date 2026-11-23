@@ -381,8 +381,20 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "PageResponseTime": ["page response time", "website response time"],
             "ScreenResolution": ["screen resolution", "display resolution"],
             "LocationData": ["(?<!in )(?<!in your )(?<!in the )(?<!various )\\b(?:geo)?locations?\\b"],
+            # precise location: an explicit "precise / exact" location, GPS, or latitude and longitude;
+            # not approximate, general, IP-based or city/region-level location (those stay LocationData)
+            "PreciseGeolocation": [
+                "(?<!non-)(?<!non )(?<!less )\\b(?:precise|exact|accurate)(?:\\s+or\\s+approximate)?\\s+(?:geo-?\\s?)?locations?\\b",
+                "(?<!non-)(?<!non )(?<!less )\\b(?:precise|exact)\\s+(?:geographic(?:al)?\\s+)?(?:position(?:ing)?|whereabouts)\\b",
+                "\\bapproximate\\b.{0,60}?\\bor\\s+precise\\b",
+                "\\b(?:exactly|precisely)\\s+where\\s+you\\s+are\\b",
+                "\\bGPS\\b",
+                "\\blatitude\\b.{0,40}\\blongitude\\b",
+                "\\blongitude\\b.{0,40}\\blatitude\\b",
+                "\\b(?:geographic(?:al)?|geo|GPS|location|map)\\s+coordinates\\b",
+            ],
             "LocationHistory": ["location history", "\\broute history\\b"],
-            "GPSData": ["GPS (data|information)"],
+            "GPSData": ["\\bGPS(?:[\\s-]+(?:data|information|signals?|coordinates|position(?:ing)?|locations?|tracking))\\b", "\\bGPS-based\\b"],
             "Coordinates": ["coordinates", "latitude", "longitude"],
             "AltitudeData": ["\\baltitude\\b", "elevation data"],
             "Timezone": ["time zone"],
@@ -971,7 +983,8 @@ EN_PATTERN_CONFIG: AttributePatterns = AttributePatterns(
             "CompanyName": ["\\bcompany(.){0,20}names?\\b", "\\bname of company\\b"],
             "NumberOfEmployees": ["\\bnumber of employees\\b", "\\bemployee count\\b"],
             "BusinessModel": ["\\bbusiness models?\\b"],
-        }
+        },
+        excludes={"PreciseGeolocation": ["LocationData"]},
     ),
     track_conv=AttributePattern.from_dict(
         {
