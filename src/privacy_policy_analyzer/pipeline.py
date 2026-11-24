@@ -246,7 +246,7 @@ class Pipeline:
                 entries,
                 gate=gate,
                 scopes_only_into_unspecified=propagation.scopes_only_into_unspecified,
-                nearest_scope=propagation.nearest_scope,
+                scope_headings=propagation.scope_headings,
                 topics=propagation.topics,
                 contents=propagation.contents,
             )
@@ -270,7 +270,7 @@ class Pipeline:
                 entries,
                 gate=gate,
                 scopes_only_into_unspecified=propagation.scopes_only_into_unspecified,
-                nearest_scope=propagation.nearest_scope,
+                scope_headings=propagation.scope_headings,
             )
         else:
             propagate_content_stats = empty_propagation_stats()

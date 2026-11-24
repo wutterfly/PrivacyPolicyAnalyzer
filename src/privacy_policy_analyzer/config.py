@@ -60,20 +60,22 @@ class PropagationConfig:
     propagated to all sentences below it (within the limits below).
 
     `scopes_only_into_unspecified` lets only sentences whose own Scope is
-    `Unspecified` inherit Scopes, and `nearest_scope` takes them only from the
-    nearest heading above the sentence that has a Scope (a subsection
-    narrows the Scope of its section). `topics=False` stops headings from passing
-    on topics, and `contents=False` lets them pass on topics but not their
-    contents, which the content models then decide. The defaults follow the
-    in-context evaluation of the added labels (Section 6.4 of the paper):
-    Scopes inherited by Unspecified sentences were mostly correct, while
-    Scopes added to sentences with a Scope of their own, inherited topics
-    (also under a strict gate), and inherited contents were mostly wrong.
+    `Unspecified` inherit Scopes, and `scope_headings` decides from which
+    headings: "own" (the heading of the sentence's own section), "nearest"
+    (the nearest heading above that has a Scope), or "all". `topics=False`
+    stops headings from passing on topics, and `contents=False` lets them
+    pass on topics but not their contents, which the content models then
+    decide. The defaults follow the in-context evaluation of the added
+    labels (Section 6.4 of the paper): Scopes that Unspecified sentences
+    inherit from the heading of their own section were correct in 0.83 of
+    the judged cases, those from headings further up in 0.59, while Scopes
+    added to sentences with a Scope of their own, inherited topics (also
+    under a strict gate), and inherited contents were mostly wrong.
     """
 
     enabled: bool = True
     scopes_only_into_unspecified: bool = True
-    nearest_scope: bool = True
+    scope_headings: str = "own"
     topics: bool = False
     contents: bool = False
     scope_floor_ratio: float = 0.0
@@ -91,6 +93,10 @@ class PropagationConfig:
             value = getattr(self, name)
             if not 0.0 <= value <= 1.0:
                 raise ValueError(f"{name} must be between 0 and 1, got {value}")
+        if self.scope_headings not in ("all", "nearest", "own"):
+            raise ValueError(
+                f"scope_headings must be 'all', 'nearest' or 'own', got {self.scope_headings!r}"
+            )
 
     @property
     def gated(self) -> bool:

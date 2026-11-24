@@ -175,6 +175,8 @@ def merge_entries(
 
 
 _MAX_HEADER_LEVEL = 6  # h1 - h6; headers outside this range are ignored
+# which active headers pass on their Scopes (see propagate_headers)
+SCOPE_HEADINGS = ("all", "nearest", "own")
 
 
 def _merge_header_into(
@@ -322,7 +324,7 @@ def propagate_headers(
     *,
     gate: PropagationGate | None = None,
     scopes_only_into_unspecified: bool = False,
-    nearest_scope: bool = False,
+    scope_headings: str = "all",
     topics: bool = True,
     contents: bool = True,
 ) -> dict[str, dict]:
@@ -341,10 +343,10 @@ def propagate_headers(
 
     With `scopes_only_into_unspecified`, only entries whose own Scope is
     `Unspecified` inherit Scopes; entries with a Scope of their own keep it.
-    With `nearest_scope`, an entry inherits Scopes only from the nearest
-    active header that has a Scope other than `Unspecified`, since a
-    subsection usually narrows the Scope of the sections around it; the
-    topics of all active headers are still merged.
+    `scope_headings` decides which active headers pass on their Scopes:
+    "all" of them, only the "nearest" one that has a Scope other than
+    `Unspecified`, or only the header of the entry's "own" section (the
+    deepest active one). Topics are merged from all active headers.
     With `topics=False`, headers pass on no topics (and so no contents).
     With `contents=False`, headers pass on their topics but not the contents
     of these topics, so the content models decide the contents of an
@@ -356,6 +358,10 @@ def propagate_headers(
     Returns counts of the labels that were added, and with a gate also of
     those that were blocked, under "blocked".
     """
+    if scope_headings not in SCOPE_HEADINGS:
+        raise ValueError(
+            f"scope_headings must be one of {SCOPE_HEADINGS}, got {scope_headings!r}"
+        )
     added_scopes = Counter()
     added_topics = Counter()
     blocked_scopes = Counter()
@@ -382,7 +388,7 @@ def propagate_headers(
             not scopes_only_into_unspecified or entry.scopes == [UNSPECIFIED_SCOPE]
         )
         scope_source = None
-        if nearest_scope:
+        if scope_headings == "nearest":
             scope_source = next(
                 (
                     header
@@ -391,6 +397,8 @@ def propagate_headers(
                 ),
                 None,
             )
+        elif scope_headings == "own" and active:
+            scope_source = active[-1][1]
         for _, header in active:
             if gate is None:
                 scopes, header_topics = header.scopes, header.topics
@@ -401,7 +409,9 @@ def propagate_headers(
                 blocked_scopes.update(b_scopes)
                 blocked_topics.update(b_topics)
                 blocked_contents.update(b_contents)
-            if not takes_scopes or (nearest_scope and header is not scope_source):
+            if not takes_scopes or (
+                scope_headings != "all" and header is not scope_source
+            ):
                 scopes = []
             if not topics:
                 header_topics = []

@@ -1,5 +1,7 @@
 from dataclasses import asdict
 
+import pytest
+
 from privacy_policy_analyzer.analysis.post_processing import (
     DEFAULT_SKIPS,
     LabelFloors,
@@ -671,12 +673,12 @@ class TestPropagationLimits:
         h3 = make_entry(scopes=["Unspecified"], structure=Header(level=3))
         body = make_entry(scopes=["Unspecified"], structure=Text(3))
         stats = propagate_headers(
-            [h1, h2, h3, body], skips=[], scopes_only_into_unspecified=True, nearest_scope=True
+            [h1, h2, h3, body], skips=[], scopes_only_into_unspecified=True, scope_headings="nearest"
         )
         assert body.scopes == ["App"]
         assert stats["scopes"] == {"App": 1, "total": 1}
 
-    def test_nearest_scope_falls_back_to_an_enclosing_header(self):
+    def test_nearest_scope_falls_back_to_a_header_further_up(self):
         # after the App subsection closes, the h1 Scope applies again
         h1 = make_entry(scopes=["Device"], structure=Header(level=1))
         h2 = make_entry(scopes=["App"], structure=Header(level=2))
@@ -684,7 +686,7 @@ class TestPropagationLimits:
         in_app = make_entry(scopes=["Unspecified"], structure=Text(2))
         after = make_entry(scopes=["Unspecified"], structure=Text(2))
         propagate_headers(
-            [h1, h2, in_app, h2b, after], skips=[], nearest_scope=True
+            [h1, h2, in_app, h2b, after], skips=[], scope_headings="nearest"
         )
         assert in_app.scopes == ["App"]
         assert after.scopes == ["Device"]
@@ -696,9 +698,41 @@ class TestPropagationLimits:
         )
         h2 = make_entry(scopes=["App"], structure=Header(level=2))
         body = make_entry(structure=Text(2))
-        propagate_headers([h1, h2, body], skips=[], nearest_scope=True)
+        propagate_headers([h1, h2, body], skips=[], scope_headings="nearest")
         assert body.scopes == ["App"]
         assert [t.topic for t in body.topics] == ["Sharing"]
+
+    def test_own_scope_takes_the_header_of_the_own_section(self):
+        h1 = make_entry(scopes=["Device"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        body = make_entry(scopes=["Unspecified"], structure=Text(2))
+        stats = propagate_headers(
+            [h1, h2, body], skips=[], scopes_only_into_unspecified=True, scope_headings="own"
+        )
+        assert body.scopes == ["App"]
+        assert stats["scopes"] == {"App": 1, "total": 1}
+
+    def test_own_scope_does_not_look_further_up(self):
+        # the heading of the own section has no Scope, so the h1 Scope is not used
+        h1 = make_entry(scopes=["Website"], structure=Header(level=1))
+        h2 = make_entry(scopes=["Unspecified"], structure=Header(level=2))
+        body = make_entry(scopes=["Unspecified"], structure=Text(2))
+        propagate_headers([h1, h2, body], skips=[], scope_headings="own")
+        assert body.scopes == ["Unspecified"]
+
+    def test_own_scope_uses_the_outer_header_once_the_subsection_closes(self):
+        h1 = make_entry(scopes=["Device"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        h1b = make_entry(scopes=["Website"], structure=Header(level=1))
+        in_app = make_entry(scopes=["Unspecified"], structure=Text(2))
+        on_web = make_entry(scopes=["Unspecified"], structure=Text(1))
+        propagate_headers([h1, h2, in_app, h1b, on_web], skips=[], scope_headings="own")
+        assert in_app.scopes == ["App"]
+        assert on_web.scopes == ["Website"]
+
+    def test_unknown_scope_headings_value_is_rejected(self):
+        with pytest.raises(ValueError):
+            propagate_headers([], skips=[], scope_headings="closest")
 
     def test_topics_still_reach_entries_with_a_scope_of_their_own(self):
         header = make_entry(
