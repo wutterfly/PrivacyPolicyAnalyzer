@@ -990,6 +990,25 @@ class TestCombineTableRows:
 
 
 class TestSmoothScope:
+    def test_excluded_scope_is_not_passed_on(self):
+        entries = [
+            make_entry(scopes=["Services"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Services"]),
+        ]
+        stats = smooth_scope(entries, exclude=["Services"])
+        assert entries[1].scopes == ["Unspecified"]
+        assert stats == {"total": 0}
+
+    def test_exclusion_keeps_the_other_shared_scopes(self):
+        entries = [
+            make_entry(scopes=["Services", "Device"]),
+            make_entry(scopes=["Unspecified"]),
+            make_entry(scopes=["Device", "Services"]),
+        ]
+        smooth_scope(entries, exclude=("Services",))
+        assert entries[1].scopes == ["Device"]
+
     def test_other_replaced_by_neighbour_intersection(self):
         entries = [
             make_entry(scopes=["Website"]),

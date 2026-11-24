@@ -528,10 +528,19 @@ def combine_table_rows(entries: list[StructuredEntry]) -> list[StructuredEntry]:
     return combined_entries
 
 
-def smooth_scope(entries: list[StructuredEntry]) -> dict[str, int]:
+def smooth_scope(
+    entries: list[StructuredEntry], exclude: Iterable[str] = ()
+) -> dict[str, int]:
+    """Give an Unspecified entry the Scopes its neighbours share (in place).
+
+    Runs left to right, so an entry filled in this way counts as a neighbour
+    of the next one. Scopes in `exclude` are never passed on; an entry whose
+    neighbours share only excluded Scopes stays Unspecified.
+    """
     if len(entries) < 3:
         return {}
 
+    excluded = set(exclude)
     added_scopes = Counter()
 
     for i in range(1, len(entries) - 1):
@@ -540,7 +549,9 @@ def smooth_scope(entries: list[StructuredEntry]) -> dict[str, int]:
         next_entry = entries[i + 1]
 
         if current_entry.scopes == [UNSPECIFIED_SCOPE]:
-            intersect = set(prev_entry.scopes).intersection(set(next_entry.scopes))
+            intersect = (
+                set(prev_entry.scopes).intersection(set(next_entry.scopes)) - excluded
+            )
             if intersect:
                 current_entry.scopes = list(intersect)
                 added_scopes.update(intersect)

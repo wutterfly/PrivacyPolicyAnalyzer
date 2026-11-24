@@ -293,7 +293,7 @@ class Pipeline:
         logger.info("Completed information collection for policy=%s", policy.name)
 
         entries = combine_table_rows(entries)
-        smoothing_stats = smooth_scope(entries)
+        smoothing_stats = smooth_scope(entries, exclude=config.smoothing.exclude_scopes)
         # the scopes are final now, so the scope specifics can be extracted
         extract_scope_specifics(entries, config.pattern_configs.scope_specifics)
 

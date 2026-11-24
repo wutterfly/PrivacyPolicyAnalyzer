@@ -67,8 +67,8 @@ class PropagationConfig:
     pass on topics but not their contents, which the content models then
     decide. The defaults follow the in-context evaluation of the added
     labels (Section 6.4 of the paper): Scopes that Unspecified sentences
-    inherit from the heading of their own section were correct in 0.83 of
-    the judged cases, those from headings further up in 0.59, while Scopes
+    inherit from the heading of their own section were correct in 0.78 of
+    the judged cases, those from headings further up in 0.57, while Scopes
     added to sentences with a Scope of their own, inherited topics (also
     under a strict gate), and inherited contents were mostly wrong.
     """
@@ -138,6 +138,21 @@ class PropagationConfig:
         )
 
 
+@dataclass(frozen=True)
+class SmoothingConfig:
+    """Which Scopes Scope smoothing may pass on.
+
+    Smoothing gives an Unspecified sentence the Scopes that the sentences
+    before and after it share, except those in `exclude_scopes`. Services is
+    excluded by default: in the in-context evaluation (Section 6.4 of the
+    paper), Services added by smoothing were correct in only 0.41 of the
+    judged cases, as general sentences often stand between two sentences
+    about the services, while the other Scopes were mostly correct.
+    """
+
+    exclude_scopes: tuple[str, ...] = ("Services",)
+
+
 @dataclass
 class PipelineConfiguration:
     """Bundles all language-dependent and model configuration needed to run
@@ -163,6 +178,7 @@ class PipelineConfiguration:
     url_pattern_config: UrlPattern
 
     propagation: PropagationConfig = field(default_factory=PropagationConfig)
+    smoothing: SmoothingConfig = field(default_factory=SmoothingConfig)
 
 
 # common domain endings the NER model mistakenly tags as "ORG"
