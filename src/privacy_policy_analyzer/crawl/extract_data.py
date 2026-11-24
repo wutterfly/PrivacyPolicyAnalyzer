@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,6 +22,25 @@ from privacy_policy_analyzer.shared.structure import (
 HEADER_TAGS = ["h1", "h2", "h3", "h4", "h5", "h6"]
 STYLE_TAGS = ["b", "strong", "u", "i", "em", "span", "mark"]
 DESTRUCTIBLE_TAGS = ["a", "link", "br"] + STYLE_TAGS
+
+# Literal escape sequences ("\r\n" as text) of a JSON string that leaked into the document.
+_ESCAPE_SEQUENCES = re.compile(r"\\[rnt]")
+# The end of a leaked JSON attribute value, followed by the remaining attributes of its tag,
+# e.g. '"}}" id="richtext-95c29b2f0c" class="cmp-text">'.
+_ATTRIBUTE_TAIL = re.compile(r'["}\]]+(\s+[\w:.-]+(="[^"]*")?)*\s*>')
+
+
+def _is_markup_leftover(text: str) -> bool:
+    """
+    Whether a text node is a leftover of a JSON attribute that the page did not escape (e.g. the
+    `data-cmp-data-layer` of an AEM `cmp-text` component): the HTML parser ends the attribute at the
+    first inner quote and turns the rest of the JSON value into text nodes that hold only literal
+    escape sequences, optionally followed by the tail of the attribute and its tag.
+    """
+    if not _ESCAPE_SEQUENCES.search(text):
+        return False
+    rest = _ESCAPE_SEQUENCES.sub("", text).strip()
+    return not rest or _ATTRIBUTE_TAIL.fullmatch(rest) is not None
 
 
 # ---- Intermediate Types ---- #
@@ -191,6 +211,7 @@ def _get_contents(element: Tag) -> list[TagItem | DataItem]:
         child
         for child in children
         if not (isinstance(child, (Comment, TemplateString, Script)))
+        and not (isinstance(child, NavigableString) and _is_markup_leftover(child))
     ]
 
     # Special handling for tables
