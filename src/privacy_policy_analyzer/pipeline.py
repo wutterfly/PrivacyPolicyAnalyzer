@@ -242,7 +242,14 @@ class Pipeline:
         propagation = config.propagation
         gate = propagation.build_gate(config.model_configs)
         if propagation.enabled:
-            propagate_scope_topic_stats = propagate_headers(entries, gate=gate)
+            propagate_scope_topic_stats = propagate_headers(
+                entries,
+                gate=gate,
+                scopes_only_into_unspecified=propagation.scopes_only_into_unspecified,
+                nearest_scope=propagation.nearest_scope,
+                topics=propagation.topics,
+                contents=propagation.contents,
+            )
         else:
             propagate_scope_topic_stats = empty_propagation_stats()
 
@@ -256,9 +263,15 @@ class Pipeline:
             return error
 
         # propagate again so contents just classified above also inherit
-        # down from their parent headers
-        if propagation.enabled:
-            propagate_content_stats = propagate_headers(entries, gate=gate)
+        # down from their parent headers (only if headers pass on contents;
+        # otherwise the content models alone decide the contents)
+        if propagation.enabled and propagation.topics and propagation.contents:
+            propagate_content_stats = propagate_headers(
+                entries,
+                gate=gate,
+                scopes_only_into_unspecified=propagation.scopes_only_into_unspecified,
+                nearest_scope=propagation.nearest_scope,
+            )
         else:
             propagate_content_stats = empty_propagation_stats()
 

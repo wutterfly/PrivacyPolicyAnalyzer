@@ -56,11 +56,26 @@ class PropagationConfig:
     keeps clearly unrelated sentences from picking it up. Sentences that
     already have a label are not affected.
 
-    All values at 0 (the default) mean there is no gate: everything a heading
-    carries is propagated to all sentences below it.
+    All ratios at 0 mean there is no gate: every label a heading carries is
+    propagated to all sentences below it (within the limits below).
+
+    `scopes_only_into_unspecified` lets only sentences whose own Scope is
+    `Unspecified` inherit Scopes, and `nearest_scope` takes them only from the
+    nearest heading above the sentence that has a Scope (a subsection
+    narrows the Scope of its section). `topics=False` stops headings from passing
+    on topics, and `contents=False` lets them pass on topics but not their
+    contents, which the content models then decide. The defaults follow the
+    in-context evaluation of the added labels (Section 6.4 of the paper):
+    Scopes inherited by Unspecified sentences were mostly correct, while
+    Scopes added to sentences with a Scope of their own, inherited topics
+    (also under a strict gate), and inherited contents were mostly wrong.
     """
 
     enabled: bool = True
+    scopes_only_into_unspecified: bool = True
+    nearest_scope: bool = True
+    topics: bool = False
+    contents: bool = False
     scope_floor_ratio: float = 0.0
     topic_floor_ratio: float = 0.0
     content_floor_ratio: float = 0.0

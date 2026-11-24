@@ -321,6 +321,10 @@ def propagate_headers(
     skips: list[SkipRule] = DEFAULT_SKIPS,
     *,
     gate: PropagationGate | None = None,
+    scopes_only_into_unspecified: bool = False,
+    nearest_scope: bool = False,
+    topics: bool = True,
+    contents: bool = True,
 ) -> dict[str, dict]:
     """Propagate the labels of headers to the entries below them (in place).
 
@@ -334,6 +338,17 @@ def propagate_headers(
     enough itself (see `PropagationGate`), judged by the entry's `scores`
     (an entry without scores inherits nothing under a floor above 0).
     Without a gate, everything the header carries is propagated.
+
+    With `scopes_only_into_unspecified`, only entries whose own Scope is
+    `Unspecified` inherit Scopes; entries with a Scope of their own keep it.
+    With `nearest_scope`, an entry inherits Scopes only from the nearest
+    active header that has a Scope other than `Unspecified`, since a
+    subsection usually narrows the Scope of the sections around it; the
+    topics of all active headers are still merged.
+    With `topics=False`, headers pass on no topics (and so no contents).
+    With `contents=False`, headers pass on their topics but not the contents
+    of these topics, so the content models decide the contents of an
+    inherited topic.
 
     Single pass over `entries` with a stack of active headers, each filtered
     with `skips` once when it is pushed.
@@ -362,19 +377,39 @@ def propagate_headers(
                 active.append((level, filter_src(entry, skips) if skips else entry))
             continue
 
+        # decided on the entry's own Scopes, before any header is merged in
+        takes_scopes = (
+            not scopes_only_into_unspecified or entry.scopes == [UNSPECIFIED_SCOPE]
+        )
+        scope_source = None
+        if nearest_scope:
+            scope_source = next(
+                (
+                    header
+                    for _, header in reversed(active)
+                    if any(s != UNSPECIFIED_SCOPE for s in header.scopes)
+                ),
+                None,
+            )
         for _, header in active:
             if gate is None:
-                new_scopes, new_topics = _merge_header_into(
-                    entry, header.scopes, header.topics
-                )
+                scopes, header_topics = header.scopes, header.topics
             else:
-                scopes, topics, b_scopes, b_topics, b_contents = _gate_header(
+                scopes, header_topics, b_scopes, b_topics, b_contents = _gate_header(
                     entry, header, gate
                 )
                 blocked_scopes.update(b_scopes)
                 blocked_topics.update(b_topics)
                 blocked_contents.update(b_contents)
-                new_scopes, new_topics = _merge_header_into(entry, scopes, topics)
+            if not takes_scopes or (nearest_scope and header is not scope_source):
+                scopes = []
+            if not topics:
+                header_topics = []
+            elif not contents:
+                header_topics = [
+                    TopicAnnotation(topic=t.topic, contents=[]) for t in header_topics
+                ]
+            new_scopes, new_topics = _merge_header_into(entry, scopes, header_topics)
             added_scopes.update(new_scopes)
             added_topics.update(new_topics)
 

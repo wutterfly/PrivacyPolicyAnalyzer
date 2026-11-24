@@ -79,8 +79,13 @@ def topics_by_text(result: PolicyResult) -> dict[str, list[str]]:
 
 @pytest.mark.usefixtures("fake_models")
 class TestPipelinePropagation:
+    def test_by_default_headers_pass_on_no_topics(self):
+        topics = topics_by_text(analyze(PropagationConfig()))
+        assert "Sharing" not in topics["We give data to partners."]
+        assert "Sharing" not in topics["The weather is nice."]
+
     def test_without_a_gate_everything_below_the_header_inherits_its_topic(self):
-        result = analyze(PropagationConfig())
+        result = analyze(PropagationConfig(topics=True))
         assert topics_by_text(result) == {
             "Sharing": ["Sharing"],
             "We give data to partners.": ["Sharing"],
@@ -90,7 +95,7 @@ class TestPipelinePropagation:
 
     def test_with_a_gate_only_sentences_that_nearly_scored_it_inherit_the_topic(self):
         # floor = 0.5 * 0.6 = 0.3: passes for 0.35, blocks 0.02
-        result = analyze(PropagationConfig(topic_floor_ratio=0.5))
+        result = analyze(PropagationConfig(topics=True, topic_floor_ratio=0.5))
         topics = topics_by_text(result)
         assert topics["We give data to partners."] == ["Sharing"]
         assert "Sharing" not in topics["The weather is nice."]
@@ -99,7 +104,7 @@ class TestPipelinePropagation:
         assert blocked["topics"] == {"Sharing": 1, "total": 1}
 
     def test_content_model_runs_on_sentences_that_inherited_the_topic(self):
-        result = analyze(PropagationConfig(topic_floor_ratio=0.5))
+        result = analyze(PropagationConfig(topics=True, topic_floor_ratio=0.5))
         entry = next(e for e in result.analyzed if e.text == "We give data to partners.")
         sharing = next(t for t in entry.topics if t.topic == "Sharing")
         assert [c.content for c in sharing.contents] == ["DataType"]
@@ -116,7 +121,7 @@ class TestPipelinePropagation:
         assert propagate["content"] == {"scopes": {"total": 0}, "topics": {"total": 0}}
 
     def test_scores_of_every_label_are_part_of_the_serialized_result(self):
-        result = analyze(PropagationConfig())
+        result = analyze(PropagationConfig(topics=True))
         entries = {e["text"]: e for e in result.to_json()["analyzed"]}
 
         scores = entries["We give data to partners."]["scores"]

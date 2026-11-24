@@ -644,6 +644,106 @@ class TestGatedPropagation:
         assert body.scopes == ["Website"]
 
 
+class TestPropagationLimits:
+    def test_only_unspecified_entries_inherit_scopes(self):
+        header = make_entry(scopes=["Device"], structure=Header(level=1))
+        unspecified = make_entry(scopes=["Unspecified"], structure=Text(1))
+        own = make_entry(scopes=["App"], structure=Text(1))
+        stats = propagate_headers(
+            [header, unspecified, own], skips=[], scopes_only_into_unspecified=True
+        )
+        assert unspecified.scopes == ["Device"]
+        assert own.scopes == ["App"]
+        assert stats["scopes"] == {"Device": 1, "total": 1}
+
+    def test_unspecified_entry_inherits_the_scopes_of_all_active_headers(self):
+        # the decision is made on the entry's own Scope, so the h1 Scope
+        # filled in first does not keep the h2 Scope out
+        h1 = make_entry(scopes=["Device"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        body = make_entry(scopes=["Unspecified"], structure=Text(2))
+        propagate_headers([h1, h2, body], skips=[], scopes_only_into_unspecified=True)
+        assert sorted(body.scopes) == ["App", "Device"]
+
+    def test_nearest_scope_takes_only_the_nearest_header_with_a_scope(self):
+        h1 = make_entry(scopes=["Device"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        h3 = make_entry(scopes=["Unspecified"], structure=Header(level=3))
+        body = make_entry(scopes=["Unspecified"], structure=Text(3))
+        stats = propagate_headers(
+            [h1, h2, h3, body], skips=[], scopes_only_into_unspecified=True, nearest_scope=True
+        )
+        assert body.scopes == ["App"]
+        assert stats["scopes"] == {"App": 1, "total": 1}
+
+    def test_nearest_scope_falls_back_to_an_enclosing_header(self):
+        # after the App subsection closes, the h1 Scope applies again
+        h1 = make_entry(scopes=["Device"], structure=Header(level=1))
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        h2b = make_entry(scopes=["Unspecified"], structure=Header(level=2))
+        in_app = make_entry(scopes=["Unspecified"], structure=Text(2))
+        after = make_entry(scopes=["Unspecified"], structure=Text(2))
+        propagate_headers(
+            [h1, h2, in_app, h2b, after], skips=[], nearest_scope=True
+        )
+        assert in_app.scopes == ["App"]
+        assert after.scopes == ["Device"]
+
+    def test_nearest_scope_still_merges_the_topics_of_all_headers(self):
+        h1 = make_entry(
+            scopes=["Device"], topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        h2 = make_entry(scopes=["App"], structure=Header(level=2))
+        body = make_entry(structure=Text(2))
+        propagate_headers([h1, h2, body], skips=[], nearest_scope=True)
+        assert body.scopes == ["App"]
+        assert [t.topic for t in body.topics] == ["Sharing"]
+
+    def test_topics_still_reach_entries_with_a_scope_of_their_own(self):
+        header = make_entry(
+            scopes=["Device"],
+            topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(scopes=["App"], structure=Text(1))
+        propagate_headers([header, body], skips=[], scopes_only_into_unspecified=True)
+        assert body.scopes == ["App"]
+        assert [t.topic for t in body.topics] == ["Sharing"]
+
+    def test_without_contents_an_inherited_topic_comes_without_contents(self):
+        header = make_entry(
+            topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        new = make_entry(structure=Text(1))
+        own = make_entry(topics=[make_topic("Sharing", ("Purpose", []))], structure=Text(1))
+        propagate_headers([header, new, own], skips=[], contents=False)
+        assert [(t.topic, t.contents) for t in new.topics] == [("Sharing", [])]
+        assert [c.content for c in own.topics[0].contents] == ["Purpose"]
+
+    def test_gate_and_limits_combine(self):
+        header = make_entry(
+            scopes=["Device"],
+            topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(
+            scopes=["Unspecified"],
+            structure=Text(1),
+            scores=make_scores(topics={"Sharing": 0.01}),
+        )
+        propagate_headers(
+            [header, body],
+            skips=[],
+            gate=uniform_gate(topics=0.05),
+            scopes_only_into_unspecified=True,
+            contents=False,
+        )
+        assert body.scopes == ["Device"]
+        assert body.topics == []
+
+
 # ---------------------------------------------------------------------------
 # scores on entries
 # ---------------------------------------------------------------------------
@@ -938,3 +1038,19 @@ class TestSmoothScope:
         ]
         smooth_scope(entries)
         assert set(entries[1].scopes) == {"Website", "App"}
+
+
+class TestPropagationWithoutTopics:
+    def test_without_topics_only_scopes_are_inherited(self):
+        header = make_entry(
+            scopes=["Device"],
+            topics=[make_topic("Sharing", ("DataType", []))],
+            structure=Header(level=1),
+        )
+        body = make_entry(scopes=["Unspecified"], structure=Text(1))
+        stats = propagate_headers(
+            [header, body], skips=[], scopes_only_into_unspecified=True, topics=False
+        )
+        assert body.scopes == ["Device"]
+        assert body.topics == []
+        assert stats["topics"] == {"total": 0}
