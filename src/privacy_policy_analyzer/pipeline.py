@@ -196,7 +196,8 @@ class Pipeline:
                     "Pre-loading model loading for language=%s", config.language
                 )
                 config.model_configs.test_load_models(prefer_onnx)
-                config.ner_model_config.test_load_models(prefer_onnx)
+                if config.use_ner_for_company:
+                    config.ner_model_config.test_load_models(prefer_onnx)
             logger.info("Completed pre-loading model loading for all languages")
 
     def run_with_policy(
