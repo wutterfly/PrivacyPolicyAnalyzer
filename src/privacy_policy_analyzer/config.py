@@ -259,7 +259,9 @@ EN_DEFAULT_CONFIGURATION: PipelineConfiguration = PipelineConfiguration(
     language=Language.EN,
     model_configs=EN_DEFAULT_MODEL_CONFIGS,
     ner_model_config=EN_DEFAULT_NER_MODEL_CONFIGS,
-    use_ner_for_company=True,
+    # company names come from the regex list (pattern_configs.company), like all other
+    # attributes; the NER model has not been evaluated
+    use_ner_for_company=False,
     splitter_configs=EN_SPLITTER_CONFIG,
     pattern_configs=EN_PATTERN_CONFIG,
     duration_pattern_configs=EN_DURATION_PATTERN_CONFIG,
