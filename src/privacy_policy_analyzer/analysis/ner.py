@@ -13,7 +13,7 @@ from transformers import (
 from privacy_policy_analyzer.analysis.err import ModelLoadError
 from privacy_policy_analyzer.shared.annotation import RawEntry
 from privacy_policy_analyzer.shared.logging import get_logger
-from privacy_policy_analyzer.shared.util import cleanup_memory, get_device
+from privacy_policy_analyzer.shared.util import cap_max_length, cleanup_memory, get_device
 
 logger = get_logger(__name__)
 hf_logging.set_verbosity_error()
@@ -137,6 +137,7 @@ def _load_pipeline(
         # ONNX Runtime models always run on CPU here - GPU execution providers
         # aren't wired up, so device selection would silently be wrong.
         device = "cpu" if loaded_onnx else get_device()
+        cap_max_length(tokenizer)
 
         return LoadedNERModel(
             pipeline(

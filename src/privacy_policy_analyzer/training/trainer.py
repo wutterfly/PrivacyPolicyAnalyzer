@@ -179,6 +179,8 @@ def train(
     set_global_seed(config.seed, config.deterministic)  # before the head is initialised
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
+    # saved with the model, so that inference truncates like training (DeBERTa-v3's tokenizer sets no limit)
+    tokenizer.model_max_length = config.max_length
     ratio = config.oversampling if config.oversampling is not None else task.default_oversampling
     train_index = oversample_indices(
         parts["train"].labels, ratio,
